@@ -1,26 +1,20 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider, theme, App as AntApp } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import MainLayout from './components/Layout/MainLayout'
-import Dashboard from './features/dashboard/Dashboard'
-import StrategyList from './features/strategy/StrategyList'
-import TradingView from './features/trading/TradingView'
-import TradingManagement from './features/trading/TradingManagement'
-import Settings from './features/settings/Settings'
-import APIConfigManagement from './features/settings/APIConfigManagement'
-import BacktestList from './features/backtest/BacktestList'
-import BacktestDetail from './features/backtest/BacktestDetail'
-import KlineManager from './features/backtest/KlineManager'
-import AlertHistory from './features/alerts/AlertHistory'
-import RiskControlPage from './features/risk-control/RiskControlPage'
-import MarketAnalysisPage from './features/ai/MarketAnalysisPage'
-import AIConfigManagement from './features/settings/AIConfigManagement'
 import { wsService, NotificationData } from './services/websocket'
 import { useWebSocketStore } from './stores/useWebSocketStore'
+import { useUserStore } from './stores/useUserStore'
+import LoginPage from './features/auth/LoginPage'
+
+const MainLayout = lazy(() => import('./components/Layout/MainLayout'))
+const Dashboard = lazy(() => import('./features/dashboard/Dashboard'))
+const StrategyList = lazy(() => import('./features/strategy/StrategyList'))
+const TradingManagement = lazy(() => import('./features/trading/TradingManagement'))
+const APIConfigManagement = lazy(() => import('./features/settings/APIConfigManagement'))
 
 // 创建React Query客户端
 const queryClient = new QueryClient({
@@ -75,27 +69,30 @@ function AppContent() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="strategies" element={<StrategyList />} />
-          <Route path="trading" element={<TradingView />} />
-          <Route path="trading-management" element={<TradingManagement />} />
-          <Route path="backtest" element={<BacktestList />} />
-          <Route path="backtest/:id" element={<BacktestDetail />} />
-          <Route path="kline-manager" element={<KlineManager />} />
-          <Route path="alerts" element={<AlertHistory />} />
-          <Route path="risk-control" element={<RiskControlPage />} />
-          <Route path="ai-analysis" element={<MarketAnalysisPage />} />
-          <Route path="ai-config" element={<AIConfigManagement />} />
-          <Route path="api-config" element={<APIConfigManagement />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0d0d0d' }} />}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<ProtectedLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="strategies" element={<StrategyList />} />
+            <Route path="trading-management" element={<TradingManagement />} />
+            <Route path="api-config" element={<APIConfigManagement />} />
+            <Route path="trading" element={<Navigate to="/trading-management" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
+}
+
+function ProtectedLayout() {
+  const isAuthenticated = useUserStore((state) => state.isAuthenticated)
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: window.location.pathname }} replace />
+  }
+  return <MainLayout />
 }
 
 function App() {

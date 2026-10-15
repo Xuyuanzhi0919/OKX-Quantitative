@@ -10,11 +10,37 @@ from datetime import datetime
 from app.core.database import get_db
 from app.api.deps import require_current_user_id
 from app.models.alert import Alert
+from app.services.altcoin_momentum_monitor import altcoin_momentum_monitor
+from app.services.tradfi_momentum_monitor import tradfi_momentum_monitor
 
 router = APIRouter()
 
 
 get_current_user_id = require_current_user_id
+
+
+@router.get("/altcoin-momentum/status")
+async def get_altcoin_momentum_status(
+    user_id: int = Depends(get_current_user_id),
+):
+    """获取山寨币短线异动监控状态和最近命中。"""
+    return {
+        "code": 0,
+        "msg": "success",
+        "data": altcoin_momentum_monitor.status(),
+    }
+
+
+@router.get("/tradfi-momentum/status")
+async def get_tradfi_momentum_status(
+    user_id: int = Depends(get_current_user_id),
+):
+    """获取 TradFi 双向异动监控状态和最近命中。"""
+    return {
+        "code": 0,
+        "msg": "success",
+        "data": tradfi_momentum_monitor.status(),
+    }
 
 
 @router.get("/list")

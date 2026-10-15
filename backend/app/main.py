@@ -68,6 +68,8 @@ async def startup_event():
     from app.websocket.manager import ws_manager
     from app.services.notification import notification_service
     from app.services.altcoin_momentum_monitor import altcoin_momentum_monitor
+    from app.services.tradfi_momentum_monitor import tradfi_momentum_monitor
+    from app.services.account_monitor import account_monitor
     import app.websocket as websocket_module
 
     if not settings.DEBUG and settings.SECRET_KEY == "your-secret-key-change-in-production-please":
@@ -90,6 +92,12 @@ async def startup_event():
 
             altcoin_momentum_monitor.configure(
                 notification_config.get("altcoin_momentum_monitor", {})
+            )
+            tradfi_momentum_monitor.configure(
+                notification_config.get("tradfi_momentum_monitor", {})
+            )
+            account_monitor.configure(
+                notification_config.get("account_risk_monitor", {})
             )
         except Exception as e:
             logger.error(f"❌ 加载推送配置失败: {e}")
@@ -124,7 +132,6 @@ async def startup_event():
     await websocket_module.okx_ws_client.start()
 
     # 启动账户监控器(定期推送余额和持仓)
-    from app.services.account_monitor import account_monitor
     try:
         await account_monitor.start()
         logger.info("📊 账户监控器已启动")
@@ -136,6 +143,12 @@ async def startup_event():
         await altcoin_momentum_monitor.start()
     except Exception as e:
         logger.error(f"山寨币短线异动监控启动失败，已跳过: {e}")
+
+    # 启动 TradFi 双向异动监控（只读，不参与下单）
+    try:
+        await tradfi_momentum_monitor.start()
+    except Exception as e:
+        logger.error(f"TradFi 异动监控启动失败，已跳过: {e}")
 
     # 自动恢复运行中的策略
     try:
@@ -217,12 +230,16 @@ async def shutdown_event():
     from app.services.strategy.manager import strategy_manager
     from app.services.account_monitor import account_monitor
     from app.services.altcoin_momentum_monitor import altcoin_momentum_monitor
+    from app.services.tradfi_momentum_monitor import tradfi_momentum_monitor
 
     # 停止账户监控器
     await account_monitor.stop()
 
     # 停止山寨币短线异动监控
     await altcoin_momentum_monitor.stop()
+
+    # 停止 TradFi 异动监控
+    await tradfi_momentum_monitor.stop()
 
     # 停止所有运行中的策略
     try:

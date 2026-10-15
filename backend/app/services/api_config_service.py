@@ -2,6 +2,7 @@
 API配置服务 - 动态获取当前激活的API配置
 """
 from typing import Optional
+import socket
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models.api_config import APIConfig
@@ -12,6 +13,22 @@ from loguru import logger
 
 class APIConfigService:
     """API配置服务"""
+
+    @staticmethod
+    def _resolve_proxy(config_proxy: Optional[str] = None) -> Optional[str]:
+        """优先使用账户配置代理，其次使用 .env，最后探测常见本地代理端口。"""
+        if config_proxy and config_proxy.strip():
+            return config_proxy.strip()
+        if settings.OKX_PROXY and settings.OKX_PROXY.strip():
+            return settings.OKX_PROXY.strip()
+
+        for port in (7897, 7890, 7891):
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                    return f"http://127.0.0.1:{port}"
+            except OSError:
+                continue
+        return None
 
     @staticmethod
     def get_active_config(user_id: int = 1, db: Optional[Session] = None) -> Optional[APIConfig]:
@@ -94,7 +111,7 @@ class APIConfigService:
                 secret_key=config.secret_key,
                 passphrase=config.passphrase,
                 simulated=config.is_simulated,
-                proxy=config.proxy
+                proxy=APIConfigService._resolve_proxy(config.proxy)
             )
         else:
             # 回退到.env配置
@@ -107,7 +124,7 @@ class APIConfigService:
                 secret_key=settings.OKX_SECRET_KEY,
                 passphrase=settings.OKX_PASSPHRASE,
                 simulated=settings.OKX_SIMULATED,
-                proxy=settings.OKX_PROXY
+                proxy=APIConfigService._resolve_proxy()
             )
 
 

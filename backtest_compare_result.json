@@ -1,0 +1,800 @@
+{
+  "window": {
+    "start": 1783697700000,
+    "end": 1783762500000
+  },
+  "results": [
+    {
+      "symbol": "BEAT-USDT-SWAP",
+      "change_24h_pct": 30.41,
+      "atr": {
+        "final_equity": 1041.0382863048014,
+        "return_pct": 4.103828630480133,
+        "max_drawdown_pct": 6.14413920790163,
+        "closed_trades": 5,
+        "win_rate_pct": 80.0,
+        "trades": [
+          {
+            "timestamp": 1783711800000,
+            "time": "2026-07-11 03:30",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6339,
+            "pnl": 0.0,
+            "equity": 821.0241120881127
+          },
+          {
+            "timestamp": 1783719000000,
+            "time": "2026-07-11 05:30",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.669176568084299,
+            "pnl": 12.58883343492807,
+            "equity": 1028.9918160508366
+          },
+          {
+            "timestamp": 1783723200000,
+            "time": "2026-07-11 06:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6868,
+            "pnl": 0.0,
+            "equity": 781.546427175467
+          },
+          {
+            "timestamp": 1783732800000,
+            "time": "2026-07-11 09:20",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.630795582985186,
+            "pnl": -26.329003798770707,
+            "equity": 1002.0457414568655
+          },
+          {
+            "timestamp": 1783740300000,
+            "time": "2026-07-11 11:25",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6711,
+            "pnl": 0.0,
+            "equity": 796.2610572338502
+          },
+          {
+            "timestamp": 1783748700000,
+            "time": "2026-07-11 13:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.7346931090557933,
+            "pnl": 23.90995460108525,
+            "equity": 1025.4425172943024
+          },
+          {
+            "timestamp": 1783757100000,
+            "time": "2026-07-11 16:05",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.9039,
+            "pnl": 0.0,
+            "equity": 834.5618623820524
+          },
+          {
+            "timestamp": 1783762500000,
+            "time": "2026-07-11 17:35",
+            "side": "exit",
+            "reason": "final",
+            "price": 2.9544,
+            "pnl": 16.07178061875899,
+            "equity": 1041.0382863048014
+          }
+        ]
+      },
+      "fixed": {
+        "final_equity": 980.64,
+        "return_pct": -1.94,
+        "max_drawdown_pct": 11.66,
+        "closed_trades": 13,
+        "win_rate_pct": 53.8,
+        "trades": [
+          {
+            "time": "07-11 16:05",
+            "side": "entry",
+            "reason": "long",
+            "price": 2.9039,
+            "pnl": 0.0,
+            "equity": 498.6,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 16:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.874861,
+            "pnl": -26.2297,
+            "equity": 972.22,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 16:50",
+            "side": "entry",
+            "reason": "long",
+            "price": 2.9094,
+            "pnl": 0.0,
+            "equity": 484.9,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:05",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.880306,
+            "pnl": -25.5087,
+            "equity": 945.5,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:10",
+            "side": "entry",
+            "reason": "long",
+            "price": 2.9032,
+            "pnl": 0.0,
+            "equity": 471.57,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:25",
+            "side": "exit",
+            "reason": "take",
+            "price": 2.932232,
+            "pnl": 22.4438,
+            "equity": 966.76,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:25",
+            "side": "entry",
+            "reason": "long",
+            "price": 2.9346,
+            "pnl": 0.0,
+            "equity": 482.17,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:35",
+            "side": "exit",
+            "reason": "final",
+            "price": 2.9544,
+            "pnl": 15.0904,
+            "equity": 980.64,
+            "dir": "long"
+          }
+        ],
+        "long_trades": 13,
+        "short_trades": 0
+      }
+    },
+    {
+      "symbol": "HMSTR-USDT-SWAP",
+      "change_24h_pct": 25.73,
+      "atr": {
+        "final_equity": 1060.9066271090917,
+        "return_pct": 6.090662710909167,
+        "max_drawdown_pct": 6.550402383869233,
+        "closed_trades": 8,
+        "win_rate_pct": 62.5,
+        "trades": [
+          {
+            "timestamp": 1783736400000,
+            "time": "2026-07-11 10:20",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002132,
+            "pnl": 0.0,
+            "equity": 759.2216257390785
+          },
+          {
+            "timestamp": 1783740600000,
+            "time": "2026-07-11 11:30",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.00022145103316823796,
+            "pnl": 43.95356745197601,
+            "equity": 1033.4097489785727
+          },
+          {
+            "timestamp": 1783743300000,
+            "time": "2026-07-11 12:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002214,
+            "pnl": 0.0,
+            "equity": 854.2179901718714
+          },
+          {
+            "timestamp": 1783745100000,
+            "time": "2026-07-11 12:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.0002149999034708024,
+            "pnl": -26.26918834401531,
+            "equity": 1006.6936983931441
+          },
+          {
+            "timestamp": 1783751700000,
+            "time": "2026-07-11 14:35",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002173,
+            "pnl": 0.0,
+            "equity": 808.9787375836631
+          },
+          {
+            "timestamp": 1783754400000,
+            "time": "2026-07-11 15:20",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.0002272826175775045,
+            "pnl": 44.785511054366665,
+            "equity": 1050.9861546824
+          },
+          {
+            "timestamp": 1783759200000,
+            "time": "2026-07-11 16:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002339,
+            "pnl": 0.0,
+            "equity": 894.0490997419561
+          },
+          {
+            "timestamp": 1783762500000,
+            "time": "2026-07-11 17:35",
+            "side": "exit",
+            "reason": "final",
+            "price": 0.0002371,
+            "pnl": 10.311836653475973,
+            "equity": 1060.9066271090917
+          }
+        ]
+      },
+      "fixed": {
+        "final_equity": 1039.3,
+        "return_pct": 3.93,
+        "max_drawdown_pct": 3.53,
+        "closed_trades": 13,
+        "win_rate_pct": 61.5,
+        "trades": [
+          {
+            "time": "07-11 12:15",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.0002214,
+            "pnl": 0.0,
+            "equity": 524.22,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 12:20",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.000223614,
+            "pnl": 24.9499,
+            "equity": 1074.71,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:35",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.0002173,
+            "pnl": 0.0,
+            "equity": 536.01,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:40",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.000215127,
+            "pnl": -28.1977,
+            "equity": 1045.17,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:50",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.0002188,
+            "pnl": 0.0,
+            "equity": 521.28,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:55",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.000220988,
+            "pnl": 24.8097,
+            "equity": 1068.67,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 16:40",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.0002339,
+            "pnl": 0.0,
+            "equity": 533.0,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 16:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.000231561,
+            "pnl": -28.0393,
+            "equity": 1039.3,
+            "dir": "long"
+          }
+        ],
+        "long_trades": 13,
+        "short_trades": 0
+      }
+    },
+    {
+      "symbol": "MMT-USDT-SWAP",
+      "change_24h_pct": 17.3,
+      "atr": {
+        "final_equity": 973.8428579007455,
+        "return_pct": -2.615714209925457,
+        "max_drawdown_pct": 2.6157142099254544,
+        "closed_trades": 1,
+        "win_rate_pct": 0.0,
+        "trades": [
+          {
+            "timestamp": 1783728600000,
+            "time": "2026-07-11 08:10",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.2038,
+            "pnl": 0.0,
+            "equity": 765.4867590994752
+          },
+          {
+            "timestamp": 1783730100000,
+            "time": "2026-07-11 08:35",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.19944396664308897,
+            "pnl": -25.572321049627245,
+            "equity": 973.8428579007455
+          }
+        ]
+      },
+      "fixed": {
+        "final_equity": 961.61,
+        "return_pct": -3.84,
+        "max_drawdown_pct": 5.42,
+        "closed_trades": 5,
+        "win_rate_pct": 40.0,
+        "trades": [
+          {
+            "time": "07-11 10:30",
+            "side": "entry",
+            "reason": "short",
+            "price": 0.1904,
+            "pnl": 0.0,
+            "equity": 485.04,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 10:40",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.192304,
+            "pnl": -25.5406,
+            "equity": 945.76,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 11:00",
+            "side": "entry",
+            "reason": "short",
+            "price": 0.1889,
+            "pnl": 0.0,
+            "equity": 471.7,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 11:05",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.187011,
+            "pnl": 22.4735,
+            "equity": 967.05,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 14:15",
+            "side": "entry",
+            "reason": "short",
+            "price": 0.1826,
+            "pnl": 0.0,
+            "equity": 482.31,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 14:25",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.18077400000000002,
+            "pnl": 22.9795,
+            "equity": 988.82,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 17:00",
+            "side": "entry",
+            "reason": "short",
+            "price": 0.1834,
+            "pnl": 0.0,
+            "equity": 493.17,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 17:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.185234,
+            "pnl": -25.9688,
+            "equity": 961.61,
+            "dir": "short"
+          }
+        ],
+        "long_trades": 1,
+        "short_trades": 4
+      }
+    },
+    {
+      "symbol": "VIRTUAL-USDT-SWAP",
+      "change_24h_pct": 14.16,
+      "atr": {
+        "final_equity": 1099.8873398026342,
+        "return_pct": 9.988733980263408,
+        "max_drawdown_pct": 5.790218464973108,
+        "closed_trades": 7,
+        "win_rate_pct": 71.42857142857143,
+        "trades": [
+          {
+            "timestamp": 1783722300000,
+            "time": "2026-07-11 06:25",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6071,
+            "pnl": 0.0,
+            "equity": 817.1528541313705
+          },
+          {
+            "timestamp": 1783731600000,
+            "time": "2026-07-11 09:00",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.6280683311087685,
+            "pnl": 49.02901726357104,
+            "equity": 1154.4077690137256
+          },
+          {
+            "timestamp": 1783732500000,
+            "time": "2026-07-11 09:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6247,
+            "pnl": 0.0,
+            "equity": 825.9452754855006
+          },
+          {
+            "timestamp": 1783736400000,
+            "time": "2026-07-11 10:20",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6136947643356424,
+            "pnl": -29.664872590894372,
+            "equity": 1123.9237879601674
+          },
+          {
+            "timestamp": 1783737600000,
+            "time": "2026-07-11 10:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6301,
+            "pnl": 0.0,
+            "equity": 842.5715686556274
+          },
+          {
+            "timestamp": 1783746900000,
+            "time": "2026-07-11 13:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6332736308806318,
+            "pnl": 6.362617664547815,
+            "equity": 1129.584779142659
+          },
+          {
+            "timestamp": 1783748400000,
+            "time": "2026-07-11 13:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6329,
+            "pnl": 0.0,
+            "equity": 834.4608750675159
+          },
+          {
+            "timestamp": 1783753500000,
+            "time": "2026-07-11 15:05",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6207576170493173,
+            "pnl": -28.961469504426056,
+            "equity": 1099.8873398026342
+          }
+        ]
+      },
+      "fixed": {
+        "final_equity": 1104.76,
+        "return_pct": 10.48,
+        "max_drawdown_pct": 5.95,
+        "closed_trades": 18,
+        "win_rate_pct": 66.7,
+        "trades": [
+          {
+            "time": "07-11 12:50",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.6296,
+            "pnl": 0.0,
+            "equity": 529.99,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 13:00",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.635896,
+            "pnl": 25.2245,
+            "equity": 1086.54,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 13:40",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.6329,
+            "pnl": 0.0,
+            "equity": 541.91,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:00",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.626571,
+            "pnl": -28.508,
+            "equity": 1056.67,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:05",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.6334,
+            "pnl": 0.0,
+            "equity": 527.01,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:20",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.6397339999999999,
+            "pnl": 25.0827,
+            "equity": 1080.43,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 17:05",
+            "side": "entry",
+            "reason": "short",
+            "price": 0.6113,
+            "pnl": 0.0,
+            "equity": 538.87,
+            "dir": "short"
+          },
+          {
+            "time": "07-11 17:25",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.6051869999999999,
+            "pnl": 25.6738,
+            "equity": 1104.76,
+            "dir": "short"
+          }
+        ],
+        "long_trades": 16,
+        "short_trades": 2
+      }
+    },
+    {
+      "symbol": "GRASS-USDT-SWAP",
+      "change_24h_pct": 12.3,
+      "atr": {
+        "final_equity": 936.5275997572958,
+        "return_pct": -6.347240024270418,
+        "max_drawdown_pct": 8.268989368424695,
+        "closed_trades": 5,
+        "win_rate_pct": 20.0,
+        "trades": [
+          {
+            "timestamp": 1783723800000,
+            "time": "2026-07-11 06:50",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.3867,
+            "pnl": 0.0,
+            "equity": 585.1111886756814
+          },
+          {
+            "timestamp": 1783734000000,
+            "time": "2026-07-11 09:40",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.3818403185093375,
+            "pnl": -25.289385219167862,
+            "equity": 947.0788449779952
+          },
+          {
+            "timestamp": 1783745100000,
+            "time": "2026-07-11 12:45",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.3939,
+            "pnl": 0.0,
+            "equity": 499.70211863770584
+          },
+          {
+            "timestamp": 1783746900000,
+            "time": "2026-07-11 13:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.3897202229697018,
+            "pnl": -24.780785323028027,
+            "equity": 921.1824069708268
+          },
+          {
+            "timestamp": 1783750500000,
+            "time": "2026-07-11 14:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.4063,
+            "pnl": 0.0,
+            "equity": 696.3669495290826
+          },
+          {
+            "timestamp": 1783752000000,
+            "time": "2026-07-11 14:40",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.4213208040197334,
+            "pnl": 40.87184465855347,
+            "equity": 961.4936145784034
+          },
+          {
+            "timestamp": 1783755300000,
+            "time": "2026-07-11 15:35",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.4138,
+            "pnl": 0.0,
+            "equity": 772.8846426490286
+          },
+          {
+            "timestamp": 1783759500000,
+            "time": "2026-07-11 16:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.40322625266505935,
+            "pnl": -24.49566825769276,
+            "equity": 936.5275997572958
+          }
+        ]
+      },
+      "fixed": {
+        "final_equity": 935.18,
+        "return_pct": -6.48,
+        "max_drawdown_pct": 11.32,
+        "closed_trades": 6,
+        "win_rate_pct": 33.3,
+        "trades": [
+          {
+            "time": "07-11 06:50",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.3867,
+            "pnl": 0.0,
+            "equity": 471.71,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 09:10",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.382833,
+            "pnl": -24.8149,
+            "equity": 919.78,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 12:45",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.3939,
+            "pnl": 0.0,
+            "equity": 458.74,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 13:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.38996099999999995,
+            "pnl": -24.1328,
+            "equity": 894.5,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:15",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.4063,
+            "pnl": 0.0,
+            "equity": 446.13,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 14:30",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.410363,
+            "pnl": 21.2332,
+            "equity": 914.62,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 15:35",
+            "side": "entry",
+            "reason": "long",
+            "price": 0.4138,
+            "pnl": 0.0,
+            "equity": 456.16,
+            "dir": "long"
+          },
+          {
+            "time": "07-11 15:50",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.41793800000000003,
+            "pnl": 21.7107,
+            "equity": 935.18,
+            "dir": "long"
+          }
+        ],
+        "long_trades": 6,
+        "short_trades": 0
+      }
+    }
+  ],
+  "summary": {
+    "atr_avg": 1022.44,
+    "fixed_avg": 1004.3,
+    "atr_return_pct": 2.24,
+    "fixed_return_pct": 0.43
+  }
+}

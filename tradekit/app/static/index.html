@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OKK TradeKit</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>OKK TradeKit</h1>
+          <p id="subtitle">AI 交易副驾驶</p>
+        </div>
+        <button id="refreshBtn" class="icon-button" title="刷新">↻</button>
+      </header>
+
+      <section class="status-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>TradeKit</h2>
+            <span id="tradeKitBadge" class="badge muted">检测中</span>
+          </div>
+          <dl class="metrics">
+            <div><dt>OKX CLI</dt><dd id="cliVersion">--</dd></div>
+            <div><dt>策略模式</dt><dd id="policyMode">--</dd></div>
+            <div><dt>单笔上限</dt><dd id="orderLimit">--</dd></div>
+          </dl>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>OKK</h2>
+            <span id="okkBadge" class="badge muted">检测中</span>
+          </div>
+          <dl class="metrics">
+            <div><dt>策略</dt><dd id="strategyCount">--</dd></div>
+            <div><dt>运行中</dt><dd id="runningCount">--</dd></div>
+            <div><dt>持仓</dt><dd id="positionCount">--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="workbench">
+        <article class="panel market-panel">
+          <div class="panel-head">
+            <h2>行情</h2>
+            <button id="tickerBtn" class="small-button">查询</button>
+          </div>
+          <div class="input-row">
+            <label for="tickerInput">标的</label>
+            <input id="tickerInput" value="BTC-USDT" autocomplete="off" />
+          </div>
+          <pre id="tickerOutput" class="output">等待查询</pre>
+        </article>
+
+        <article class="panel proposal-panel">
+          <div class="panel-head">
+            <h2>草稿</h2>
+            <button id="reviewBtn" class="small-button">评估</button>
+          </div>
+          <div class="proposal-grid">
+            <label>标的<input id="intentInst" value="BTC-USDT-SWAP" /></label>
+            <label>方向<select id="intentSide"><option>long</option><option>short</option><option>buy</option><option>sell</option><option>close</option></select></label>
+            <label>金额<input id="intentNotional" type="number" value="100" min="1" /></label>
+            <label>杠杆<input id="intentLeverage" type="number" value="5" min="1" /></label>
+          </div>
+          <textarea id="intentReason" rows="3">momentum review</textarea>
+          <pre id="reviewOutput" class="output">等待评估</pre>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>策略副驾驶</h2>
+          <button id="overviewBtn" class="small-button">同步</button>
+        </div>
+        <div id="notes" class="notes"></div>
+        <div id="strategies" class="strategy-list"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

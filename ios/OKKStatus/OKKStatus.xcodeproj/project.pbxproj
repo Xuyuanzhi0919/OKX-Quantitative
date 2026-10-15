@@ -1,0 +1,515 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1EF43A7D520E01132B1CEA6F /* AppIcon60@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 552D9EF687F4C9CFA12CC4B5 /* AppIcon60@3x.png */; };
+		2B281F6D6E35367E8160E443 /* StrategyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFD96E0F90D7FB958D47DD0 /* StrategyModels.swift */; };
+		31215FA345D367267493A306 /* AppIcon83.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 515CAF0599B21F19E3DF1408 /* AppIcon83.5@2x.png */; };
+		3510DD935B8CAE028A0E58FE /* StrategyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAFD96E0F90D7FB958D47DD0 /* StrategyModels.swift */; };
+		4AD958A05CBDE53EB1954A12 /* StrategyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BAA076BE7563F1EA43ACCD9 /* StrategyCardView.swift */; };
+		4E7E8C5AB5CC590E0BC86355 /* OKK Status Widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1365ADDCC1E5509AC8118E52 /* OKK Status Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		51000A2ADDCE2A4ECEE98A4D /* AppIcon76.png in Resources */ = {isa = PBXBuildFile; fileRef = 8AACC41464AEC66ED930BB58 /* AppIcon76.png */; };
+		52E7922C2E5DC7BAC1D6155C /* StrategyAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19414A86AB5C7EAC48332C3 /* StrategyAPI.swift */; };
+		53148426D1D47F956DEE58B0 /* AppIcon1024.png in Resources */ = {isa = PBXBuildFile; fileRef = B1899AB8D7D9B0D7017BCC87 /* AppIcon1024.png */; };
+		5523885525EA2B35610742A6 /* AppIcon76@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F76920FC4C26B604206838CC /* AppIcon76@2x.png */; };
+		61AA69FC7C1C76FF654858C8 /* OKKStatusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D7A239F765BB87748AF71D /* OKKStatusApp.swift */; };
+		9466F5529053923F8591400D /* OKKStatusWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2BCBEA9DE62BE8577D3AF0 /* OKKStatusWidget.swift */; };
+		9549EA32308A2EC3A541CB76 /* AppIcon60@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = BAF2E507DC147DD3D7274358 /* AppIcon60@2x.png */; };
+		A21213AFDB3C7EBD61588D2F /* StrategyAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19414A86AB5C7EAC48332C3 /* StrategyAPI.swift */; };
+		D753498640650A752A990413 /* PositionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A0482EE5B7FE867FDB1C300 /* PositionDetailView.swift */; };
+		E32EA68DB260AE8C5C9B27B3 /* StrategyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BAA076BE7563F1EA43ACCD9 /* StrategyCardView.swift */; };
+		F8D394635C0CDC51E9B81508 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 532298A96F789730688E6074 /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		75C42E9342D8C05299BA5C0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B0DB758BED79F99057B33CD2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 89A0DC5FB08FD3CB84B1730D;
+			remoteInfo = OKKStatusWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E101F57DE1B0C62553BF7E33 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4E7E8C5AB5CC590E0BC86355 /* OKK Status Widget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1365ADDCC1E5509AC8118E52 /* OKK Status Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "OKK Status Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		3A0482EE5B7FE867FDB1C300 /* PositionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionDetailView.swift; sourceTree = "<group>"; };
+		515CAF0599B21F19E3DF1408 /* AppIcon83.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon83.5@2x.png"; sourceTree = "<group>"; };
+		532298A96F789730688E6074 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		552D9EF687F4C9CFA12CC4B5 /* AppIcon60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon60@3x.png"; sourceTree = "<group>"; };
+		56D7A239F765BB87748AF71D /* OKKStatusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKKStatusApp.swift; sourceTree = "<group>"; };
+		5E2BCBEA9DE62BE8577D3AF0 /* OKKStatusWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKKStatusWidget.swift; sourceTree = "<group>"; };
+		6BAA076BE7563F1EA43ACCD9 /* StrategyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyCardView.swift; sourceTree = "<group>"; };
+		7FE06D27F14473E411884565 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8AACC41464AEC66ED930BB58 /* AppIcon76.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon76.png; sourceTree = "<group>"; };
+		A319E8B89B4F70C54E515FCD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B1899AB8D7D9B0D7017BCC87 /* AppIcon1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon1024.png; sourceTree = "<group>"; };
+		B19414A86AB5C7EAC48332C3 /* StrategyAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyAPI.swift; sourceTree = "<group>"; };
+		BAF2E507DC147DD3D7274358 /* AppIcon60@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon60@2x.png"; sourceTree = "<group>"; };
+		D4643DA01CFEAD883E11DAE2 /* OKK Status.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "OKK Status.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAFD96E0F90D7FB958D47DD0 /* StrategyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrategyModels.swift; sourceTree = "<group>"; };
+		F76920FC4C26B604206838CC /* AppIcon76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon76@2x.png"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		6C1FE495CF48A35EAE47B480 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				A319E8B89B4F70C54E515FCD /* Info.plist */,
+				5E2BCBEA9DE62BE8577D3AF0 /* OKKStatusWidget.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		81FE2D2ADDB7A7ED2CDABAF5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D4643DA01CFEAD883E11DAE2 /* OKK Status.app */,
+				1365ADDCC1E5509AC8118E52 /* OKK Status Widget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A303C01D1323927AAA66171B = {
+			isa = PBXGroup;
+			children = (
+				FB7CB7484AE956FCA629C8EB /* App */,
+				DC37F6DD4F9030D9D867BD17 /* Config */,
+				A32CC2C2E081B95BEF388F50 /* Shared */,
+				6C1FE495CF48A35EAE47B480 /* Widget */,
+				81FE2D2ADDB7A7ED2CDABAF5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A32CC2C2E081B95BEF388F50 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B19414A86AB5C7EAC48332C3 /* StrategyAPI.swift */,
+				6BAA076BE7563F1EA43ACCD9 /* StrategyCardView.swift */,
+				EAFD96E0F90D7FB958D47DD0 /* StrategyModels.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AE70C0FCA45D1BFD52BF74DE /* IconResources */ = {
+			isa = PBXGroup;
+			children = (
+				BAF2E507DC147DD3D7274358 /* AppIcon60@2x.png */,
+				552D9EF687F4C9CFA12CC4B5 /* AppIcon60@3x.png */,
+				8AACC41464AEC66ED930BB58 /* AppIcon76.png */,
+				F76920FC4C26B604206838CC /* AppIcon76@2x.png */,
+				515CAF0599B21F19E3DF1408 /* AppIcon83.5@2x.png */,
+				B1899AB8D7D9B0D7017BCC87 /* AppIcon1024.png */,
+			);
+			path = IconResources;
+			sourceTree = "<group>";
+		};
+		DC37F6DD4F9030D9D867BD17 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		FB7CB7484AE956FCA629C8EB /* App */ = {
+			isa = PBXGroup;
+			children = (
+				532298A96F789730688E6074 /* ContentView.swift */,
+				7FE06D27F14473E411884565 /* Info.plist */,
+				56D7A239F765BB87748AF71D /* OKKStatusApp.swift */,
+				3A0482EE5B7FE867FDB1C300 /* PositionDetailView.swift */,
+				AE70C0FCA45D1BFD52BF74DE /* IconResources */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		50FA7246DCAF99CE3EA9720E /* OKKStatus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D187E82C0E1BA8504907AB1B /* Build configuration list for PBXNativeTarget "OKKStatus" */;
+			buildPhases = (
+				18279E2FF8F62C17B9BACE78 /* Sources */,
+				97E71CC8928563C71EF5BB69 /* Resources */,
+				E101F57DE1B0C62553BF7E33 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E40F00A12276301CA59F2B84 /* PBXTargetDependency */,
+			);
+			name = OKKStatus;
+			packageProductDependencies = (
+			);
+			productName = OKKStatus;
+			productReference = D4643DA01CFEAD883E11DAE2 /* OKK Status.app */;
+			productType = "com.apple.product-type.application";
+		};
+		89A0DC5FB08FD3CB84B1730D /* OKKStatusWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 03B57DC22CEEE6F1B7E63CB8 /* Build configuration list for PBXNativeTarget "OKKStatusWidget" */;
+			buildPhases = (
+				CEC97E93E717ECE329E6A8FE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OKKStatusWidget;
+			packageProductDependencies = (
+			);
+			productName = OKKStatusWidget;
+			productReference = 1365ADDCC1E5509AC8118E52 /* OKK Status Widget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B0DB758BED79F99057B33CD2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					50FA7246DCAF99CE3EA9720E = {
+						ProvisioningStyle = Automatic;
+					};
+					89A0DC5FB08FD3CB84B1730D = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = F031D55A9853A1D869250360 /* Build configuration list for PBXProject "OKKStatus" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A303C01D1323927AAA66171B;
+			minimizedProjectReferenceProxies = 1;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				50FA7246DCAF99CE3EA9720E /* OKKStatus */,
+				89A0DC5FB08FD3CB84B1730D /* OKKStatusWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		97E71CC8928563C71EF5BB69 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				53148426D1D47F956DEE58B0 /* AppIcon1024.png in Resources */,
+				9549EA32308A2EC3A541CB76 /* AppIcon60@2x.png in Resources */,
+				1EF43A7D520E01132B1CEA6F /* AppIcon60@3x.png in Resources */,
+				51000A2ADDCE2A4ECEE98A4D /* AppIcon76.png in Resources */,
+				5523885525EA2B35610742A6 /* AppIcon76@2x.png in Resources */,
+				31215FA345D367267493A306 /* AppIcon83.5@2x.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		18279E2FF8F62C17B9BACE78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8D394635C0CDC51E9B81508 /* ContentView.swift in Sources */,
+				61AA69FC7C1C76FF654858C8 /* OKKStatusApp.swift in Sources */,
+				D753498640650A752A990413 /* PositionDetailView.swift in Sources */,
+				52E7922C2E5DC7BAC1D6155C /* StrategyAPI.swift in Sources */,
+				4AD958A05CBDE53EB1954A12 /* StrategyCardView.swift in Sources */,
+				3510DD935B8CAE028A0E58FE /* StrategyModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CEC97E93E717ECE329E6A8FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9466F5529053923F8591400D /* OKKStatusWidget.swift in Sources */,
+				A21213AFDB3C7EBD61588D2F /* StrategyAPI.swift in Sources */,
+				E32EA68DB260AE8C5C9B27B3 /* StrategyCardView.swift in Sources */,
+				2B281F6D6E35367E8160E443 /* StrategyModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E40F00A12276301CA59F2B84 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 89A0DC5FB08FD3CB84B1730D /* OKKStatusWidget */;
+			targetProxy = 75C42E9342D8C05299BA5C0C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0FE5F4749BB232B57355B836 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JM9AQ9452G;
+				INFOPLIST_FILE = Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chasexu.OKKStatus.widget;
+				PRODUCT_NAME = "OKK Status Widget";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		12FCC69DFABE97B945789B0B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JM9AQ9452G;
+				INFOPLIST_FILE = Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chasexu.OKKStatus.widget;
+				PRODUCT_NAME = "OKK Status Widget";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		2C06FFB2996EFDB4A787BB98 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JM9AQ9452G;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chasexu.OKKStatus;
+				PRODUCT_NAME = "OKK Status";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		448CDC867437F2C548F13345 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		62826EE26427C8BC4ABAF599 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AADAB7AE4F385BC9E0C0392E /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1CAA37DB53BC0C9328E40148 /* Secrets.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JM9AQ9452G;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chasexu.OKKStatus;
+				PRODUCT_NAME = "OKK Status";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		03B57DC22CEEE6F1B7E63CB8 /* Build configuration list for PBXNativeTarget "OKKStatusWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0FE5F4749BB232B57355B836 /* Debug */,
+				12FCC69DFABE97B945789B0B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D187E82C0E1BA8504907AB1B /* Build configuration list for PBXNativeTarget "OKKStatus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2C06FFB2996EFDB4A787BB98 /* Debug */,
+				AADAB7AE4F385BC9E0C0392E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F031D55A9853A1D869250360 /* Build configuration list for PBXProject "OKKStatus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				62826EE26427C8BC4ABAF599 /* Debug */,
+				448CDC867437F2C548F13345 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B0DB758BED79F99057B33CD2 /* Project object */;
+}

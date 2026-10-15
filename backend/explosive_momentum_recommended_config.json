@@ -1,0 +1,20 @@
+{
+  "timeframe": "1H",
+  "rank_feature": "ret_1h",
+  "min_signal": 0.04,
+  "min_gap": 0.01,
+  "min_vol_ratio": 3.0,
+  "hold_hours": 8,
+  "stop_loss_pct": 0.08,
+  "take_profit_pct": 0.10,
+  "market_filter": "btc_4h_positive",
+  "universe_size": 80,
+  "top_n": 1,
+  "max_leverage": 3,
+  "margin_mode": "isolated",
+  "max_position_usd": 1000,
+  "max_total_position_usd": 1000,
+  "max_open_positions": 1,
+  "cooldown_seconds": 7200,
+  "observe_first_scan": true
+}

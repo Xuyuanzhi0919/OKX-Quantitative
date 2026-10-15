@@ -1,12 +1,15 @@
 """
 山寨币短线异动监控。
 
-定期扫描 OKX USDT 永续行情，发现 1 分钟涨幅超过阈值时通过通知服务推送。
+定期扫描 OKX USDT 永续行情：
+- ticker 级别短窗口涨幅
+- 5m K线级别涨幅 + 成交量突增
 """
 import asyncio
 import time
 from collections import defaultdict, deque
-from typing import Any, Deque, Dict, Optional, Set
+from datetime import datetime
+from typing import Any, Deque, Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -46,10 +49,21 @@ class AltcoinMomentumMonitor:
         self.min_volume_usdt = 1000000
         self.exclude_majors = True
         self.user_id = 1
+        self.kline_monitor_enabled = True
+        self.kline_timeframe = "5m"
+        self.kline_scan_interval_seconds = 60
+        self.kline_change_threshold_pct = 3.0
+        self.kline_volume_spike_multiple = 3.0
+        self.kline_volume_lookback = 20
+        self.kline_min_volume_usdt = 200000
+        self.kline_max_symbols_per_scan = 80
         self._task: Optional[asyncio.Task] = None
         self._exchange: Optional[OKXExchange] = None
         self._price_history: Dict[str, Deque[tuple[float, float]]] = defaultdict(deque)
         self._last_alert_at: Dict[str, float] = {}
+        self._last_kline_alert_at: Dict[str, float] = {}
+        self._last_kline_scan_at = 0.0
+        self._recent_signals: Deque[Dict[str, Any]] = deque(maxlen=100)
         self._seen_symbols: Set[str] = set()
 
     def configure(self, config: Dict[str, Any]):
@@ -80,6 +94,28 @@ class AltcoinMomentumMonitor:
         self.min_volume_usdt = float(config.get("min_volume_usdt", self.min_volume_usdt))
         self.exclude_majors = bool(config.get("exclude_majors", self.exclude_majors))
         self.user_id = int(config.get("user_id", self.user_id))
+        self.kline_monitor_enabled = bool(config.get("kline_monitor_enabled", self.kline_monitor_enabled))
+        self.kline_timeframe = str(config.get("kline_timeframe", self.kline_timeframe))
+        if self.kline_timeframe not in {"1m", "3m", "5m", "15m"}:
+            self.kline_timeframe = "5m"
+        self.kline_scan_interval_seconds = int(config.get(
+            "kline_scan_interval_seconds",
+            self.kline_scan_interval_seconds,
+        ))
+        self.kline_change_threshold_pct = float(config.get(
+            "kline_change_threshold_pct",
+            self.kline_change_threshold_pct,
+        ))
+        self.kline_volume_spike_multiple = float(config.get(
+            "kline_volume_spike_multiple",
+            self.kline_volume_spike_multiple,
+        ))
+        self.kline_volume_lookback = int(config.get("kline_volume_lookback", self.kline_volume_lookback))
+        self.kline_min_volume_usdt = float(config.get("kline_min_volume_usdt", self.kline_min_volume_usdt))
+        self.kline_max_symbols_per_scan = int(config.get(
+            "kline_max_symbols_per_scan",
+            self.kline_max_symbols_per_scan,
+        ))
 
     async def start(self):
         if not self.enabled:
@@ -106,7 +142,8 @@ class AltcoinMomentumMonitor:
         )
         logger.info(
             f"山寨币短线异动监控已启动: windows=[{windows_text}], "
-            f"interval={self.interval_seconds}s"
+            f"interval={self.interval_seconds}s, "
+            f"kline={self.kline_timeframe if self.kline_monitor_enabled else 'disabled'}"
         )
 
     async def stop(self):
@@ -144,11 +181,17 @@ class AltcoinMomentumMonitor:
 
         now = time.time()
         tickers = await self._exchange.get_tickers(self.inst_type)
-        for ticker in tickers:
-            symbol = str(ticker.get("instId") or "")
-            if not self._is_supported_symbol(symbol):
-                continue
+        supported_tickers = [
+            ticker for ticker in tickers
+            if self._is_supported_symbol(str(ticker.get("instId") or ""))
+        ]
 
+        if self.kline_monitor_enabled and now - self._last_kline_scan_at >= self.kline_scan_interval_seconds:
+            self._last_kline_scan_at = now
+            await self._scan_kline_spikes(supported_tickers, now)
+
+        for ticker in supported_tickers:
+            symbol = str(ticker.get("instId") or "")
             last = safe_float(ticker.get("last"))
             if last <= 0:
                 continue
@@ -211,6 +254,101 @@ class AltcoinMomentumMonitor:
             safe_float(ticker.get("vol24h")) * last,
         )
 
+    async def _scan_kline_spikes(self, tickers: List[Dict[str, Any]], now: float):
+        if not self._exchange:
+            return
+
+        candidates = []
+        for ticker in tickers:
+            symbol = str(ticker.get("instId") or "")
+            volume_usdt = self._volume_usdt(ticker)
+            if volume_usdt < self.min_volume_usdt:
+                continue
+            candidates.append((symbol, volume_usdt))
+
+        candidates.sort(key=lambda item: item[1], reverse=True)
+        candidates = candidates[:max(1, self.kline_max_symbols_per_scan)]
+
+        limit = max(10, min(100, self.kline_volume_lookback + 3))
+        for symbol, volume_24h_usdt in candidates:
+            try:
+                raw = await self._exchange.get_kline(symbol, self.kline_timeframe, limit=limit)
+                signal = self._build_kline_signal(symbol, raw, volume_24h_usdt, now)
+                if signal:
+                    await self._maybe_alert_kline_spike(signal)
+            except Exception as exc:
+                logger.debug(f"5m山寨币异动扫描失败: {symbol} {exc}")
+            await asyncio.sleep(0.03)
+
+    def _build_kline_signal(
+        self,
+        symbol: str,
+        raw_klines: List[Dict[str, Any]],
+        volume_24h_usdt: float,
+        now: float,
+    ) -> Optional[Dict[str, Any]]:
+        confirmed = [
+            item for item in raw_klines
+            if str(item.get("confirm", "1")) == "1"
+        ]
+        if len(confirmed) < self.kline_volume_lookback + 2:
+            return None
+
+        candles = sorted(confirmed, key=lambda item: int(item["ts"]))
+        latest = candles[-1]
+        previous = candles[-2]
+        lookback = candles[-self.kline_volume_lookback - 1:-1]
+
+        latest_close = safe_float(latest.get("c"))
+        previous_close = safe_float(previous.get("c"))
+        if latest_close <= 0 or previous_close <= 0:
+            return None
+
+        change_pct = (latest_close - previous_close) / previous_close * 100
+        latest_volume_usdt = self._kline_quote_volume(latest)
+        avg_volume_usdt = sum(self._kline_quote_volume(item) for item in lookback) / len(lookback)
+        if avg_volume_usdt <= 0:
+            return None
+
+        volume_multiple = latest_volume_usdt / avg_volume_usdt
+        if (
+            change_pct < self.kline_change_threshold_pct
+            or volume_multiple < self.kline_volume_spike_multiple
+            or latest_volume_usdt < self.kline_min_volume_usdt
+        ):
+            return None
+
+        return {
+            "type": "kline_volume_spike",
+            "symbol": symbol,
+            "timeframe": self.kline_timeframe,
+            "timestamp": int(latest["ts"]),
+            "time": datetime.fromtimestamp(int(latest["ts"]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "open": safe_float(latest.get("o")),
+            "high": safe_float(latest.get("h")),
+            "low": safe_float(latest.get("l")),
+            "close": latest_close,
+            "previous_close": previous_close,
+            "change_pct": change_pct,
+            "latest_volume_usdt": latest_volume_usdt,
+            "avg_volume_usdt": avg_volume_usdt,
+            "volume_multiple": volume_multiple,
+            "volume_24h_usdt": volume_24h_usdt,
+            "detected_at": now,
+        }
+
+    @staticmethod
+    def _kline_quote_volume(kline: Dict[str, Any]) -> float:
+        quote_volume = safe_float(kline.get("volCcyQuote"))
+        if quote_volume > 0:
+            return quote_volume
+
+        close = safe_float(kline.get("c"))
+        volume_ccy = safe_float(kline.get("volCcy"))
+        if close > 0 and volume_ccy > 0:
+            return close * volume_ccy
+        return 0.0
+
     def _find_baseline(
         self,
         history: Deque[tuple[float, float]],
@@ -266,6 +404,72 @@ class AltcoinMomentumMonitor:
         )
         if sent:
             logger.warning(f"山寨币急涨Bark提醒已发送: {symbol} {window_label} {change_pct:.2f}%")
+
+    async def _maybe_alert_kline_spike(self, signal: Dict[str, Any]):
+        symbol = signal["symbol"]
+        timestamp = signal["timestamp"]
+        alert_key = f"{symbol}:{self.kline_timeframe}:{timestamp}"
+        last_alert_at = self._last_kline_alert_at.get(symbol, 0)
+        now = float(signal["detected_at"])
+        if now - last_alert_at < self.cooldown_seconds:
+            return
+
+        self._last_kline_alert_at[symbol] = now
+        self._recent_signals.appendleft(signal)
+        self._seen_symbols.add(symbol)
+
+        title = f"山寨币5m量价异动: {symbol}"
+        content = (
+            f"{symbol} {signal['time']} {self.kline_timeframe}涨 "
+            f"{signal['change_pct']:.2f}%，成交量放大 {signal['volume_multiple']:.1f}x"
+        )
+        data = {
+            "交易对": symbol,
+            "周期": self.kline_timeframe,
+            "K线时间": signal["time"],
+            "前收": f"{signal['previous_close']:.8g}",
+            "收盘": f"{signal['close']:.8g}",
+            "涨幅": f"{signal['change_pct']:.2f}%",
+            "本根成交额": f"{signal['latest_volume_usdt']:,.0f} USDT",
+            f"过去{self.kline_volume_lookback}根均额": f"{signal['avg_volume_usdt']:,.0f} USDT",
+            "放大倍数": f"{signal['volume_multiple']:.2f}x",
+            "24h成交额估算": f"{signal['volume_24h_usdt']:,.0f} USDT",
+        }
+
+        sent = await notification_service.send_bark_notification(
+            title=title,
+            message=content,
+            level=NotificationLevel.WARNING,
+            data=data,
+        )
+        if sent:
+            logger.warning(
+                f"山寨币5m量价异动Bark提醒已发送: {symbol} "
+                f"{signal['change_pct']:.2f}% volume={signal['volume_multiple']:.2f}x"
+            )
+
+    def status(self) -> Dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "running": bool(self._task and not self._task.done()),
+            "inst_type": self.inst_type,
+            "quote_ccy": self.quote_ccy,
+            "ticker_windows": self.windows,
+            "interval_seconds": self.interval_seconds,
+            "cooldown_seconds": self.cooldown_seconds,
+            "min_volume_usdt": self.min_volume_usdt,
+            "exclude_majors": self.exclude_majors,
+            "kline_monitor_enabled": self.kline_monitor_enabled,
+            "kline_timeframe": self.kline_timeframe,
+            "kline_scan_interval_seconds": self.kline_scan_interval_seconds,
+            "kline_change_threshold_pct": self.kline_change_threshold_pct,
+            "kline_volume_spike_multiple": self.kline_volume_spike_multiple,
+            "kline_volume_lookback": self.kline_volume_lookback,
+            "kline_min_volume_usdt": self.kline_min_volume_usdt,
+            "kline_max_symbols_per_scan": self.kline_max_symbols_per_scan,
+            "seen_symbol_count": len(self._seen_symbols),
+            "recent_signals": list(self._recent_signals),
+        }
 
 
 altcoin_momentum_monitor = AltcoinMomentumMonitor()

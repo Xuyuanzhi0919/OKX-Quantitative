@@ -1,0 +1,23 @@
+mode: read_only
+default_profile: demo
+require_human_confirm: true
+
+limits:
+  max_order_notional_usdt: 50
+  max_daily_notional_usdt: 200
+  max_leverage: 3
+
+allowed_modules:
+  - market
+  - account
+  - smartmoney
+  - news
+
+blocked_symbols:
+  - "*-USDT-SWAP:MEME"
+
+risk_notes:
+  - "默认只读，不开放真实下单。"
+  - "禁止使用提现权限 API Key。"
+  - "实盘前必须先使用模拟盘和小额验证。"
+

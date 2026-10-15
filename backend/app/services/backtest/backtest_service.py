@@ -11,6 +11,7 @@ from app.models import Backtest, BacktestTrade, Kline
 from .kline_service import KlineService
 from .adaptive_grid_trend_backtest import AdaptiveGridTrendBacktestEngine
 from .spot_perp_arbitrage_backtest import SpotPerpArbitrageBacktestEngine
+from .fixed_tp_sl_backtest import FixedTpSlTrendBacktestEngine
 from .backtest_engine import BacktestEngine
 from .metrics import BacktestMetrics
 
@@ -19,6 +20,7 @@ from .metrics import BacktestMetrics
 BACKTEST_ENGINES: Dict[str, Type[BacktestEngine]] = {
     "adaptive_grid_trend": AdaptiveGridTrendBacktestEngine,
     "arbitrage": SpotPerpArbitrageBacktestEngine,
+    "fixed_tp_sl": FixedTpSlTrendBacktestEngine,
 }
 
 

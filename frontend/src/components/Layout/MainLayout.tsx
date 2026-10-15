@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Badge, Drawer, Space } from 'antd'
+import { Layout, Menu, Drawer, Space } from 'antd'
 import {
   LayoutDashboard,
   Zap,
-  TrendingUp,
   Settings,
   Menu as MenuIcon,
-  Bell,
   Wifi,
   WifiOff,
-  FlaskConical,
   Wallet,
-  Shield,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWebSocketStore } from '@/stores/useWebSocketStore'
@@ -27,7 +23,6 @@ const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [drawerVisible, setDrawerVisible] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
   const isConnected = useWebSocketStore((state) => state.connected)
 
   // 检测屏幕尺寸
@@ -38,12 +33,6 @@ const MainLayout = () => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  // 更新时间
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
   }, [])
 
   const menuItems = [
@@ -58,29 +47,9 @@ const MainLayout = () => {
       label: t('nav.strategy'),
     },
     {
-      key: '/trading',
-      icon: <TrendingUp size={16} />,
-      label: t('nav.trading'),
-    },
-    {
       key: '/trading-management',
       icon: <Wallet size={16} />,
-      label: '交易管理',
-    },
-    {
-      key: '/backtest',
-      icon: <FlaskConical size={16} />,
-      label: t('nav.backtest', '回测'),
-    },
-    {
-      key: '/alerts',
-      icon: <Bell size={16} />,
-      label: '告警历史',
-    },
-    {
-      key: '/risk-control',
-      icon: <Shield size={16} />,
-      label: '风控管理',
+      label: '持仓与订单',
     },
     {
       key: '/api-config',
@@ -251,7 +220,7 @@ const MainLayout = () => {
                 onClick={() => setDrawerVisible(true)}
               />
             )}
-            <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
                   fontSize: 14,
@@ -265,31 +234,12 @@ const MainLayout = () => {
               >
                 {menuItems.find((item) => item.key === location.pathname)?.label || '仪表盘'}
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: '#737373',
-                  fontFamily: 'monospace',
-                  whiteSpace: 'nowrap',
-                  lineHeight: 1.2,
-                }}
-              >
-                {currentTime.toLocaleTimeString('zh-CN', { hour12: false })}
-              </div>
             </div>
           </div>
 
           <Space size={20} style={{ flexShrink: 0 }}>
             {/* 语言切换 */}
             {!isMobile && <LanguageSwitcher />}
-
-            {/* 通知 */}
-            <Badge count={0} size="small">
-              <Bell
-                size={18}
-                style={{ color: '#a3a3a3', cursor: 'pointer' }}
-              />
-            </Badge>
 
             {/* 连接状态 */}
             <div

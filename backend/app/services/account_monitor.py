@@ -3,8 +3,8 @@
 """
 import asyncio
 from loguru import logger
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Set
 from app.websocket.manager import broadcast_balance_update, broadcast_positions_update
 from app.services.api_config_service import api_config_service
 from app.services.exchange.okx import OKXExchange
@@ -41,6 +41,33 @@ class AccountMonitor:
         self._snapshot_interval = 360
         self.user_id = 1
         self._last_daily_report_date = None
+        self._risk_config = {
+            "enabled": True,
+            "check_interval_seconds": 30,
+            "cooldown_seconds": 1800,
+            "margin_usage_threshold": 0.5,
+            "available_ratio_threshold": 0.1,
+            "high_leverage_threshold": 5.0,
+            "liquidation_distance_threshold_pct": 12.0,
+            "profit_drawdown_ratio": 0.3,
+            "profit_drawdown_min_usdt": 20.0,
+            "profit_drawdown_min_peak_usdt": 20.0,
+        }
+        self._risk_check_counter = 0
+        self._risk_last_fingerprint = ""
+        self._risk_last_sent_at: Optional[datetime] = None
+        self._position_upl_peaks: Dict[str, float] = {}
+
+    def configure(self, config: Optional[dict] = None):
+        """Apply read-only account-risk thresholds from notification config."""
+        if config:
+            self._risk_config.update(config)
+        logger.info(
+            "账户风险监控配置: enabled={}, interval={}s, cooldown={}s",
+            self._risk_config["enabled"],
+            self._risk_config["check_interval_seconds"],
+            self._risk_config["cooldown_seconds"],
+        )
 
     def _get_exchange(self):
         """获取或创建 exchange 实例（复用，不重复创建）"""
@@ -111,6 +138,7 @@ class AccountMonitor:
                         await self._save_snapshot(snapshot_data)
 
                 await self._maybe_send_daily_report(snapshot_data, positions_data)
+                await self._maybe_send_risk_alert(snapshot_data, positions_data)
 
                 # 等待下一次推送
                 await asyncio.sleep(self.interval)
@@ -170,12 +198,169 @@ class AccountMonitor:
                     "total_equity": total_eq,
                     "available_balance": available_balance,
                     "unrealized_pnl": total_upl,
+                    "initial_margin": imr,
                 }
 
         except Exception as e:
             logger.error(f"推送余额更新失败: {e}")
 
         return None
+
+    async def _get_stop_protected_symbols(self) -> Optional[Set[str]]:
+        """Read pending OKX algo orders and identify symbols with stop protection."""
+        exchange = self._get_exchange()
+        if not exchange or not hasattr(exchange, "get_pending_algo_orders"):
+            return None
+
+        protected: Set[str] = set()
+        successful_queries = 0
+        for ord_type in ("conditional", "oco", "move_order_stop"):
+            try:
+                orders = await exchange.get_pending_algo_orders(ord_type=ord_type, inst_type="SWAP")
+                successful_queries += 1
+            except Exception as exc:
+                logger.warning(f"读取 {ord_type} 风控委托失败: {exc}")
+                continue
+            for order in orders:
+                symbol = str(order.get("instId") or "")
+                if not symbol:
+                    continue
+                has_stop = (
+                    ord_type == "move_order_stop"
+                    or safe_float(order.get("slTriggerPx")) > 0
+                )
+                if has_stop:
+                    protected.add(symbol)
+        return protected if successful_queries else None
+
+    def _build_risk_conditions(
+        self,
+        balance_data: dict,
+        positions: List[dict],
+        protected_symbols: Optional[Set[str]],
+    ) -> List[dict]:
+        """Build deterministic, read-only risk conditions for tests and alerts."""
+        conditions = []
+        total_equity = safe_float(balance_data.get("total_equity"))
+        available = safe_float(balance_data.get("available_balance"))
+        initial_margin = safe_float(balance_data.get("initial_margin"))
+        if initial_margin <= 0:
+            initial_margin = sum(
+                max(safe_float(pos.get("imr")), safe_float(pos.get("margin")))
+                for pos in positions
+            )
+        if positions and total_equity > 0:
+            margin_usage = initial_margin / total_equity
+            if margin_usage >= safe_float(self._risk_config["margin_usage_threshold"]):
+                conditions.append({
+                    "code": "margin_usage",
+                    "message": f"保证金占总资产 {margin_usage * 100:.1f}%",
+                })
+            available_ratio = available / total_equity
+            if available_ratio <= safe_float(self._risk_config["available_ratio_threshold"]):
+                conditions.append({
+                    "code": "low_available",
+                    "message": f"可用余额仅占总资产 {available_ratio * 100:.1f}%",
+                })
+
+        active_symbols = set()
+        for pos in positions:
+            symbol = str(pos.get("symbol") or "UNKNOWN")
+            active_symbols.add(symbol)
+            leverage = safe_float(pos.get("leverage"))
+            if leverage >= safe_float(self._risk_config["high_leverage_threshold"]):
+                conditions.append({
+                    "code": f"high_leverage:{symbol}",
+                    "message": f"{symbol} 杠杆 {leverage:g}x",
+                })
+
+            current = safe_float(pos.get("current_price") or pos.get("last_price"))
+            liquidation = safe_float(pos.get("liquidation_price"))
+            if current > 0 and liquidation > 0:
+                distance_pct = abs(current - liquidation) / current * 100
+                if distance_pct <= safe_float(self._risk_config["liquidation_distance_threshold_pct"]):
+                    conditions.append({
+                        "code": f"liquidation_distance:{symbol}",
+                        "message": f"{symbol} 距强平价仅 {distance_pct:.1f}%",
+                    })
+
+            if protected_symbols is not None and symbol not in protected_symbols:
+                conditions.append({
+                    "code": f"missing_stop:{symbol}",
+                    "message": f"{symbol} 未检测到止损委托",
+                })
+
+            upl = safe_float(pos.get("unrealized_pnl"))
+            peak = max(self._position_upl_peaks.get(symbol, upl), upl)
+            self._position_upl_peaks[symbol] = peak
+            drawdown = peak - upl
+            drawdown_limit = max(
+                safe_float(self._risk_config["profit_drawdown_min_usdt"]),
+                peak * safe_float(self._risk_config["profit_drawdown_ratio"]),
+            )
+            if (
+                peak >= safe_float(self._risk_config["profit_drawdown_min_peak_usdt"])
+                and drawdown >= drawdown_limit
+            ):
+                conditions.append({
+                    "code": f"profit_drawdown:{symbol}",
+                    "message": f"{symbol} 浮盈由 {peak:.2f} 回撤至 {upl:.2f} USDT",
+                })
+
+        for symbol in set(self._position_upl_peaks) - active_symbols:
+            self._position_upl_peaks.pop(symbol, None)
+        return conditions
+
+    async def _maybe_send_risk_alert(
+        self,
+        balance_data: Optional[dict],
+        positions_data: Optional[dict],
+    ):
+        """Send one deduplicated Bark alert; never place or modify orders."""
+        if not self._risk_config.get("enabled") or not balance_data or positions_data is None:
+            return
+
+        self._risk_check_counter += self.interval
+        if self._risk_check_counter < int(self._risk_config["check_interval_seconds"]):
+            return
+        self._risk_check_counter = 0
+
+        positions = positions_data.get("positions", [])
+        protected_symbols = await self._get_stop_protected_symbols() if positions else set()
+        conditions = self._build_risk_conditions(balance_data, positions, protected_symbols)
+        fingerprint = "|".join(sorted(item["code"] for item in conditions))
+        now = datetime.now()
+
+        if not fingerprint:
+            self._risk_last_fingerprint = ""
+            self._risk_last_sent_at = None
+            return
+
+        cooldown = timedelta(seconds=int(self._risk_config["cooldown_seconds"]))
+        if (
+            fingerprint == self._risk_last_fingerprint
+            and self._risk_last_sent_at is not None
+            and now - self._risk_last_sent_at < cooldown
+        ):
+            return
+
+        message = "；".join(item["message"] for item in conditions)
+        success = await notification_service.send_bark_alert(
+            title="账户风险提醒",
+            message=message,
+            level="error",
+            category="账户风控",
+            data={
+                "总资产": f"{safe_float(balance_data.get('total_equity')):.2f} USDT",
+                "可用余额": f"{safe_float(balance_data.get('available_balance')):.2f} USDT",
+                "持仓数": len(positions),
+                "模式": "只读监控，不会自动平仓",
+            },
+        )
+        if success:
+            self._risk_last_fingerprint = fingerprint
+            self._risk_last_sent_at = now
+            logger.warning(f"账户风险提醒已发送: {message}")
 
     async def _push_positions_update(self) -> Optional[dict]:
         """推送持仓更新"""

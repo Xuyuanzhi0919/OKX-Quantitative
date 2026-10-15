@@ -42,7 +42,14 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
 
     try {
       const pnl = await strategyApi.getPnl(strategy.id)
-      setPnlData(pnl)
+      const raw = (pnl as any)?.data ?? pnl
+      setPnlData({
+        ...raw,
+        total_pnl: raw?.total_pnl ?? raw?.total_profit,
+        realized_pnl: raw?.realized_pnl ?? raw?.realized_profit,
+        unrealized_pnl: raw?.unrealized_pnl ?? raw?.unrealized_profit,
+        pnl_rate: raw?.pnl_rate ?? raw?.total_profit_rate,
+      })
     } catch (error) {
       // 处理错误
     }
@@ -129,7 +136,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
 
   // 计算显示数据 - 优先使用PNL API返回的数据
   const realized_pnl = pnlData?.realized_pnl ?? displayData.realized_pnl ?? 0
-  const unrealized_pnl = pnlData?.unrealized_pnl ?? 0
+  const unrealized_pnl = pnlData?.unrealized_pnl ?? displayData.unrealized_pnl ?? 0
   const total_pnl = pnlData?.total_pnl ?? (realized_pnl + unrealized_pnl)
   const pnl_rate = pnlData?.pnl_rate ?? 0
   const total_fee = pnlData?.total_fee ?? 0
@@ -144,9 +151,9 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
     : avg_buy_price
 
   // 交易统计 - 优先使用PNL API返回的数据
-  const buy_count = pnlData?.buy_count ?? 0
-  const sell_count = pnlData?.sell_count ?? 0
-  const total_trades = buy_count + sell_count
+  const buy_count = pnlData?.buy_count ?? displayData.buy_count ?? 0
+  const sell_count = pnlData?.sell_count ?? displayData.sell_count ?? 0
+  const total_trades = pnlData?.total_trades ?? displayData.total_trades ?? (buy_count + sell_count)
   const total_buy_amount = pnlData?.total_buy_amount ?? displayData.total_buy_volume ?? 0
   const total_sell_amount = pnlData?.total_sell_amount ?? displayData.total_sell_volume ?? 0
   const signalStatus = displayData.signal_status
@@ -177,6 +184,42 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
   const pctText = (value?: number | null) => (
     value == null || Number.isNaN(Number(value)) ? '-' : `${Number(value).toFixed(2)}%`
   )
+
+  const inferPositionSide = (pos: any) => {
+    if (pos?.side) return pos.side
+    const entry = Number(pos?.entry_price || 0)
+    const stop = Number(pos?.stop_px || 0)
+    if (entry > 0 && stop > 0) return stop < entry ? 'long' : 'short'
+    return ''
+  }
+
+  const distanceToStopPct = (pos: any) => {
+    if (pos?.distance_to_stop_pct != null) return pos.distance_to_stop_pct
+    const side = inferPositionSide(pos)
+    const current = Number(pos?.current_price || 0)
+    const stop = Number(pos?.stop_px || 0)
+    if (!current || !stop) return null
+    if (side === 'long') return (current - stop) / current * 100
+    if (side === 'short') return (stop - current) / current * 100
+    return null
+  }
+
+  const distanceToTakeProfitPct = (pos: any) => {
+    if (pos?.distance_to_take_profit_pct != null) return pos.distance_to_take_profit_pct
+    const side = inferPositionSide(pos)
+    const current = Number(pos?.current_price || 0)
+    const takeProfit = Number(pos?.take_profit_px || 0)
+    if (!current || !takeProfit) return null
+    if (side === 'long') return (takeProfit - current) / current * 100
+    if (side === 'short') return (current - takeProfit) / current * 100
+    return null
+  }
+
+  const sideText = (side?: string) => {
+    if (side === 'long') return '做多'
+    if (side === 'short') return '做空'
+    return '-'
+  }
 
   const moneyText = (value?: number | null) => (
     value == null || Number.isNaN(Number(value)) ? '-' : `${formatAmount(value)} USDT`
@@ -330,99 +373,184 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
 
           {signalStatus && (
             <Card title="当前信号" variant="borderless" size="small" style={{ marginBottom: 16 }}>
-              <Descriptions column={3} size="small">
-                <Descriptions.Item label="趋势">
-                  <Tag color={
-                    signalStatus.trend === 'bull' ? 'green'
-                      : signalStatus.trend === 'bear' ? 'red'
-                        : signalStatus.trend === 'position' ? 'blue'
+              {signalStatus.top_symbols || signalStatus.symbol ? (
+                <Descriptions column={3} size="small">
+                  <Descriptions.Item label="动态涨幅榜" span={2}>
+                    <Space wrap>
+                      {(signalStatus.top_symbols || []).map((symbol: string) => (
+                        <Tag key={symbol}>{symbol}</Tag>
+                      ))}
+                      {!signalStatus.top_symbols?.length && (signalStatus.symbol || '-')}
+                    </Space>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="策略方向">
+                    <Tag color={signalStatus.direction === 'short' ? 'red' : signalStatus.direction === 'long' ? 'green' : 'blue'}>
+                      {signalStatus.direction || signalStatus.side || '-'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="最近信号">{signalStatus.status || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="动作">{signalStatus.action || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="信号方向">
+                    <Tag color={signalStatus.side === 'short' ? 'red' : signalStatus.side === 'long' ? 'green' : 'default'}>
+                      {signalStatus.side || '-'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="价格">{signalStatus.last != null ? formatPrice(signalStatus.last) : '-'}</Descriptions.Item>
+                  <Descriptions.Item label="RSI">{signalStatus.rsi != null ? Number(signalStatus.rsi).toFixed(2) : '-'}</Descriptions.Item>
+                  <Descriptions.Item label="ATR占比">{pctText(signalStatus.atr_pct)}</Descriptions.Item>
+                  <Descriptions.Item label="首轮观察">
+                    {signalStatus.observe_first_scan == null ? '-' : signalStatus.observe_first_scan ? '开启' : '关闭'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="说明" span={3}>{signalStatus.message || '-'}</Descriptions.Item>
+                </Descriptions>
+              ) : (
+                <Descriptions column={3} size="small">
+                  <Descriptions.Item label="趋势">
+                    <Tag color={
+                      signalStatus.trend === 'bull' ? 'green'
+                        : signalStatus.trend === 'bear' ? 'red'
+                          : signalStatus.trend === 'position' ? 'blue'
+                            : 'default'
+                    }>
+                      {trendLabel[signalStatus.trend] || signalStatus.trend || '-'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="等待方向">
+                    <Tag color={
+                      signalStatus.waiting_for === 'long' ? 'green'
+                        : signalStatus.waiting_for === 'short' ? 'red'
                           : 'default'
-                  }>
-                    {trendLabel[signalStatus.trend] || signalStatus.trend || '-'}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="等待方向">
-                  <Tag color={
-                    signalStatus.waiting_for === 'long' ? 'green'
-                      : signalStatus.waiting_for === 'short' ? 'red'
-                        : 'default'
-                  }>
-                    {waitingLabel[signalStatus.waiting_for] || signalStatus.waiting_for || '-'}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="距离触发">
-                  {signalStatus.distance_pct != null ? `${Number(signalStatus.distance_pct).toFixed(2)}%` : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="当前价">
-                  {signalStatus.current_price != null ? formatPrice(signalStatus.current_price) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="触发价">
-                  {signalStatus.trigger_price != null ? formatPrice(signalStatus.trigger_price) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="ATR">
-                  {signalStatus.atr != null ? formatPrice(signalStatus.atr) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="EMA快线">
-                  {signalStatus.ema_fast != null ? formatPrice(signalStatus.ema_fast) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="EMA慢线">
-                  {signalStatus.ema_slow != null ? formatPrice(signalStatus.ema_slow) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="原因" span={3}>
-                  {signalStatus.message || '-'}
-                </Descriptions.Item>
-              </Descriptions>
+                    }>
+                      {waitingLabel[signalStatus.waiting_for] || signalStatus.waiting_for || '-'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="距离触发">
+                    {signalStatus.distance_pct != null ? `${Number(signalStatus.distance_pct).toFixed(2)}%` : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="当前价">
+                    {signalStatus.current_price != null ? formatPrice(signalStatus.current_price) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="触发价">
+                    {signalStatus.trigger_price != null ? formatPrice(signalStatus.trigger_price) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="ATR">
+                    {signalStatus.atr != null ? formatPrice(signalStatus.atr) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="EMA快线">
+                    {signalStatus.ema_fast != null ? formatPrice(signalStatus.ema_fast) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="EMA慢线">
+                    {signalStatus.ema_slow != null ? formatPrice(signalStatus.ema_slow) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="原因" span={3}>
+                    {signalStatus.message || '-'}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
             </Card>
           )}
 
           {positionStatus && (
             <Card title="持仓止盈止损" variant="borderless" size="small" style={{ marginBottom: 16 }}>
-              <Descriptions column={3} size="small">
-                <Descriptions.Item label="状态">
-                  <Tag color={positionStatus.in_position ? 'blue' : 'default'}>
-                    {positionStatus.in_position ? '持仓中' : '空仓'}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="方向">
-                  <Tag color={
-                    positionStatus.side === 'long' ? 'green'
-                      : positionStatus.side === 'short' ? 'red'
-                        : 'default'
-                  }>
-                    {positionStatus.side || '-'}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="数量">
-                  {positionStatus.qty ? formatQuantityDisplay(positionStatus.qty) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="开仓价">
-                  {positionStatus.entry_price ? formatPrice(positionStatus.entry_price) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="当前价">
-                  {positionStatus.current_price ? formatPrice(positionStatus.current_price) : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="浮动盈亏">
-                  <span style={{ color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                    {moneyText(unrealized_pnl)}
-                  </span>
-                </Descriptions.Item>
-                <Descriptions.Item label="止损价">
-                  <span style={{ color: '#ef4444', fontWeight: 600 }}>
-                    {positionStatus.stop_px ? formatPrice(positionStatus.stop_px) : '-'}
-                  </span>
-                </Descriptions.Item>
-                <Descriptions.Item label="距离止损">
-                  {pctText(positionStatus.distance_to_stop_pct)}
-                </Descriptions.Item>
-                <Descriptions.Item label="止盈价">
-                  <span style={{ color: '#22c55e', fontWeight: 600 }}>
-                    {positionStatus.take_profit_px ? formatPrice(positionStatus.take_profit_px) : '-'}
-                  </span>
-                </Descriptions.Item>
-                <Descriptions.Item label="距离止盈">
-                  {pctText(positionStatus.distance_to_take_profit_pct)}
-                </Descriptions.Item>
-              </Descriptions>
+              {positionStatus.dynamic ? (
+                <>
+                  <Descriptions column={3} size="small" style={{ marginBottom: 12 }}>
+                    <Descriptions.Item label="状态">
+                      <Tag color={positionStatus.in_position ? 'blue' : 'default'}>
+                        {positionStatus.in_position ? `${positionStatus.open_positions} 个持仓` : '空仓'}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="当前名义价值">
+                      {positionStatus.current_notional_usd == null ? '-' : moneyText(positionStatus.current_notional_usd)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="浮动盈亏">
+                      <span style={{ color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                        {moneyText(unrealized_pnl)}
+                      </span>
+                    </Descriptions.Item>
+                  </Descriptions>
+                  {(positionStatus.positions || []).length ? (
+                    <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                      {positionStatus.positions.map((pos: any) => {
+                        const inferredSide = inferPositionSide(pos)
+                        return (
+                        <Card key={pos.symbol} size="small" variant="borderless" style={{ background: '#fafafa' }}>
+                          <Descriptions column={3} size="small">
+                            <Descriptions.Item label="交易对">{pos.symbol}</Descriptions.Item>
+                            <Descriptions.Item label="方向">
+                              <Tag color={inferredSide === 'long' ? 'green' : inferredSide === 'short' ? 'red' : 'default'}>
+                                {sideText(inferredSide)}
+                              </Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="数量">{pos.qty ? formatQuantityDisplay(pos.qty) : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="开仓价">{pos.entry_price ? formatPrice(pos.entry_price) : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="当前价">{pos.current_price ? formatPrice(pos.current_price) : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="止损价">
+                              <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                                {pos.stop_px ? formatPrice(pos.stop_px) : '-'}
+                              </span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="距离止损">{pctText(distanceToStopPct(pos))}</Descriptions.Item>
+                            <Descriptions.Item label="止盈价">
+                              <span style={{ color: '#22c55e', fontWeight: 600 }}>
+                                {pos.take_profit_px ? formatPrice(pos.take_profit_px) : '-'}
+                              </span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="距离止盈">{pctText(distanceToTakeProfitPct(pos))}</Descriptions.Item>
+                          </Descriptions>
+                        </Card>
+                      )})}
+                    </Space>
+                  ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无动态持仓" />}
+                </>
+              ) : (
+                <Descriptions column={3} size="small">
+                  <Descriptions.Item label="状态">
+                    <Tag color={positionStatus.in_position ? 'blue' : 'default'}>
+                      {positionStatus.in_position ? '持仓中' : '空仓'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="方向">
+                    <Tag color={
+                      positionStatus.side === 'long' ? 'green'
+                        : positionStatus.side === 'short' ? 'red'
+                          : 'default'
+                    }>
+                      {sideText(positionStatus.side)}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="数量">
+                    {positionStatus.qty ? formatQuantityDisplay(positionStatus.qty) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="开仓价">
+                    {positionStatus.entry_price ? formatPrice(positionStatus.entry_price) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="当前价">
+                    {positionStatus.current_price ? formatPrice(positionStatus.current_price) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="浮动盈亏">
+                    <span style={{ color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                      {moneyText(unrealized_pnl)}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="止损价">
+                    <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                      {positionStatus.stop_px ? formatPrice(positionStatus.stop_px) : '-'}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="距离止损">
+                    {pctText(distanceToStopPct(positionStatus))}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="止盈价">
+                    <span style={{ color: '#22c55e', fontWeight: 600 }}>
+                      {positionStatus.take_profit_px ? formatPrice(positionStatus.take_profit_px) : '-'}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="距离止盈">
+                    {pctText(distanceToTakeProfitPct(positionStatus))}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
             </Card>
           )}
 

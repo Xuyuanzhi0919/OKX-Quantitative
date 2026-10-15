@@ -538,6 +538,28 @@ class OKXExchange(ExchangeBase):
 
         return data[0]
 
+    async def get_pending_algo_orders(
+        self,
+        ord_type: str = "conditional",
+        inst_type: Optional[str] = None,
+        inst_id: Optional[str] = None,
+    ) -> List[Dict]:
+        """Return untriggered algo orders used to detect live stop protection."""
+        params = {"ordType": ord_type}
+        if inst_type:
+            params["instType"] = inst_type
+        if inst_id:
+            params["instId"] = inst_id
+        response = await self._request(
+            method="GET",
+            endpoint="/api/v5/trade/orders-algo-pending",
+            params=params,
+            auth_required=True,
+        )
+        if response.get("code") != "0":
+            raise Exception(f"获取未触发策略委托失败: {response.get('msg')}")
+        return response.get("data", [])
+
     async def get_leverage(self, inst_id: str, mgn_mode: str = "cross") -> Dict:
         """
         获取杠杆倍数
@@ -696,7 +718,8 @@ class OKXExchange(ExchangeBase):
         cl_ord_id: Optional[str] = None,
         pos_side: Optional[str] = None,
         reduce_only: bool = False,
-        tgt_ccy: Optional[str] = None
+        tgt_ccy: Optional[str] = None,
+        attach_algo_ords: Optional[List[Dict]] = None,
     ) -> Dict:
         """
         创建订单
@@ -811,6 +834,8 @@ class OKXExchange(ExchangeBase):
             data["reduceOnly"] = str(reduce_only).lower()
         if tgt_ccy:
             data["tgtCcy"] = tgt_ccy
+        if attach_algo_ords:
+            data["attachAlgoOrds"] = attach_algo_ords
 
         response = await self._request(
             method="POST",
@@ -1343,11 +1368,23 @@ class OKXExchange(ExchangeBase):
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 # 网络相关错误才重试
                 if attempt < max_retries - 1:
-                    logger.warning(f"请求失败 (尝试 {attempt + 1}/{max_retries}): {e}, {retry_delay}秒后重试...")
+                    logger.warning(
+                        f"请求失败 (尝试 {attempt + 1}/{max_retries}): {e}, "
+                        f"proxy={self.proxy or '未设置'}, {retry_delay}秒后重试..."
+                    )
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # 指数退避
                 else:
-                    logger.error(f"请求失败，已达最大重试次数: {e}")
+                    logger.error(
+                        f"请求失败，已达最大重试次数: {e}. proxy={self.proxy or '未设置'}。"
+                        "如果当前网络无法直连OKX，请启动本地代理，并在 API 配置或 backend/.env 中设置 "
+                        "OKX_PROXY=http://127.0.0.1:7897"
+                    )
+                    if isinstance(e, aiohttp.ClientConnectorError):
+                        raise ConnectionError(
+                            "连接 OKX 失败：当前没有可用代理或网络无法直连。"
+                            "请启动本地代理，并在 API 配置里填写代理地址，例如 http://127.0.0.1:7897。"
+                        ) from e
                     raise
             except Exception as e:
                 # 其他错误直接抛出

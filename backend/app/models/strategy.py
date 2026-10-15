@@ -28,6 +28,8 @@ class StrategyType(str, enum.Enum):
     ORDER_BOOK_IMBALANCE = "order_book_imbalance"  # 订单簿不平衡高频策略
     DUAL_SIDE = "dual_side"  # 双向持仓策略（多空双向）
     ADAPTIVE_GRID_TREND = "adaptive_grid_trend"  # 自适应趋势网格
+    TOP_GAINERS_MOMENTUM = "top_gainers_momentum"  # 涨幅榜前三15m动量策略
+    EXPLOSIVE_MOMENTUM_CHASER = "explosive_momentum_chaser"  # 爆量急拉追涨策略
     CUSTOM = "custom"  # 自定义
 
 

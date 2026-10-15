@@ -38,7 +38,15 @@ api.interceptors.response.use(
     return response.data
   },
   (error) => {
-    // TODO: 统一错误处理
+    if (
+      error?.response?.status === 401
+      && !String(error?.config?.url || '').includes('/auth/login')
+    ) {
+      localStorage.removeItem('token')
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
+      }
+    }
     return Promise.reject(error)
   }
 )
@@ -54,7 +62,7 @@ export const authApi = {
 
 // 策略API
 export const strategyApi = {
-  getList: () => api.get<{ total: number; items: Strategy[] }>('/strategies'),
+  getList: () => api.get<{ total: number; items: Strategy[] }>('/strategies/'),
   getById: (id: number) => api.get<Strategy>(`/strategies/${id}`),
   create: (data: Partial<Strategy>) => api.post('/strategies', data),
   update: (id: number, data: Partial<Strategy>) =>

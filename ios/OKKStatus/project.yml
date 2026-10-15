@@ -1,0 +1,87 @@
+name: OKKStatus
+options:
+  bundleIdPrefix: com.chasexu
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+targets:
+  OKKStatus:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
+    sources:
+      - path: App
+        excludes:
+          - Assets.xcassets
+      - path: Shared
+    resources:
+      - path: App/IconResources
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 量化脉搏
+        MobileReadToken: $(MOBILE_READ_TOKEN)
+        CFBundleIcons:
+          CFBundlePrimaryIcon:
+            CFBundleIconFiles:
+              - AppIcon60
+        CFBundleIcons~ipad:
+          CFBundlePrimaryIcon:
+            CFBundleIconFiles:
+              - AppIcon76
+              - AppIcon83.5
+        UILaunchScreen: {}
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.chasexu.OKKStatus
+        PRODUCT_NAME: OKK Status
+        CODE_SIGN_STYLE: Automatic
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - target: OKKStatusWidget
+        embed: true
+
+  OKKStatusWidget:
+    type: app-extension
+    platform: iOS
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
+    sources:
+      - path: Widget
+      - path: Shared
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: 量化脉搏
+        MobileReadToken: $(MOBILE_READ_TOKEN)
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.chasexu.OKKStatus.widget
+        PRODUCT_NAME: OKK Status Widget
+        CODE_SIGN_STYLE: Automatic
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+schemes:
+  OKKStatus:
+    build:
+      targets:
+        OKKStatus: all
+        OKKStatusWidget: all
+    run:
+      config: Debug

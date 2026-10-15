@@ -11,6 +11,10 @@ import { extractCoin, getAdaptiveGridTrendPreset } from '@/config/strategyPreset
 import type { TopAltcoinStrategyCandidate } from '@/types'
 
 const { TextArea } = Input
+const TOP_GAINERS_SYMBOL = 'TOP-GAINERS-USDT-SWAP'
+const TOP_GAINERS_NAME = '涨幅榜前三15m动量实盘'
+const EXPLOSIVE_SYMBOL = 'EXPLOSIVE-MOMENTUM-USDT-SWAP'
+const EXPLOSIVE_NAME = '爆量急拉追涨模拟'
 
 interface StrategyCreateModalProps {
   open: boolean
@@ -66,6 +70,16 @@ const STRATEGY_TYPES: { value: string; label: string; desc: string }[] = [
     label: '现货-永续套利',
     desc: '买入现货并做空USDT永续，捕捉正向基差收敛，建议先用模拟盘小额验证',
   },
+  {
+    value: 'top_gainers_momentum',
+    label: '涨幅榜前三15m动量',
+    desc: '跟踪OKX USDT永续涨幅榜前三，用15m/5m动量和ATR风控自动交易，风险极高，建议先模拟盘',
+  },
+  {
+    value: 'explosive_momentum_chaser',
+    label: '爆量急拉追涨',
+    desc: '扫描OKX高流动性USDT永续，按所选K线周期追爆量急拉币，固定持有，硬止损，高风险先模拟盘',
+  },
 ]
 
 // 交易对列表：合约（SWAP）优先，后接现货（SPOT）
@@ -98,10 +112,14 @@ const TYPE_SHORT: Record<string, string> = {
   grid: '网格交易',
   adaptive_grid_trend: '自适应趋势网格',
   arbitrage: '现货-永续套利',
+  top_gainers_momentum: '涨幅榜前三动量',
+  explosive_momentum_chaser: '爆量急拉追涨',
 }
 
 // 生成自动名称，例如 BTC 趋势跟踪
 function buildAutoName(type: string, symbol: string): string {
+  if (type === 'top_gainers_momentum') return TOP_GAINERS_NAME
+  if (type === 'explosive_momentum_chaser') return EXPLOSIVE_NAME
   const coin = extractCoin(symbol)
   const typeName = TYPE_SHORT[type] ?? type
   if (coin && typeName) return `${coin} ${typeName}`
@@ -170,7 +188,27 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   // 从下拉菜单预选类型
   useEffect(() => {
     if (initialType && open && !backtestData) {
-      form.setFieldValue('type', initialType)
+      if (initialType === 'top_gainers_momentum') {
+        form.setFieldsValue({
+          type: initialType,
+          symbol: TOP_GAINERS_SYMBOL,
+          name: TOP_GAINERS_NAME,
+          timeframe: '15m',
+          tgm_timeframe: '15m',
+        })
+        setLastAutoName(TOP_GAINERS_NAME)
+      } else if (initialType === 'explosive_momentum_chaser') {
+        form.setFieldsValue({
+          type: initialType,
+          symbol: EXPLOSIVE_SYMBOL,
+          name: EXPLOSIVE_NAME,
+          timeframe: '1H',
+          emc_timeframe: '1H',
+        })
+        setLastAutoName(EXPLOSIVE_NAME)
+      } else {
+        form.setFieldValue('type', initialType)
+      }
     }
   }, [initialType, open, backtestData, form])
 
@@ -247,6 +285,36 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         agt_fuse_min_profit_factor: riskFuse.min_profit_factor,
         agt_fuse_cancel_orders: riskFuse.cancel_orders_on_trigger,
         agt_fuse_close_position: riskFuse.close_position_on_trigger,
+
+        emc_timeframe: params.timeframe || '1H',
+        emc_rank_feature: params.rank_feature,
+        emc_hold_hours: params.hold_hours,
+        emc_top_n: params.top_n,
+        emc_min_signal_pct: percentValue(params.min_signal),
+        emc_min_gap_pct: percentValue(params.min_gap),
+        emc_min_vol_ratio: params.min_vol_ratio,
+        emc_stop_loss_pct: percentValue(params.stop_loss_pct),
+        emc_market_filter: params.market_filter,
+        emc_universe_size: params.universe_size,
+        emc_max_leverage: params.max_leverage,
+        emc_max_position_usd: params.max_position_usd,
+        emc_max_total_position_usd: params.max_total_position_usd,
+        emc_max_open_positions: params.max_open_positions,
+        emc_margin_mode: params.margin_mode,
+        emc_loop_interval_seconds: params.loop_interval_seconds,
+        emc_cooldown_minutes: params.cooldown_seconds != null
+          ? Math.round(Number(params.cooldown_seconds) / 60)
+          : undefined,
+        emc_observe_first_scan: params.observe_first_scan,
+        emc_use_volume_profile_filter: params.use_volume_profile_filter,
+        emc_volume_profile_hours: params.volume_profile_hours,
+        emc_volume_profile_bins: params.volume_profile_bins,
+        emc_volume_profile_level: params.volume_profile_level,
+        emc_max_high_pullback_pct: percentValue(params.max_high_pullback_pct),
+        emc_initial_capital: riskFuse.risk_base_usd,
+        emc_fuse_max_consecutive_losses: riskFuse.max_consecutive_losses,
+        emc_fuse_daily_loss_pct: percentValue(riskFuse.daily_loss_limit_pct),
+        emc_fuse_max_drawdown_pct: percentValue(riskFuse.max_drawdown_pct),
       })
     }
   }, [backtestData, open, form])
@@ -254,6 +322,10 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   // 自动命名：监听类型和交易对，只要名称为空或等于上次自动生成的值就覆盖
   const watchedType   = Form.useWatch('type',   form)
   const watchedSymbol = Form.useWatch('symbol', form)
+  const watchedTgmTimeframe = Form.useWatch('tgm_timeframe', form)
+  const watchedEmcTimeframe = Form.useWatch('emc_timeframe', form)
+  const watchedEmcVolumeProfile = Form.useWatch('emc_use_volume_profile_filter', form)
+  const isDynamicUniverse = watchedType === 'top_gainers_momentum' || watchedType === 'explosive_momentum_chaser'
 
   const { data: agtRecommendation, isLoading: agtRecommendationLoading } = useQuery<AdaptiveGridTrendRecommendation>({
     queryKey: ['adaptive-grid-trend-recommendation'],
@@ -280,6 +352,54 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
       agt_near_trigger_cooldown_minutes: 10,
     })
   }, [open, backtestData, watchedType, watchedSymbol, form])
+
+  useEffect(() => {
+    if (!open || backtestData || watchedType !== 'top_gainers_momentum') return
+    const current = form.getFieldValue('name') ?? ''
+    if (current === '' || current === lastAutoName || current.includes('BTC') || current.includes('自适应趋势网格')) {
+      form.setFieldValue('name', TOP_GAINERS_NAME)
+      setLastAutoName(TOP_GAINERS_NAME)
+    }
+    if (form.getFieldValue('symbol') !== TOP_GAINERS_SYMBOL) {
+      form.setFieldValue('symbol', TOP_GAINERS_SYMBOL)
+    }
+    form.setFieldValue('timeframe', form.getFieldValue('tgm_timeframe') ?? '15m')
+  }, [open, backtestData, watchedType, form, lastAutoName])
+
+  useEffect(() => {
+    if (!open || backtestData || watchedType !== 'explosive_momentum_chaser') return
+    const current = form.getFieldValue('name') ?? ''
+    if (current === '' || current === lastAutoName || current.includes('BTC') || current.includes('自适应趋势网格')) {
+      form.setFieldValue('name', EXPLOSIVE_NAME)
+      setLastAutoName(EXPLOSIVE_NAME)
+    }
+    if (form.getFieldValue('symbol') !== EXPLOSIVE_SYMBOL) {
+      form.setFieldValue('symbol', EXPLOSIVE_SYMBOL)
+    }
+    const timeframe = form.getFieldValue('emc_timeframe') ?? '1H'
+    form.setFieldsValue({ timeframe, emc_timeframe: timeframe })
+  }, [open, backtestData, watchedType, watchedEmcTimeframe, form, lastAutoName])
+
+  useEffect(() => {
+    if (!open || backtestData || watchedType !== 'top_gainers_momentum') return
+    if (watchedTgmTimeframe === '5m') {
+      form.setFieldsValue({
+        tgm_risk_per_trade: 2.5,
+        tgm_max_leverage: 5,
+        tgm_stop_atr: 1.8,
+        tgm_take_profit_r: 1.8,
+        tgm_trailing_atr: 1.6,
+      })
+    } else if (watchedTgmTimeframe === '15m') {
+      form.setFieldsValue({
+        tgm_risk_per_trade: 3.5,
+        tgm_max_leverage: 7,
+        tgm_stop_atr: 2.1,
+        tgm_take_profit_r: 2,
+        tgm_trailing_atr: 1.8,
+      })
+    }
+  }, [open, backtestData, watchedType, watchedTgmTimeframe, form])
 
   useEffect(() => {
     if (backtestData) return   // 回测模式不覆盖
@@ -436,18 +556,90 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         parameters.leverage             = values.arb_leverage ?? 1
         parameters.margin_mode          = values.arb_margin_mode ?? 'isolated'
         parameters.close_on_stop        = values.arb_close_on_stop ?? false
+      } else if (values.type === 'top_gainers_momentum') {
+        parameters.mode                 = 'live_trading'
+        parameters.universe             = 'okx_usdt_swap_top_gainers'
+        parameters.direction            = values.tgm_direction ?? 'both'
+        parameters.top_n                = values.tgm_top_n ?? 3
+        parameters.timeframe            = values.tgm_timeframe ?? '15m'
+        parameters.initial_capital      = values.tgm_initial_capital ?? 1000
+        parameters.lookback_hours       = values.tgm_lookback_hours ?? 24
+        parameters.risk_per_trade       = (values.tgm_risk_per_trade ?? 3.5) / 100
+        parameters.max_leverage         = values.tgm_max_leverage ?? 7
+        parameters.max_position_usd     = values.tgm_max_position_usd ?? 300
+        parameters.max_total_position_usd = values.tgm_max_total_position_usd ?? values.tgm_max_position_usd ?? 300
+        parameters.max_open_positions   = values.tgm_max_open_positions ?? 1
+        parameters.margin_mode          = values.tgm_margin_mode ?? 'isolated'
+        parameters.loop_interval_seconds = values.tgm_loop_interval_seconds ?? 60
+        parameters.cooldown_seconds     = (values.tgm_cooldown_minutes ?? 15) * 60
+        parameters.observe_first_scan   = values.tgm_observe_first_scan ?? true
+        parameters.use_attached_tp_sl   = values.tgm_use_attached_tp_sl ?? true
+        parameters.close_when_out_of_top = values.tgm_close_when_out_of_top ?? false
+        parameters.stop_atr             = values.tgm_stop_atr ?? 2.1
+        parameters.take_profit_r        = values.tgm_take_profit_r ?? 2
+        parameters.trailing_atr         = values.tgm_trailing_atr ?? 1.8
+        parameters.min_24h_change_pct   = values.tgm_min_24h_change_pct ?? 0
+        parameters.risk_fuse            = {
+          enabled: true,
+          max_consecutive_losses: values.tgm_fuse_max_consecutive_losses ?? 2,
+          daily_loss_limit_pct: (values.tgm_fuse_daily_loss_pct ?? 8) / 100,
+          max_drawdown_pct: (values.tgm_fuse_max_drawdown_pct ?? 12) / 100,
+          cancel_orders_on_trigger: true,
+          close_position_on_trigger: false,
+          risk_base_usd: values.tgm_initial_capital ?? 1000,
+        }
+      } else if (values.type === 'explosive_momentum_chaser') {
+        parameters.mode                  = 'sim_first_live_capable'
+        parameters.universe              = 'okx_usdt_swap_liquid_intraday'
+        parameters.timeframe             = values.emc_timeframe ?? '1H'
+        parameters.rank_feature          = values.emc_rank_feature ?? 'ret_1h'
+        parameters.hold_hours            = values.emc_hold_hours ?? 4
+        parameters.top_n                 = values.emc_top_n ?? 1
+        parameters.min_signal            = (values.emc_min_signal_pct ?? 6) / 100
+        parameters.min_gap               = (values.emc_min_gap_pct ?? 1) / 100
+        parameters.min_vol_ratio         = values.emc_min_vol_ratio ?? 1.2
+        parameters.stop_loss_pct         = (values.emc_stop_loss_pct ?? 4) / 100
+        parameters.market_filter         = values.emc_market_filter ?? 'btc_4h_positive'
+        parameters.universe_size         = values.emc_universe_size ?? 50
+        parameters.max_leverage          = values.emc_max_leverage ?? 3
+        parameters.max_position_usd      = values.emc_max_position_usd ?? 300
+        parameters.max_total_position_usd = values.emc_max_total_position_usd ?? values.emc_max_position_usd ?? 300
+        parameters.max_open_positions    = values.emc_max_open_positions ?? 1
+        parameters.margin_mode           = values.emc_margin_mode ?? 'isolated'
+        parameters.loop_interval_seconds = values.emc_loop_interval_seconds ?? 60
+        parameters.cooldown_seconds      = (values.emc_cooldown_minutes ?? 240) * 60
+        parameters.observe_first_scan    = values.emc_observe_first_scan ?? true
+        parameters.use_attached_tp_sl     = true
+        parameters.use_volume_profile_filter = values.emc_use_volume_profile_filter ?? false
+        parameters.volume_profile_hours  = values.emc_volume_profile_hours ?? 8
+        parameters.volume_profile_bins   = values.emc_volume_profile_bins ?? 48
+        parameters.volume_profile_level  = values.emc_volume_profile_level ?? 'poc'
+        parameters.max_high_pullback_pct = (values.emc_max_high_pullback_pct ?? 2) / 100
+        parameters.risk_fuse             = {
+          enabled: true,
+          max_consecutive_losses: values.emc_fuse_max_consecutive_losses ?? 2,
+          daily_loss_limit_pct: (values.emc_fuse_daily_loss_pct ?? 20) / 100,
+          max_drawdown_pct: (values.emc_fuse_max_drawdown_pct ?? 30) / 100,
+          cancel_orders_on_trigger: true,
+          close_position_on_trigger: true,
+          risk_base_usd: values.emc_initial_capital ?? 1000,
+        }
       }
 
       const payload = {
         name: values.name,
         type: values.type as any,
-        symbol: values.symbol,
+        symbol: values.type === 'top_gainers_momentum' ? TOP_GAINERS_SYMBOL
+               : values.type === 'explosive_momentum_chaser' ? EXPLOSIVE_SYMBOL
+               : values.symbol,
         api_config_id: values.api_config_id,
         timeframe: values.type === 'trend' ? '15m'
                  : values.type === 'dual_side' ? (values.dual_timeframe ?? '15m')
                  : values.type === 'grid' ? '1m'
                  : values.type === 'adaptive_grid_trend' ? (values.agt_timeframe ?? '15m')
                  : values.type === 'arbitrage' ? '1m'
+                 : values.type === 'top_gainers_momentum' ? (values.tgm_timeframe ?? '15m')
+                 : values.type === 'explosive_momentum_chaser' ? (values.emc_timeframe ?? '1H')
                  : (values.timeframe ?? '1H'),
         parameters,
         description: values.description,
@@ -703,6 +895,56 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
           arb_leverage: 1,
           arb_margin_mode: 'isolated',
           arb_close_on_stop: false,
+          tgm_timeframe: '15m',
+          tgm_direction: 'both',
+          tgm_top_n: 3,
+          tgm_initial_capital: 1000,
+          tgm_lookback_hours: 24,
+          tgm_risk_per_trade: 3.5,
+          tgm_max_leverage: 7,
+          tgm_max_position_usd: 300,
+          tgm_max_total_position_usd: 300,
+          tgm_max_open_positions: 1,
+          tgm_margin_mode: 'isolated',
+          tgm_loop_interval_seconds: 60,
+          tgm_cooldown_minutes: 15,
+          tgm_observe_first_scan: true,
+          tgm_use_attached_tp_sl: true,
+          tgm_close_when_out_of_top: false,
+          tgm_stop_atr: 2.1,
+          tgm_take_profit_r: 2,
+          tgm_trailing_atr: 1.8,
+          tgm_min_24h_change_pct: 0,
+          tgm_fuse_max_consecutive_losses: 2,
+          tgm_fuse_daily_loss_pct: 8,
+          tgm_fuse_max_drawdown_pct: 12,
+          emc_timeframe: '1H',
+          emc_rank_feature: 'ret_1h',
+          emc_hold_hours: 4,
+          emc_top_n: 1,
+          emc_min_signal_pct: 6,
+          emc_min_gap_pct: 1,
+          emc_min_vol_ratio: 1.2,
+          emc_stop_loss_pct: 4,
+          emc_market_filter: 'btc_4h_positive',
+          emc_universe_size: 50,
+          emc_initial_capital: 1000,
+          emc_max_leverage: 3,
+          emc_max_position_usd: 300,
+          emc_max_total_position_usd: 300,
+          emc_max_open_positions: 1,
+          emc_margin_mode: 'isolated',
+          emc_loop_interval_seconds: 60,
+          emc_cooldown_minutes: 240,
+          emc_observe_first_scan: true,
+          emc_use_volume_profile_filter: false,
+          emc_volume_profile_hours: 8,
+          emc_volume_profile_bins: 48,
+          emc_volume_profile_level: 'poc',
+          emc_max_high_pullback_pct: 2,
+          emc_fuse_max_consecutive_losses: 2,
+          emc_fuse_daily_loss_pct: 20,
+          emc_fuse_max_drawdown_pct: 30,
         }}
       >
         {/* ── 基础信息 ── */}
@@ -740,22 +982,27 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="timeframe" label="K线周期" style={compactItem}>
-              <Select placeholder="选择周期">
-                {TIMEFRAMES.map(tf => (
-                  <Select.Option key={tf.value} value={tf.value}>{tf.label}</Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
+          {!isDynamicUniverse && (
+            <Col span={12}>
+              <Form.Item name="timeframe" label="K线周期" style={compactItem}>
+                <Select placeholder="选择周期">
+                  {TIMEFRAMES.map(tf => (
+                    <Select.Option key={tf.value} value={tf.value}>{tf.label}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          )}
           <Col span={24}>
             <Form.Item
               name="symbol"
               label={
                 <Space size={4}>
                   交易对
-                  <Tooltip title="合约策略请选择 XXX-USDT-SWAP 格式；现货策略请选择 XXX-USDT 格式">
+                  <Tooltip title={isDynamicUniverse
+                    ? '动态策略会自动从OKX USDT永续池选择币种，这里只保存动态池占位符'
+                    : '合约策略请选择 XXX-USDT-SWAP 格式；现货策略请选择 XXX-USDT 格式'
+                  }>
                     <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 13 }} />
                   </Tooltip>
                 </Space>
@@ -766,12 +1013,26 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Select
                 showSearch
                 allowClear
-                loading={symbolsLoading}
-                placeholder={symbolsLoading ? '加载交易对中...' : '搜索交易对，如 BTC-USDT-SWAP'}
+                disabled={isDynamicUniverse}
+                loading={isDynamicUniverse ? false : symbolsLoading}
+                placeholder={isDynamicUniverse
+                  ? '动态OKX USDT永续池'
+                  : symbolsLoading ? '加载交易对中...' : '搜索交易对，如 BTC-USDT-SWAP'
+                }
                 filterOption={(input, option) =>
                   String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
                 }
               >
+                {selectedType === 'top_gainers_momentum' && (
+                  <Select.Option value={TOP_GAINERS_SYMBOL}>
+                    动态涨幅榜前三 · OKX USDT永续
+                  </Select.Option>
+                )}
+                {selectedType === 'explosive_momentum_chaser' && (
+                  <Select.Option value={EXPLOSIVE_SYMBOL}>
+                    动态爆量急拉池 · OKX USDT永续
+                  </Select.Option>
+                )}
                 <Select.OptGroup label="合约（SWAP）">
                   {(availableSymbols ?? DEFAULT_SYMBOLS)
                     .filter(s => s.endsWith('-SWAP'))
@@ -787,7 +1048,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
           </Col>
         </Row>
 
-        {!editStrategyId && !backtestData && (
+        {!editStrategyId && !backtestData && !isDynamicUniverse && (
           <>
             <Divider orientation="left" style={compactDivider}>候选分析</Divider>
             {selectedType === 'adaptive_grid_trend' && (
@@ -1452,6 +1713,424 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                   style={compactItem}
                 >
                   <Switch checkedChildren="平仓" unCheckedChildren="不平" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </>
+        )}
+
+        {/* ── 爆量急拉追涨参数 ── */}
+        {selectedType === 'explosive_momentum_chaser' && (
+          <>
+            <Divider orientation="left" style={compactDivider}>
+              爆量急拉追涨参数
+              <Tooltip title="动态扫描OKX高流动性USDT永续，按所选K线周期扫描，使用近1小时/近4小时累计涨幅排行，固定持有或硬止损退出">
+                <InfoCircleOutlined style={{ marginLeft: 6, color: '#8c8c8c', fontSize: 12 }} />
+              </Tooltip>
+            </Divider>
+            <Alert
+              message="高风险模拟优先：该策略捕捉短线急拉延续，默认3x逐仓、4%止损、首轮只观察。确认稳定后再考虑提高到5x。"
+              type="warning"
+              showIcon
+              style={{ marginBottom: 10, fontSize: 12 }}
+            />
+            <Row gutter={12}>
+              <Col span={8}>
+                <Form.Item
+                  name="emc_timeframe"
+                  label={<Space size={4}>K线周期<Tooltip title="周期越短越敏感、交易更多；周期越长信号更少但噪音更低"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <Select
+                    options={[
+                      { label: '1分钟', value: '1m' },
+                      { label: '5分钟', value: '5m' },
+                      { label: '15分钟', value: '15m' },
+                      { label: '30分钟', value: '30m' },
+                      { label: '1小时', value: '1H' },
+                      { label: '4小时', value: '4H' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_rank_feature" label="排行因子" style={compactItem}>
+                  <Select
+                    options={[
+                      { label: '1小时涨幅', value: 'ret_1h' },
+                      { label: '4小时涨幅', value: 'ret_4h' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_min_signal_pct" label="最小涨幅" style={compactItem}>
+                  <InputNumber min={1} max={30} step={0.5} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_min_gap_pct" label="领先差距" style={compactItem}>
+                  <InputNumber min={0} max={10} step={0.5} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_min_vol_ratio" label="最小量比" style={compactItem}>
+                  <InputNumber min={0.5} max={10} step={0.1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_hold_hours" label="持仓时间" style={compactItem}>
+                  <InputNumber min={1} max={12} step={1} suffix="小时" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_stop_loss_pct" label="硬止损" style={compactItem}>
+                  <InputNumber min={1} max={20} step={0.5} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_market_filter" label="市场过滤" style={compactItem}>
+                  <Select
+                    options={[
+                      { label: 'BTC 4小时上涨', value: 'btc_4h_positive' },
+                      { label: 'BTC/ETH 1小时同涨', value: 'btc_eth_1h_positive' },
+                      { label: 'BTC/ETH 4小时同涨', value: 'btc_eth_4h_positive' },
+                      { label: '不过滤', value: 'none' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_universe_size" label="流动性池" style={compactItem}>
+                  <InputNumber min={10} max={200} step={5} suffix="个" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_top_n" label="开仓名次" style={compactItem}>
+                  <InputNumber min={1} max={3} step={1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_max_leverage" label="最大杠杆" style={compactItem}>
+                  <InputNumber min={1} max={10} step={1} suffix="x" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_max_position_usd" label="单仓上限" style={compactItem}>
+                  <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_max_total_position_usd" label="总仓上限" style={compactItem}>
+                  <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_margin_mode" label="保证金模式" style={compactItem}>
+                  <Select
+                    options={[
+                      { label: '逐仓', value: 'isolated' },
+                      { label: '全仓', value: 'cross' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_loop_interval_seconds" label="风控检查" style={compactItem}>
+                  <InputNumber min={15} max={300} step={15} suffix="秒" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_cooldown_minutes" label="同币冷却" style={compactItem}>
+                  <InputNumber min={0} max={720} step={30} suffix="分钟" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_observe_first_scan" label="首轮只观察" valuePropName="checked" style={compactItem}>
+                  <Switch checkedChildren="观察" unCheckedChildren="可开仓" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_use_volume_profile_filter" label="成交量分布过滤" valuePropName="checked" style={compactItem}>
+                  <Switch checkedChildren="启用" unCheckedChildren="关闭" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_volume_profile_level" label="接受价位" style={compactItem}>
+                  <Select
+                    disabled={!watchedEmcVolumeProfile}
+                    options={[
+                      { label: 'POC 控制点', value: 'poc' },
+                      { label: 'VAH 价值区高点', value: 'vah' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_max_high_pullback_pct" label="高点最大回落" style={compactItem}>
+                  <InputNumber disabled={!watchedEmcVolumeProfile} min={0.5} max={10} step={0.5} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_volume_profile_hours" label="分布回看" style={compactItem}>
+                  <InputNumber disabled={!watchedEmcVolumeProfile} min={4} max={24} step={1} suffix="小时" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_volume_profile_bins" label="价格分箱" style={compactItem}>
+                  <InputNumber disabled={!watchedEmcVolumeProfile} min={20} max={100} step={4} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_fuse_max_consecutive_losses" label="连续亏损熔断" style={compactItem}>
+                  <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_fuse_daily_loss_pct" label="日亏损熔断" style={compactItem}>
+                  <InputNumber min={1} max={80} step={1} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="emc_fuse_max_drawdown_pct" label="回撤熔断" style={compactItem}>
+                  <InputNumber min={1} max={90} step={1} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </>
+        )}
+
+        {/* ── 涨幅榜前三动量参数 ── */}
+        {selectedType === 'top_gainers_momentum' && (
+          <>
+            <Divider orientation="left" style={compactDivider}>
+              涨幅榜前三动量参数
+              <Tooltip title="动态读取OKX USDT永续24h涨幅榜前三，支持多空双向，用短周期动量信号和ATR风控交易">
+                <InfoCircleOutlined style={{ marginLeft: 6, color: '#8c8c8c', fontSize: 12 }} />
+              </Tooltip>
+            </Divider>
+            <Alert
+              message="已接入自动交易：会用绑定账户在OKX USDT永续逐仓市价开平多/空仓，并优先附带OKX原生止盈止损。山寨币短线波动极大，实盘前强烈建议先跑模拟盘。"
+              type="warning"
+              showIcon
+              style={{ marginBottom: 10, fontSize: 12 }}
+            />
+            <Row gutter={12}>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_timeframe"
+                  label={<Space size={4}>信号周期<Tooltip title="15分钟更稳，5分钟更激进且噪音更高"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <Select
+                    options={[
+                      { label: '15分钟', value: '15m' },
+                      { label: '5分钟', value: '5m' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_direction"
+                  label={<Space size={4}>交易方向<Tooltip title="双向会根据涨幅榜币种的动量延续做多，过热转弱或下跌趋势做空"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <Select
+                    options={[
+                      { label: '多空双向', value: 'both' },
+                      { label: '只做多', value: 'long' },
+                      { label: '只做空', value: 'short' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_top_n"
+                  label={<Space size={4}>涨幅榜数量<Tooltip title="从24h涨幅榜中取前N个USDT永续合约，当前建议前三"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_initial_capital"
+                  label={<Space size={4}>模拟本金<Tooltip title="用于分析面板和回测展示的权益基准，不代表自动下单金额"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={100} step={100} prefix="$" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_lookback_hours"
+                  label={<Space size={4}>分析窗口<Tooltip title="读取最近多少小时K线用于动量和回测观察"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={6} max={168} step={6} suffix="小时" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_risk_per_trade"
+                  label={<Space size={4}>单笔风险<Tooltip title="每笔交易按账户权益承担的最大止损风险，高风险策略默认3.5%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={0.5} max={20} step={0.5} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_max_leverage"
+                  label={<Space size={4}>最大杠杆<Tooltip title="分析用杠杆上限；山寨币短线波动极大，实盘需更保守"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={20} step={1} suffix="x" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_max_position_usd"
+                  label={<Space size={4}>单仓上限<Tooltip title="单个山寨币持仓的最大名义价值，实盘建议先小额"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_max_total_position_usd"
+                  label={<Space size={4}>总持仓上限<Tooltip title="策略所有动态币种合计最大名义价值"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_max_open_positions"
+                  label={<Space size={4}>最多持仓数<Tooltip title="涨幅榜前三中最多同时持有几个币，默认只持有1个降低相关风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={3} step={1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_margin_mode"
+                  label={<Space size={4}>保证金模式<Tooltip title="高风险短线默认逐仓，避免单个币种拖累全仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <Select
+                    options={[
+                      { label: '逐仓', value: 'isolated' },
+                      { label: '全仓', value: 'cross' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_loop_interval_seconds"
+                  label={<Space size={4}>扫描间隔<Tooltip title="多久刷新一次涨幅榜和持仓风控"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={15} max={300} step={15} suffix="秒" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_cooldown_minutes"
+                  label={<Space size={4}>同币冷却<Tooltip title="同一个币平仓后多久内不再重新开仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={0} max={240} step={5} suffix="分钟" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_observe_first_scan"
+                  label={<Space size={4}>首轮只观察<Tooltip title="启动后第一次扫描只记录信号，不立刻开仓，降低刚启动撞上假突破的风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  valuePropName="checked"
+                  style={compactItem}
+                >
+                  <Switch checkedChildren="观察" unCheckedChildren="可开仓" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_use_attached_tp_sl"
+                  label={<Space size={4}>原生止盈止损<Tooltip title="下单时附带OKX止盈止损，程序断线时仍有交易所侧保护；程序仍会轮询移动止损"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  valuePropName="checked"
+                  style={compactItem}
+                >
+                  <Switch checkedChildren="附带" unCheckedChildren="仅轮询" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_close_when_out_of_top"
+                  label={<Space size={4}>跌出榜单平仓<Tooltip title="持仓币种不再位于动态涨幅榜前N时是否平仓；默认关闭，避免频繁换手"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  valuePropName="checked"
+                  style={compactItem}
+                >
+                  <Switch checkedChildren="平仓" unCheckedChildren="持有" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_stop_atr"
+                  label={<Space size={4}>止损ATR倍数<Tooltip title="用ATR衡量波动，倍数越小越容易被洗出"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={0.5} max={6} step={0.1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_take_profit_r"
+                  label={<Space size={4}>止盈R倍数<Tooltip title="以初始风险R计算目标止盈，例如2R表示盈利达到止损距离2倍时止盈"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={0.5} max={8} step={0.25} suffix="R" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_trailing_atr"
+                  label={<Space size={4}>移动止损ATR<Tooltip title="盈利后用ATR跟踪回撤，数值越小锁利越快但更容易提前离场"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={0.5} max={6} step={0.1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_fuse_max_consecutive_losses"
+                  label={<Space size={4}>连续亏损熔断<Tooltip title="连续亏损达到该次数后自动暂停策略"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_fuse_daily_loss_pct"
+                  label={<Space size={4}>日亏损熔断<Tooltip title="按模拟本金/风险基准计算，当日已实现亏损达到该比例后暂停"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={50} step={1} suffix="%" style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tgm_fuse_max_drawdown_pct"
+                  label={<Space size={4}>回撤熔断<Tooltip title="运行期最大已实现回撤达到该比例后暂停"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  style={compactItem}
+                >
+                  <InputNumber min={1} max={80} step={1} suffix="%" style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
             </Row>

@@ -24,6 +24,13 @@ import { formatPrice, formatPercent } from '@/utils/format'
 
 const { Search: AntSearch } = Input
 
+const apiErrorMessage = (error: any, fallback: string) => {
+  const detail = error?.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  if (detail && typeof detail.message === 'string') return detail.message
+  return error?.response?.data?.message || fallback
+}
+
 // 常用 OKX 合约交易对（USDT 本位永续）
 const SYMBOL_OPTIONS = [
   'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
@@ -48,12 +55,17 @@ const STRATEGY_TYPE_LABELS: Record<string, string> = {
   dual_side: '双向持仓',
   adaptive_grid_trend: '自适应趋势网格',
   arbitrage: '套利',
+  top_gainers_momentum: '涨幅榜前三15m动量',
+  explosive_momentum_chaser: '爆量急拉追涨',
   custom: '自定义',
 }
 
 // 可用实盘策略过滤选项
 const STRATEGY_TYPE_OPTIONS: { label: string; value: string }[] = [
   { label: '自适应趋势网格', value: 'adaptive_grid_trend' },
+  { label: '现货-永续套利', value: 'arbitrage' },
+  { label: '涨幅榜前三15m动量', value: 'top_gainers_momentum' },
+  { label: '爆量急拉追涨', value: 'explosive_momentum_chaser' },
 ]
 
 // 状态选项
@@ -67,6 +79,9 @@ const STATUS_OPTIONS = [
 // 创建策略下拉菜单（与 STRATEGY_TYPES 保持一致）
 const CREATE_MENU_ITEMS = [
   { key: 'adaptive_grid_trend', label: '自适应趋势网格' },
+  { key: 'arbitrage', label: '现货-永续套利' },
+  { key: 'top_gainers_momentum', label: '涨幅榜前三15m动量' },
+  { key: 'explosive_momentum_chaser', label: '爆量急拉追涨' },
 ]
 
 const StrategyList = () => {
@@ -201,7 +216,7 @@ const StrategyList = () => {
               await strategyApi.start(id, true)
               await fetchStrategies(true)
             } catch (error) {
-              message.error((error as any)?.response?.data?.message || t('strategy.startStrategyFailed'))
+              message.error(apiErrorMessage(error, t('strategy.startStrategyFailed')))
             } finally {
               setActionLoading({ ...actionLoading, [id]: false })
             }
@@ -213,7 +228,7 @@ const StrategyList = () => {
       await strategyApi.start(id)
       await fetchStrategies(true)
     } catch (error) {
-      message.error((error as any)?.response?.data?.message || t('strategy.startStrategyFailed'))
+      message.error(apiErrorMessage(error, t('strategy.startStrategyFailed')))
     } finally {
       setActionLoading({ ...actionLoading, [id]: false })
     }
@@ -540,6 +555,7 @@ const StrategyList = () => {
                 {t('common.refresh')}
               </Button>
               <Dropdown
+                trigger={['click']}
                 menu={{
                   items: CREATE_MENU_ITEMS,
                   onClick: ({ key }) => {

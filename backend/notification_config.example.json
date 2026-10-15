@@ -31,5 +31,73 @@
     "group": "OKK",
     "sound": "alarm",
     "level": "active"
+  },
+  "android_push": {
+    "enabled": false,
+    "api_url": "https://www.ggsuper.com.cn/push/api/v1/sendMsg3_New.php",
+    "token": "YOUR_ANDROID_PUSH_TOKEN",
+    "sender": "OKK",
+    "url": "",
+    "issecure": 0
+  },
+  "account_risk_monitor": {
+    "enabled": true,
+    "check_interval_seconds": 30,
+    "cooldown_seconds": 1800,
+    "margin_usage_threshold": 0.5,
+    "available_ratio_threshold": 0.1,
+    "high_leverage_threshold": 5,
+    "liquidation_distance_threshold_pct": 12,
+    "profit_drawdown_ratio": 0.3,
+    "profit_drawdown_min_usdt": 20,
+    "profit_drawdown_min_peak_usdt": 20
+  },
+  "altcoin_momentum_monitor": {
+    "enabled": false,
+    "inst_type": "SWAP",
+    "quote_ccy": "USDT",
+    "window_seconds": 60,
+    "threshold_pct": 2.5,
+    "windows": [
+      {
+        "window_seconds": 60,
+        "threshold_pct": 2.5
+      },
+      {
+        "window_seconds": 900,
+        "threshold_pct": 6
+      }
+    ],
+    "interval_seconds": 15,
+    "cooldown_seconds": 600,
+    "min_volume_usdt": 1000000,
+    "kline_monitor_enabled": true,
+    "kline_timeframe": "5m",
+    "kline_scan_interval_seconds": 60,
+    "kline_change_threshold_pct": 3,
+    "kline_volume_spike_multiple": 3,
+    "kline_volume_lookback": 20,
+    "kline_min_volume_usdt": 200000,
+    "kline_max_symbols_per_scan": 80,
+    "exclude_majors": true,
+    "user_id": 1
+  },
+  "tradfi_momentum_monitor": {
+    "enabled": false,
+    "inst_type": "SWAP",
+    "interval_seconds": 30,
+    "instrument_refresh_seconds": 3600,
+    "cooldown_seconds": 1800,
+    "windows": [
+      {
+        "window_seconds": 300,
+        "threshold_pct_by_category": {"3": 1.5, "4": 0.4, "5": 0.6, "6": 0.2, "7": 0.3}
+      },
+      {
+        "window_seconds": 900,
+        "threshold_pct_by_category": {"3": 3.0, "4": 0.8, "5": 1.2, "6": 0.4, "7": 0.6}
+      }
+    ],
+    "min_volume_usdt_by_category": {"3": 100000, "4": 500000, "5": 200000, "6": 200000, "7": 100000}
   }
 }

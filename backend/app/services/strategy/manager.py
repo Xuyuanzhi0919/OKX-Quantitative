@@ -134,7 +134,27 @@ class StrategyManager:
                 user_id=user_id,
             )
 
-        raise ValueError("后端当前仅支持自适应趋势网格策略和现货-永续套利策略")
+        if strategy_type_enum == StrategyType.TOP_GAINERS_MOMENTUM:
+            from app.services.strategy.top_gainers_momentum import TopGainersMomentumStrategy
+            return TopGainersMomentumStrategy(
+                strategy_id=strategy_id,
+                exchange=exchange,
+                symbol=symbol,
+                parameters=parameters,
+                user_id=user_id,
+            )
+
+        if strategy_type_enum == StrategyType.EXPLOSIVE_MOMENTUM_CHASER:
+            from app.services.strategy.explosive_momentum_chaser import ExplosiveMomentumChaserStrategy
+            return ExplosiveMomentumChaserStrategy(
+                strategy_id=strategy_id,
+                exchange=exchange,
+                symbol=symbol,
+                parameters=parameters,
+                user_id=user_id,
+            )
+
+        raise ValueError("后端当前仅支持自适应趋势网格策略、现货-永续套利策略、涨幅榜前三15m动量策略和爆量急拉追涨策略")
 
     async def _persist_strategy_state(self, strategy_id: int, strategy: StrategyBase):
         """持久化策略状态到数据库"""
@@ -489,14 +509,17 @@ class StrategyManager:
         try:
             while strategy.is_running:
                 try:
-                    # 1. 获取最新ticker并调用 on_tick
-                    ticker = await strategy.exchange.get_ticker(strategy.symbol)
-                    strategy.last_ticker_at = time.time()
-                    await strategy.on_tick(ticker)
-                    strategy.last_tick_ok_at = time.time()
+                    if getattr(strategy, "_self_driven", False):
+                        strategy.last_tick_ok_at = time.time()
+                    else:
+                        # 1. 获取最新ticker并调用 on_tick
+                        ticker = await strategy.exchange.get_ticker(strategy.symbol)
+                        strategy.last_ticker_at = time.time()
+                        await strategy.on_tick(ticker)
+                        strategy.last_tick_ok_at = time.time()
 
                     position_sync_counter += 1
-                    if position_sync_counter >= 12:
+                    if not getattr(strategy, "_self_driven", False) and position_sync_counter >= 12:
                         position_sync_counter = 0
                         sync_issue = await self._check_exchange_position_sync(strategy)
                         if sync_issue:
@@ -666,36 +689,45 @@ class StrategyManager:
             if 'close_position' in stop_sig.parameters:
                 kwargs['close_position'] = close_position
             await strategy.stop(**kwargs)
-            self.log_strategy_event(
-                strategy_id=strategy_id,
-                event_type="stop",
-                level="info",
-                title="策略停止",
-                message=f"{strategy.symbol} 策略已停止",
-                data={
-                    "cancel_orders": cancel_orders,
-                    "close_position": close_position,
-                    "realized_pnl": getattr(strategy, "realized_pnl", 0),
-                    "unrealized_pnl": getattr(strategy, "_unrealized_pnl", 0),
-                    "total_trades": getattr(strategy, "total_trades", 0),
-                },
-                parameter_snapshot=strategy.parameters if isinstance(strategy.parameters, dict) else None,
-                user_id=strategy.user_id,
-            )
-            await notification_service.send_strategy_notification(
-                strategy_id=strategy_id,
-                title="策略停止",
-                message=f"{strategy.symbol} 策略已停止",
-                level="info",
-                data={
-                    "symbol": strategy.symbol,
-                    "cancel_orders": cancel_orders,
-                    "close_position": close_position,
-                    "realized_pnl": round(float(getattr(strategy, "realized_pnl", 0) or 0), 4),
-                    "unrealized_pnl": round(float(getattr(strategy, "_unrealized_pnl", 0) or 0), 4),
-                    "total_trades": getattr(strategy, "total_trades", 0),
-                },
-            )
+            # 策略本体已经停止后，事件和通知都只能是 best effort。
+            # 这些外围操作失败不能把“已停止”重新表现成接口 500。
+            try:
+                self.log_strategy_event(
+                    strategy_id=strategy_id,
+                    event_type="stop",
+                    level="info",
+                    title="策略停止",
+                    message=f"{strategy.symbol} 策略已停止",
+                    data={
+                        "cancel_orders": cancel_orders,
+                        "close_position": close_position,
+                        "realized_pnl": getattr(strategy, "realized_pnl", 0),
+                        "unrealized_pnl": getattr(strategy, "_unrealized_pnl", 0),
+                        "total_trades": getattr(strategy, "total_trades", 0),
+                    },
+                    parameter_snapshot=strategy.parameters if isinstance(strategy.parameters, dict) else None,
+                    user_id=strategy.user_id,
+                )
+            except Exception as event_error:
+                logger.warning(f"记录策略 {strategy_id} 停止事件失败: {event_error}")
+
+            try:
+                await notification_service.send_strategy_notification(
+                    strategy_id=strategy_id,
+                    title="策略停止",
+                    message=f"{strategy.symbol} 策略已停止",
+                    level="info",
+                    data={
+                        "symbol": strategy.symbol,
+                        "cancel_orders": cancel_orders,
+                        "close_position": close_position,
+                        "realized_pnl": round(float(getattr(strategy, "realized_pnl", 0) or 0), 4),
+                        "unrealized_pnl": round(float(getattr(strategy, "_unrealized_pnl", 0) or 0), 4),
+                        "total_trades": getattr(strategy, "total_trades", 0),
+                    },
+                )
+            except Exception as notification_error:
+                logger.warning(f"发送策略 {strategy_id} 停止通知失败: {notification_error}")
 
             # 取消监控任务
             task = self.strategy_tasks.get(strategy_id)
@@ -773,6 +805,68 @@ class StrategyManager:
             elif position_side == "short":
                 position_status["distance_to_stop_pct"] = (stop_px - current_price) / current_price * 100
                 position_status["distance_to_take_profit_pct"] = (current_price - take_profit_px) / current_price * 100
+
+        dynamic_positions = getattr(strategy, "positions", None)
+        if isinstance(dynamic_positions, dict):
+            position_items = []
+            for symbol, pos in dynamic_positions.items():
+                current = float(getattr(pos, "current_price", 0) or 0)
+                stop = float(getattr(pos, "stop_px", 0) or 0)
+                take = float(getattr(pos, "take_profit_px", 0) or 0)
+                entry = float(getattr(pos, "entry_price", 0) or 0)
+                side = getattr(pos, "side", "")
+                if not side and entry > 0 and stop > 0:
+                    side = "long" if stop < entry else "short"
+                item = {
+                    "symbol": symbol,
+                    "side": side,
+                    "qty": float(getattr(pos, "qty", 0) or 0),
+                    "entry_price": entry,
+                    "current_price": current,
+                    "stop_px": stop,
+                    "take_profit_px": take,
+                    "open_time": float(getattr(pos, "open_time", 0) or 0),
+                    "leverage": float(getattr(strategy, "max_leverage", 0) or 0),
+                    "highest_price": float(getattr(pos, "highest_price", 0) or 0),
+                    "lowest_price": float(getattr(pos, "lowest_price", 0) or 0),
+                }
+                qty = item["qty"]
+                contract_value = float(getattr(pos, "ct_val", 1) or 1)
+                reference_price = current or entry
+                item["notional_usd"] = reference_price * qty * contract_value
+                if current and entry > 0:
+                    direction = -1 if side == "short" else 1
+                    unrealized = (current - entry) * qty * contract_value * direction
+                    item["unrealized_pnl"] = unrealized
+                    item["unrealized_pnl_pct"] = (
+                        (current - entry) / entry * 100 * direction
+                    )
+                else:
+                    item["unrealized_pnl"] = 0.0
+                    item["unrealized_pnl_pct"] = 0.0
+                if current and stop > 0:
+                    if side == "long":
+                        item["distance_to_stop_pct"] = (current - stop) / current * 100
+                    elif side == "short":
+                        item["distance_to_stop_pct"] = (stop - current) / current * 100
+                if current and take > 0:
+                    if side == "long":
+                        item["distance_to_take_profit_pct"] = (take - current) / current * 100
+                    elif side == "short":
+                        item["distance_to_take_profit_pct"] = (current - take) / current * 100
+                position_items.append(item)
+
+            position_status = {
+                "in_position": len(position_items) > 0,
+                "dynamic": True,
+                "positions": position_items,
+                "open_positions": len(position_items),
+                "current_notional_usd": (
+                    strategy._current_notional_usd()
+                    if hasattr(strategy, "_current_notional_usd")
+                    else None
+                ),
+            }
 
         risk_fuse = strategy.parameters.get("risk_fuse", {}) if isinstance(strategy.parameters, dict) else {}
         if not isinstance(risk_fuse, dict):

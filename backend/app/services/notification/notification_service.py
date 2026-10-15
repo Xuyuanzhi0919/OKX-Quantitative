@@ -7,7 +7,14 @@ from loguru import logger
 from datetime import datetime
 from decimal import Decimal
 import json
-from .channels import TelegramChannel, ServerChanChannel, PushPlusChannel, WeComChannel, BarkChannel
+from .channels import (
+    AndroidPushChannel,
+    BarkChannel,
+    PushPlusChannel,
+    ServerChanChannel,
+    TelegramChannel,
+    WeComChannel,
+)
 
 
 class NotificationType:
@@ -85,6 +92,11 @@ class NotificationService:
         if "bark" in config:
             self.channels["bark"] = BarkChannel(config["bark"])
             logger.info(f"✅ Bark渠道已配置 (启用: {self.channels['bark'].is_enabled()})")
+
+        # 初始化Android全能消息推送渠道
+        if "android_push" in config:
+            self.channels["android_push"] = AndroidPushChannel(config["android_push"])
+            logger.info(f"✅ Android全能消息推送渠道已配置 (启用: {self.channels['android_push'].is_enabled()})")
 
         logger.success(f"📢 推送渠道配置完成,共 {len(self.channels)} 个渠道")
 
@@ -414,6 +426,75 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Bark推送异常: {e}")
             return False
+
+    async def send_bark_alert(
+        self,
+        title: str,
+        message: str,
+        level: str = "info",
+        data: Optional[Dict] = None,
+        category: str = "OKK",
+        strategy_id: Optional[int] = None,
+    ) -> bool:
+        """
+        Bark 全能告警入口。
+
+        用于策略信号、开仓、平仓、熔断、系统异常等需要直接推到手机的事件。
+        这个方法只走 Bark，不会额外打扰 Telegram / PushPlus 等其它渠道。
+        """
+        payload = {
+            "分类": category,
+            "时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        if strategy_id is not None:
+            payload["策略ID"] = strategy_id
+        if data:
+            payload.update(data)
+        return await self.send_bark_notification(title, message, level, payload)
+
+    async def send_android_push_notification(
+        self,
+        title: str,
+        message: str,
+        level: str = "info",
+        data: Optional[Dict] = None
+    ) -> bool:
+        """只通过 Android 全能消息推送发送通知。"""
+        android_push = self.channels.get("android_push")
+        if not android_push or not android_push.is_enabled():
+            logger.warning("Android全能消息推送渠道未启用，跳过推送")
+            return False
+
+        try:
+            return await android_push.send(title, message, level, data or {})
+        except Exception as e:
+            logger.error(f"Android全能消息推送异常: {e}")
+            return False
+
+    async def send_android_push_alert(
+        self,
+        title: str,
+        message: str,
+        level: str = "info",
+        data: Optional[Dict] = None,
+        category: str = "OKK",
+        strategy_id: Optional[int] = None,
+    ) -> bool:
+        """
+        Android 全能消息推送告警入口。
+
+        用于策略信号、开仓、平仓、熔断、系统异常等需要直接推到 Android 手机的事件。
+        不做应用层节流：只要调用就尝试发送，平台限频错误会记录到日志。
+        """
+        payload = {
+            "分类": category,
+            "时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        if strategy_id is not None:
+            payload["策略ID"] = strategy_id
+        if data:
+            payload.update(data)
+        return await self.send_android_push_notification(title, message, level, payload)
 
     async def _send_notification(self, user_id: int, message: Dict):
         """

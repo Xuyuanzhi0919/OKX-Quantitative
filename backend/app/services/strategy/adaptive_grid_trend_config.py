@@ -57,6 +57,8 @@ STABLE_1000U_EXCLUDED_SYMBOLS = [
 ]
 
 
+# One-day validation snapshot from 2026-06-13 with the stable 1000U profile.
+# It is used only as a prior; live liquidity still participates in ranking.
 STABLE_1000U_VALIDATION: Dict[str, Dict[str, float]] = {
     "DOT-USDT-SWAP": {"return_pct": 2.762, "max_drawdown_pct": 1.036},
     "AVAX-USDT-SWAP": {"return_pct": 2.018, "max_drawdown_pct": 0.951},
@@ -110,7 +112,12 @@ def _ticker_by_symbol(tickers: Optional[Iterable[Dict]]) -> Dict[str, Dict]:
 
 
 def select_stable_1000u_symbols(tickers: Optional[Iterable[Dict]] = None, active_limit: int = 3) -> Dict:
-    """Rank adaptive-grid-trend symbols for a 1000 USDT account."""
+    """
+    Rank adaptive-grid-trend symbols for a 1000 USDT account.
+
+    The ranking intentionally prefers the stable initial basket over simply chasing
+    yesterday's highest return. Liquidity is added when live OKX tickers are provided.
+    """
     ticker_map = _ticker_by_symbol(tickers)
     candidate_symbols = list(dict.fromkeys(
         STABLE_1000U_ACTIVE_SYMBOLS

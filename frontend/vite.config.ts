@@ -17,6 +17,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
+      '/tradekit-api': {
+        target: 'http://127.0.0.1:8010',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tradekit-api/, ''),
+      },
     },
   },
 })

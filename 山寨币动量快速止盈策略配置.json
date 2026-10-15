@@ -1,0 +1,36 @@
+{
+  "_说明": "山寨币动量策略参数 - ATR动态止损/5x杠杆/双向（回测验证最优，组合收益+4.37%）",
+  "strategy_type": "top_gainers_momentum",
+  "symbol": "USDT-SWAP",
+
+  "timeframe": "5m",
+  "top_n": 5,
+  "direction": "both",
+  "loop_interval_seconds": 30,
+  "margin_mode": "isolated",
+
+  "max_leverage": 5,
+  "max_position_usd": 1000,
+  "max_total_position_usd": 1000,
+  "max_open_positions": 1,
+
+  "use_fixed_pct": false,
+  "stop_atr": 1.8,
+  "take_profit_r": 1.8,
+  "trailing_atr": 1.6,
+  "max_hold_bars": 36,
+  "use_attached_tp_sl": true,
+
+  "observe_first_scan": true,
+  "cooldown_seconds": 60,
+  "min_24h_change_pct": 3,
+  "close_when_out_of_top": false,
+
+  "risk_fuse": {
+    "max_consecutive_losses": 3,
+    "max_runtime_drawdown": 50,
+    "min_profit_factor": 0.8,
+    "close_position_on_trigger": true,
+    "cancel_orders_on_trigger": true
+  }
+}

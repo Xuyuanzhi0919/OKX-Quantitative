@@ -14,6 +14,7 @@ from loguru import logger
 from app.services.exchange.okx import OKXExchange
 from app.services.backtest import KlineService
 from app.services.backtest.backtest_service import BacktestService
+from app.services.backtest.top_gainers_momentum import TopGainersMomentumAnalyzer
 from app.models import Backtest
 
 router = APIRouter()
@@ -185,12 +186,38 @@ async def get_strategy_types():
         'dual_ma_cross': '双均线(多空)',
         'adaptive_grid_trend': '自适应趋势网格',
         'arbitrage': '现货-永续套利',
+        'fixed_tp_sl': '固定止盈止损',
     }
     
     return [
         {"value": t, "label": strategy_names.get(t, t)}
         for t in types
     ]
+
+
+@router.get("/top-gainers-momentum/analyze", summary="分析涨幅榜前三多周期动量策略")
+async def analyze_top_gainers_momentum(
+    timeframe: str = Query("15m", description="K线周期：1m/5m/15m/30m/1H/4H"),
+    top_n: int = Query(3, ge=1, le=10, description="涨幅榜取前N个"),
+    initial_capital: float = Query(1000.0, gt=0, description="初始资金"),
+    lookback_hours: int = Query(24, ge=1, le=72, description="快速回测窗口小时数"),
+):
+    """
+    实时拉取 OKX USDT 永续涨幅榜，排除 BTC/ETH 后取前 N 个，
+    使用所选 K 线周期的 EMA 动量策略做近 24 小时快速回测并返回当前信号。
+    """
+    analyzer = TopGainersMomentumAnalyzer()
+    try:
+        return await analyzer.analyze(
+            timeframe=timeframe,
+            top_n=top_n,
+            initial_capital=initial_capital,
+            lookback_hours=lookback_hours,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"涨幅榜动量分析失败: {str(e)}")
+    finally:
+        await analyzer.close()
 
 
 @router.get("/symbols", summary="获取有K线数据的交易对")

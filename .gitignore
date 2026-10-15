@@ -21,6 +21,7 @@ dist/
 .env
 .env.local
 .env.production
+ios/OKKStatus/Config/Secrets.xcconfig
 
 # IDE
 .vscode/
@@ -43,3 +44,14 @@ Thumbs.db
 # Windows保留文件名
 nul
 **/nul
+
+# Local runtime, research caches and platform build output
+.run/
+.workbuddy/
+.dev-windows/
+backend/backtest_data/
+backend/backtest_results/
+ios/**/.build/
+**/xcuserdata/
+*.xcuserstate
+ios/**/Secrets.xcconfig

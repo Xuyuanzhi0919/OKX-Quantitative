@@ -73,6 +73,43 @@ interface CreateBacktestFormData {
   cooldown_seconds?: number
 }
 
+interface TopGainersMomentumResult {
+  symbol: string
+  last: number
+  change_24h_pct: number
+  volume_24h: number
+  backtest: {
+    final_equity: number
+    return_pct: number
+    max_drawdown_pct: number
+    closed_trades: number
+    win_rate_pct: number
+  }
+  signal: {
+    status: string
+    action: string
+    rsi: number
+    dist_e21_pct: number
+    atr_pct: number
+    stop: number
+    take_profit: number
+  }
+}
+
+interface TopGainersMomentumAnalysis {
+  timeframe: string
+  initial_capital: number
+  window: {
+    start_str: string
+    end_str: string
+  }
+  results: TopGainersMomentumResult[]
+  basket: {
+    final_equity: number
+    return_pct: number
+  }
+}
+
 const BacktestList = () => {
   const { modal, message: messageApi } = App.useApp()
   const navigate = useNavigate()
@@ -111,6 +148,7 @@ const BacktestList = () => {
   // 对比模式状态
   const [compareMode, setCompareMode] = useState(false)
   const [compareModalOpen, setCompareModalOpen] = useState(false)
+  const [momentumTimeframe, setMomentumTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1H' | '4H'>('15m')
 
   // 编辑描述状态
   const [editDescriptionModalOpen, setEditDescriptionModalOpen] = useState(false)
@@ -251,6 +289,29 @@ const BacktestList = () => {
       return response.json()
     },
     refetchInterval: 3000, // 每3秒刷新一次,用于更新进度
+  })
+
+  const {
+    data: momentumAnalysis,
+    isFetching: isMomentumFetching,
+    refetch: refetchMomentumAnalysis,
+  } = useQuery<TopGainersMomentumAnalysis>({
+    queryKey: ['top-gainers-momentum', momentumTimeframe],
+    enabled: false,
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        timeframe: momentumTimeframe,
+        top_n: '3',
+        initial_capital: '1000',
+        lookback_hours: '24',
+      })
+      const response = await fetch(`${BACKTEST_API.topGainersMomentum}?${params}`)
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.detail || '涨幅榜动量分析失败')
+      }
+      return response.json()
+    },
   })
 
   // 应用筛选和排序
@@ -711,6 +772,75 @@ const BacktestList = () => {
     },
   ]
 
+  const momentumColumns: ColumnsType<TopGainersMomentumResult> = [
+    {
+      title: '排名币种',
+      dataIndex: 'symbol',
+      key: 'symbol',
+      width: 150,
+      render: (symbol: string, record) => (
+        <Space size={6}>
+          <strong>{symbol}</strong>
+          <Tag color={record.signal.action.includes('entry') ? 'green' : 'blue'}>
+            {record.signal.status}
+          </Tag>
+        </Space>
+      ),
+    },
+    {
+      title: '24h涨幅',
+      dataIndex: 'change_24h_pct',
+      key: 'change_24h_pct',
+      width: 100,
+      render: (value: number) => (
+        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>
+          {formatPercent(value)}%
+        </span>
+      ),
+    },
+    {
+      title: '24h回测',
+      dataIndex: ['backtest', 'return_pct'],
+      key: 'return_pct',
+      width: 110,
+      render: (value: number) => (
+        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>
+          {formatPercent(value)}%
+        </span>
+      ),
+    },
+    {
+      title: '回撤',
+      dataIndex: ['backtest', 'max_drawdown_pct'],
+      key: 'drawdown',
+      width: 90,
+      render: (value: number) => `${formatPercent(value)}%`,
+    },
+    {
+      title: '交易/胜率',
+      key: 'trades',
+      width: 110,
+      render: (_, record) => `${record.backtest.closed_trades} / ${formatPercent(record.backtest.win_rate_pct)}%`,
+    },
+    {
+      title: 'RSI',
+      dataIndex: ['signal', 'rsi'],
+      key: 'rsi',
+      width: 80,
+      render: (value: number) => formatAmount(value),
+    },
+    {
+      title: '止损/止盈',
+      key: 'risk',
+      width: 160,
+      render: (_, record) => (
+        <span>
+          {formatAmount(record.signal.stop)} / {formatAmount(record.signal.take_profit)}
+        </span>
+      ),
+    },
+  ]
+
   // 草稿保存 - 表单值变化时自动保存
   useEffect(() => {
     if (!createModalOpen) return
@@ -965,6 +1095,84 @@ const BacktestList = () => {
         closable
         style={{ marginBottom: 16 }}
       />
+
+      <Card
+        title="涨幅榜前三多周期动量分析"
+        extra={
+          <Space>
+            <Select
+              size="small"
+              value={momentumTimeframe}
+              style={{ width: 104 }}
+              onChange={setMomentumTimeframe}
+              options={[
+                { label: '1分钟', value: '1m' },
+                { label: '5分钟', value: '5m' },
+                { label: '15分钟', value: '15m' },
+                { label: '30分钟', value: '30m' },
+                { label: '1小时', value: '1H' },
+                { label: '4小时', value: '4H' },
+              ]}
+            />
+            <Button
+              size="small"
+              type="primary"
+              icon={<Calculator size={14} />}
+              loading={isMomentumFetching}
+              onClick={() => refetchMomentumAnalysis()}
+            >
+              分析前三
+            </Button>
+          </Space>
+        }
+        style={{ marginBottom: 16 }}
+      >
+        {momentumAnalysis ? (
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Row gutter={16}>
+              <Col xs={24} md={8}>
+                <Statistic
+                  title="模拟资金"
+                  value={momentumAnalysis.initial_capital}
+                  suffix="USDT"
+                  precision={0}
+                />
+              </Col>
+              <Col xs={24} md={8}>
+                <Statistic
+                  title="前三等权收益"
+                  value={momentumAnalysis.basket.return_pct}
+                  suffix="%"
+                  precision={2}
+                  valueStyle={{ color: momentumAnalysis.basket.return_pct >= 0 ? '#52c41a' : '#ff4d4f' }}
+                />
+              </Col>
+              <Col xs={24} md={8}>
+                <Statistic
+                  title="分析窗口"
+                  value={`${momentumAnalysis.window.start_str} ~ ${momentumAnalysis.window.end_str}`}
+                  valueStyle={{ fontSize: 14 }}
+                />
+              </Col>
+            </Row>
+            <Table
+              size="small"
+              rowKey="symbol"
+              columns={momentumColumns}
+              dataSource={momentumAnalysis.results}
+              pagination={false}
+              scroll={{ x: 900 }}
+            />
+          </Space>
+        ) : (
+          <Alert
+            type="info"
+            showIcon
+            message="实时筛选 OKX 永续涨幅榜前三"
+            description="选择 K 线周期后，按 1000 USDT 和最近 24 小时快速回测，并给出当前信号、参考止损和止盈。"
+          />
+        )}
+      </Card>
 
       <Card
         title="回测列表"

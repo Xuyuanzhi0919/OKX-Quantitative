@@ -23,6 +23,7 @@ export const BACKTEST_API = {
 
   // 策略类型
   strategyTypes: `${API_V1}/backtest/strategy-types`,
+  topGainersMomentum: `${API_V1}/backtest/top-gainers-momentum/analyze`,
   
   // 交易对列表
   symbols: `${API_V1}/backtest/symbols`,

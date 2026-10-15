@@ -1,0 +1,479 @@
+{
+  "timeframe": "5m",
+  "top_n": 5,
+  "initial_capital": 1000.0,
+  "lookback_hours": 18,
+  "window": {
+    "start": 1783697100000,
+    "end": 1783761900000,
+    "start_str": "2026-07-10 23:25",
+    "end_str": "2026-07-11 17:25"
+  },
+  "strategy": {
+    "name": "top_gainers_ema_momentum",
+    "description": "涨幅榜前三 + 15m/5m EMA 动量 + ATR 止损止盈",
+    "params": {
+      "risk_pct": 0.025,
+      "max_leverage": 5,
+      "stop_atr": 1.8,
+      "take_profit_r": 1.8,
+      "trailing_atr": 1.6,
+      "max_hold_bars": 36
+    }
+  },
+  "results": [
+    {
+      "symbol": "BEAT-USDT-SWAP",
+      "last": 2.9242,
+      "change_24h_pct": 28.876156897311578,
+      "volume_24h": 43575134.0,
+      "backtest": {
+        "final_equity": 1034.5502437152286,
+        "return_pct": 3.4550243715228524,
+        "max_drawdown_pct": 6.14413921018002,
+        "closed_trades": 5,
+        "win_rate_pct": 80.0,
+        "trades": [
+          {
+            "timestamp": 1783711800000,
+            "time": "2026-07-11 03:30",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6339,
+            "pnl": 0.0,
+            "equity": 821.0241139115711
+          },
+          {
+            "timestamp": 1783719000000,
+            "time": "2026-07-11 05:30",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.6691765680894095,
+            "pnl": 12.588833487663619,
+            "equity": 1028.991818716084
+          },
+          {
+            "timestamp": 1783723200000,
+            "time": "2026-07-11 06:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6868,
+            "pnl": 0.0,
+            "equity": 781.54642919786
+          },
+          {
+            "timestamp": 1783732800000,
+            "time": "2026-07-11 09:20",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.6307955829856233,
+            "pnl": -26.3290038669717,
+            "equity": 1002.0457440523087
+          },
+          {
+            "timestamp": 1783740300000,
+            "time": "2026-07-11 11:25",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.6711,
+            "pnl": 0.0,
+            "equity": 796.2610592962815
+          },
+          {
+            "timestamp": 1783748700000,
+            "time": "2026-07-11 13:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 2.7346931090557933,
+            "pnl": 23.90995466301549,
+            "equity": 1025.4425199503467
+          },
+          {
+            "timestamp": 1783757100000,
+            "time": "2026-07-11 16:05",
+            "side": "entry",
+            "reason": "signal",
+            "price": 2.9039,
+            "pnl": 0.0,
+            "equity": 834.5618645436881
+          },
+          {
+            "timestamp": 1783761900000,
+            "time": "2026-07-11 17:25",
+            "side": "exit",
+            "reason": "final",
+            "price": 2.9346,
+            "pnl": 9.583735374374799,
+            "equity": 1034.5502437152286
+          }
+        ]
+      },
+      "signal": {
+        "status": "刚触发",
+        "action": "watch_or_small_entry",
+        "last": 2.9346,
+        "rsi": 61.851179673321234,
+        "dist_e21_pct": 1.3277529141437094,
+        "atr_pct": 1.484736843406854,
+        "stop": 2.8561720426680886,
+        "take_profit": 3.0757703231974407
+      }
+    },
+    {
+      "symbol": "HMSTR-USDT-SWAP",
+      "last": 0.0002364,
+      "change_24h_pct": 25.61105207226355,
+      "volume_24h": 147846065200.0,
+      "backtest": {
+        "final_equity": 1062.9134774563613,
+        "return_pct": 6.291347745636133,
+        "max_drawdown_pct": 6.5504023831786276,
+        "closed_trades": 8,
+        "win_rate_pct": 62.5,
+        "trades": [
+          {
+            "timestamp": 1783736400000,
+            "time": "2026-07-11 10:20",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002132,
+            "pnl": 0.0,
+            "equity": 759.2216258692398
+          },
+          {
+            "timestamp": 1783740600000,
+            "time": "2026-07-11 11:30",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.00022145103316823813,
+            "pnl": 43.9535674595113,
+            "equity": 1033.4097491557354
+          },
+          {
+            "timestamp": 1783743300000,
+            "time": "2026-07-11 12:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002214,
+            "pnl": 0.0,
+            "equity": 854.2179903183144
+          },
+          {
+            "timestamp": 1783745100000,
+            "time": "2026-07-11 12:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.0002149999034708024,
+            "pnl": -26.26918834851877,
+            "equity": 1006.6936985657268
+          },
+          {
+            "timestamp": 1783751700000,
+            "time": "2026-07-11 14:35",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002173,
+            "pnl": 0.0,
+            "equity": 808.9787377223505
+          },
+          {
+            "timestamp": 1783754400000,
+            "time": "2026-07-11 15:20",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.0002272826175775045,
+            "pnl": 44.78551106204448,
+            "equity": 1050.9861548625759
+          },
+          {
+            "timestamp": 1783759200000,
+            "time": "2026-07-11 16:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.0002339,
+            "pnl": 0.0,
+            "equity": 894.0490998952275
+          },
+          {
+            "timestamp": 1783761900000,
+            "time": "2026-07-11 17:25",
+            "side": "exit",
+            "reason": "final",
+            "price": 0.0002377,
+            "pnl": 12.318686820636652,
+            "equity": 1062.9134774563613
+          }
+        ]
+      },
+      "signal": {
+        "status": "暂缓",
+        "action": "skip",
+        "last": 0.0002377,
+        "rsi": 65.99326599326604,
+        "dist_e21_pct": 1.7699293545863166,
+        "atr_pct": 1.9905489031182526,
+        "stop": 0.00022918323746311825,
+        "take_profit": 0.0002530301725663872
+      }
+    },
+    {
+      "symbol": "MMT-USDT-SWAP",
+      "last": 0.1867,
+      "change_24h_pct": 18.53968253968254,
+      "volume_24h": 332062380.0,
+      "backtest": {
+        "final_equity": 1002.1444495224797,
+        "return_pct": 0.21444495224796079,
+        "max_drawdown_pct": 2.615714209925475,
+        "closed_trades": 2,
+        "win_rate_pct": 50.0,
+        "trades": [
+          {
+            "timestamp": 1783697400000,
+            "time": "2026-07-10 23:30",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.1746,
+            "pnl": 0.0,
+            "equity": 809.8828477126918
+          },
+          {
+            "timestamp": 1783701000000,
+            "time": "2026-07-11 00:30",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.18012866425359578,
+            "pnl": 29.535871932415787,
+            "equity": 1029.0617643207268
+          },
+          {
+            "timestamp": 1783728600000,
+            "time": "2026-07-11 08:10",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.2038,
+            "pnl": 0.0,
+            "equity": 787.733154883018
+          },
+          {
+            "timestamp": 1783730100000,
+            "time": "2026-07-11 08:35",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.19944396664308975,
+            "pnl": -26.31549781710558,
+            "equity": 1002.1444495224797
+          }
+        ]
+      },
+      "signal": {
+        "status": "刚触发",
+        "action": "watch_or_small_entry",
+        "last": 0.1884,
+        "rsi": 60.29411764705892,
+        "dist_e21_pct": 2.0183289919392684,
+        "atr_pct": 0.9687453358106878,
+        "stop": 0.1851147908171988,
+        "take_profit": 0.19431337652904218
+      }
+    },
+    {
+      "symbol": "VIRTUAL-USDT-SWAP",
+      "last": 0.61,
+      "change_24h_pct": 12.608454864316048,
+      "volume_24h": 81639366.0,
+      "backtest": {
+        "final_equity": 1099.887334721076,
+        "return_pct": 9.988733472107603,
+        "max_drawdown_pct": 5.790218464973098,
+        "closed_trades": 7,
+        "win_rate_pct": 71.42857142857143,
+        "trades": [
+          {
+            "timestamp": 1783722300000,
+            "time": "2026-07-11 06:25",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6071,
+            "pnl": 0.0,
+            "equity": 817.1528503573037
+          },
+          {
+            "timestamp": 1783731600000,
+            "time": "2026-07-11 09:00",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.6280683311088586,
+            "pnl": 49.02901703705638,
+            "equity": 1154.4077636802795
+          },
+          {
+            "timestamp": 1783732500000,
+            "time": "2026-07-11 09:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6247,
+            "pnl": 0.0,
+            "equity": 825.9452716695845
+          },
+          {
+            "timestamp": 1783736400000,
+            "time": "2026-07-11 10:20",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6136947643356421,
+            "pnl": -29.664872453840523,
+            "equity": 1123.9237827675593
+          },
+          {
+            "timestamp": 1783737600000,
+            "time": "2026-07-11 10:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6301,
+            "pnl": 0.0,
+            "equity": 842.5715647628891
+          },
+          {
+            "timestamp": 1783746900000,
+            "time": "2026-07-11 13:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6332736308806318,
+            "pnl": 6.362617635152011,
+            "equity": 1129.5847739238966
+          },
+          {
+            "timestamp": 1783748400000,
+            "time": "2026-07-11 13:40",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.6329,
+            "pnl": 0.0,
+            "equity": 834.460871212247
+          },
+          {
+            "timestamp": 1783753500000,
+            "time": "2026-07-11 15:05",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.6207576170493173,
+            "pnl": -28.961469370621998,
+            "equity": 1099.887334721076
+          }
+        ]
+      },
+      "signal": {
+        "status": "暂缓",
+        "action": "skip",
+        "last": 0.6086,
+        "rsi": 30.11583011583035,
+        "dist_e21_pct": -0.8071214649568457,
+        "atr_pct": 0.7328382300238571,
+        "stop": 0.6005719037577347,
+        "take_profit": 0.6230505732360776
+      }
+    },
+    {
+      "symbol": "GRASS-USDT-SWAP",
+      "last": 0.4109,
+      "change_24h_pct": 12.084015275504639,
+      "volume_24h": 21115660.0,
+      "backtest": {
+        "final_equity": 936.5275998011567,
+        "return_pct": -6.347240019884326,
+        "max_drawdown_pct": 8.268989364128606,
+        "closed_trades": 5,
+        "win_rate_pct": 20.0,
+        "trades": [
+          {
+            "timestamp": 1783723800000,
+            "time": "2026-07-11 06:50",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.3867,
+            "pnl": 0.0,
+            "equity": 585.1111887034469
+          },
+          {
+            "timestamp": 1783734000000,
+            "time": "2026-07-11 09:40",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.3818403185093329,
+            "pnl": -25.289385220351306,
+            "equity": 947.0788450223505
+          },
+          {
+            "timestamp": 1783745100000,
+            "time": "2026-07-11 12:45",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.3939,
+            "pnl": 0.0,
+            "equity": 499.7021186611088
+          },
+          {
+            "timestamp": 1783746900000,
+            "time": "2026-07-11 13:15",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.3897202229697018,
+            "pnl": -24.78078532418861,
+            "equity": 921.1824070139692
+          },
+          {
+            "timestamp": 1783750500000,
+            "time": "2026-07-11 14:15",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.4063,
+            "pnl": 0.0,
+            "equity": 696.366949561696
+          },
+          {
+            "timestamp": 1783752000000,
+            "time": "2026-07-11 14:40",
+            "side": "exit",
+            "reason": "take",
+            "price": 0.4213208040197334,
+            "pnl": 40.87184466046766,
+            "equity": 961.4936146234336
+          },
+          {
+            "timestamp": 1783755300000,
+            "time": "2026-07-11 15:35",
+            "side": "entry",
+            "reason": "signal",
+            "price": 0.4138,
+            "pnl": 0.0,
+            "equity": 772.8846426852256
+          },
+          {
+            "timestamp": 1783759500000,
+            "time": "2026-07-11 16:45",
+            "side": "exit",
+            "reason": "stop",
+            "price": 0.40322625266505935,
+            "pnl": -24.495668258839977,
+            "equity": 936.5275998011567
+          }
+        ]
+      },
+      "signal": {
+        "status": "暂缓",
+        "action": "skip",
+        "last": 0.4128,
+        "rsi": 43.03797468354426,
+        "dist_e21_pct": 0.18795811308228463,
+        "atr_pct": 0.9313635206695887,
+        "stop": 0.4058795964960167,
+        "take_profit": 0.42525672630717
+      }
+    }
+  ],
+  "basket": {
+    "final_equity": 1027.2046210432604,
+    "return_pct": 2.720462104326038
+  }
+}
