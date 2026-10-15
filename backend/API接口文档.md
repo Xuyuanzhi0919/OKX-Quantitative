@@ -384,19 +384,15 @@ OKX_SIMULATED=true  # true=模拟盘, false=实盘
 
 ---
 
-## 🧪 测试
+## 接口验证
 
-运行测试脚本:
+启动后端后检查健康状态：
 
 ```bash
-cd backend
-python test_api.py
+curl http://localhost:8000/health
 ```
 
-测试脚本会依次测试:
-1. 公共数据接口(无需API密钥)
-2. 私有接口(需要API密钥)
-3. 交易接口说明
+访问 `http://localhost:8000/docs` 查看当前接口、认证要求和在线调用表单。公共行情、账户查询和交易接口的权限要求以具体路由为准；交易验证应使用模拟盘。
 
 ---
 

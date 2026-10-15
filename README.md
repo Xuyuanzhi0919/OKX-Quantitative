@@ -7,7 +7,7 @@
 - OKX REST 接口、HMAC 签名和代理；行情、K 线、订单簿、余额、持仓和订单管理。
 - 策略创建、启动、停止、事件记录、盈亏统计；启动时尝试恢复数据库中运行中的策略。
 - Socket.IO 前端推送与 OKX WebSocket 行情、私有频道接入。
-- K 线数据管理、回测任务、交易明细、绩效指标及独立研究脚本。
+- K 线数据管理、回测任务、交易明细、绩效指标及动量策略分析。
 - 账户风险、山寨币动量、TradFi 异动监控；Telegram、Server酱、PushPlus、企业微信、Bark、Android 推送。
 - 用户登录、JWT、服务访问令牌和移动端只读令牌。
 - TradeKit 行情/余额查询、OKK 状态聚合、策略建议与交易意图评估；当前没有执行下单接口。
@@ -24,7 +24,7 @@
 | `top_gainers_momentum` | 涨幅榜前三 15m 动量 |
 | `explosive_momentum_chaser` | 爆量急拉追涨 |
 
-模型枚举保留的其他历史类型不代表当前引擎支持启动。通用回测支持 `adaptive_grid_trend`、`arbitrage`、`fixed_tp_sl`；涨幅榜动量使用独立分析接口。研究脚本位于 `backend/scripts/` 和 `tradekit/research/`。
+模型枚举保留的其他历史类型不代表当前引擎支持启动。通用回测支持 `adaptive_grid_trend`、`arbitrage`、`fixed_tp_sl`；涨幅榜动量使用独立分析接口。
 
 ## 技术栈与结构
 
@@ -44,10 +44,9 @@ OKK/
 │   ├── app/services/     # 策略、交易所、回测、监控和通知
 │   ├── app/websocket/    # Socket.IO 和 OKX WebSocket
 │   ├── migrations/      # SQL 增量迁移
-│   ├── scripts/         # 回测、优化和研究
 │   └── init_complete.sql
 ├── frontend/src/        # 管理界面
-├── tradekit/            # 独立只读网关、UI 和研究
+├── tradekit/            # 独立只读网关和 UI
 ├── ios/OKKStatus/       # iOS 应用与小组件
 ├── scripts/             # 开发和部署工具
 ├── nginx/               # 反向代理
@@ -198,14 +197,15 @@ docker compose -f docker-compose.prod.yml logs -f backend
 API 路由在 `backend/app/api/__init__.py` 聚合，页面路由在 `frontend/src/App.tsx` 注册；日志统一使用 `from loguru import logger`。
 
 ```bash
-# 从 backend 目录运行与修改相关的测试，例如
-python -m pytest test_api_auth.py test_fixed_tp_sl_backtest.py
+# 从项目根目录检查 Python 源码语法
+python -m compileall -q backend/app tradekit/app scripts
 
-# 从 frontend 目录构建
+# 从 frontend 目录检查并构建
+npm run lint
 npm run build
 ```
 
-部分测试和研究脚本需要数据库、网络或历史行情，运行前检查各自依赖。
+启动服务后可通过 `/health` 和 `/docs` 检查健康状态及接口；需要交易权限的验证应先在模拟盘进行。
 
 ## 代码排版与仓库维护
 
@@ -223,7 +223,7 @@ npm run lint
 npm run build
 ```
 
-仓库保留源码、测试、迁移、依赖锁文件和示例配置。本地环境变量、通知凭据、数据库备份、行情快照、回测输出、进程状态、构建压缩包、持仓归属数据及缓存由 `.gitignore` 排除；需要共享配置时提交脱敏的示例文件。
+仓库保留运行源码、迁移、依赖锁文件、运维工具和示例配置，已清理测试文件、独立研究实验、过时示例及一次性修补脚本。本地环境变量、通知凭据、数据库备份、行情快照、回测输出、进程状态、构建压缩包、持仓归属数据及缓存由 `.gitignore` 排除；需要共享配置时提交脱敏的示例文件。
 
 部署上传脚本只打包 Git 已跟踪的文件，新增源码需先 `git add`。服务器同步会保留自己的通知配置、环境文件和 TradeKit 运行数据。首次部署必须自行创建通知配置文件，不能依赖仓库或镜像携带本地凭据。
 

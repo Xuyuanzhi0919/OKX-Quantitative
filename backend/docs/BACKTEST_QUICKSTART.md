@@ -100,9 +100,9 @@ http://localhost:8000/docs#/Backtest
 - **Win Rate (胜率)**: 盈利交易占比
 - **Total Trades (总交易数)**: 完成的交易次数
 
-## Python示例脚本
+## 接口调用
 
-查看 `backend/examples/run_backtest.py` 获取完整示例。
+启动后端后访问 `http://localhost:8000/docs`，在“回测系统”分组查看当前请求参数、认证要求和返回结构。独立示例脚本已清理。
 
 ## 前端界面（开发中）
 
