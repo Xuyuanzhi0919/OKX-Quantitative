@@ -86,3 +86,8 @@ frontend/dist.zip
 okk_release_*.tar.gz
 /backtest_*.json
 backend/high_risk_*_equity.html
+
+# Keep README documents public; other Markdown stays local
+*.[mM][dD]
+*.markdown
+![rR][eE][aA][dD][mM][eE]*.[mM][dD]
