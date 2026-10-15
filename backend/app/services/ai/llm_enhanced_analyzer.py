@@ -2,6 +2,7 @@
 LLM增强的AI分析器
 结合规则引擎、技术分析和DeepSeek大语言模型
 """
+
 from typing import Dict, Optional, List
 from decimal import Decimal
 from loguru import logger
@@ -32,7 +33,7 @@ class LLMEnhancedAnalyzer:
         current_price: Decimal,
         ticker_data: Dict,
         use_llm: bool = True,
-        use_news: bool = True
+        use_news: bool = True,
     ) -> Dict:
         """
         使用LLM增强的市场分析
@@ -51,11 +52,11 @@ class LLMEnhancedAnalyzer:
 
         # 1. 获取基础规则分析
         rule_result = await self.rule_analyzer.analyze_market(
-            symbol=symbol,
-            current_price=current_price,
-            ticker_data=ticker_data
+            symbol=symbol, current_price=current_price, ticker_data=ticker_data
         )
-        logger.info(f"规则分析完成: {rule_result['action']} (信心度: {rule_result['confidence']*100:.1f}%)")
+        logger.info(
+            f"规则分析完成: {rule_result['action']} (信心度: {rule_result['confidence']*100:.1f}%)"
+        )
 
         # 如果不使用LLM,直接返回规则分析结果
         if not use_llm:
@@ -66,11 +67,9 @@ class LLMEnhancedAnalyzer:
         if use_news:
             try:
                 news_list = await self.news_fetcher.fetch_all_news(
-                    symbol=symbol,
-                    limit=5,
-                    use_mock=False  # 使用真实新闻
+                    symbol=symbol, limit=5, use_mock=False  # 使用真实新闻
                 )
-                news_headlines = [news['title'] for news in news_list[:5]]
+                news_headlines = [news["title"] for news in news_list[:5]]
                 logger.info(f"获取到 {len(news_headlines)} 条新闻标题")
             except Exception as e:
                 logger.warning(f"新闻获取失败: {e}, 继续分析")
@@ -85,10 +84,10 @@ class LLMEnhancedAnalyzer:
         # 4. 调用LLM进行市场情绪分析
         try:
             # 提取市场数据
-            price_change_24h = float(ticker_data.get('sodUtc8', '0'))
-            volume_24h = float(ticker_data.get('volCcy24h', '0'))
-            high_24h = float(ticker_data.get('high24h', '0'))
-            low_24h = float(ticker_data.get('low24h', '0'))
+            price_change_24h = float(ticker_data.get("sodUtc8", "0"))
+            volume_24h = float(ticker_data.get("volCcy24h", "0"))
+            high_24h = float(ticker_data.get("high24h", "0"))
+            low_24h = float(ticker_data.get("low24h", "0"))
 
             # LLM情绪分析
             logger.info("调用DeepSeek进行情绪分析...")
@@ -96,9 +95,11 @@ class LLMEnhancedAnalyzer:
                 symbol=symbol,
                 current_price=current_price,
                 price_change_24h=price_change_24h,
-                news_headlines=news_headlines if news_headlines else None
+                news_headlines=news_headlines if news_headlines else None,
             )
-            logger.success(f"LLM情绪分析完成: {sentiment_result['sentiment']} (置信度: {sentiment_result['confidence']*100:.1f}%)")
+            logger.success(
+                f"LLM情绪分析完成: {sentiment_result['sentiment']} (置信度: {sentiment_result['confidence']*100:.1f}%)"
+            )
 
             # 5. LLM交易决策分析
             logger.info("调用DeepSeek进行交易决策分析...")
@@ -106,16 +107,18 @@ class LLMEnhancedAnalyzer:
                 symbol=symbol,
                 current_price=current_price,
                 position_info=None,  # 可以传入当前持仓信息
-                market_sentiment=sentiment_result
+                market_sentiment=sentiment_result,
             )
-            logger.success(f"LLM决策分析完成: {decision_result['action']} (置信度: {decision_result['confidence']*100:.1f}%)")
+            logger.success(
+                f"LLM决策分析完成: {decision_result['action']} (置信度: {decision_result['confidence']*100:.1f}%)"
+            )
 
             # 6. 合并LLM结果
             llm_result = {
-                'sentiment': sentiment_result,
-                'decision': decision_result,
-                'news_headlines': news_headlines,
-                'timestamp': datetime.now().isoformat()
+                "sentiment": sentiment_result,
+                "decision": decision_result,
+                "news_headlines": news_headlines,
+                "timestamp": datetime.now().isoformat(),
             }
 
             # 缓存LLM结果
@@ -124,7 +127,9 @@ class LLMEnhancedAnalyzer:
             # 7. 合并规则分析和LLM分析
             final_result = self._merge_analysis(rule_result, llm_result)
 
-            logger.success(f"LLM增强分析完成: {final_result['action']} (综合信心度: {final_result['confidence']*100:.1f}%)")
+            logger.success(
+                f"LLM增强分析完成: {final_result['action']} (综合信心度: {final_result['confidence']*100:.1f}%)"
+            )
             return final_result
 
         except Exception as e:
@@ -149,20 +154,22 @@ class LLMEnhancedAnalyzer:
             合并后的分析结果
         """
         # 提取LLM决策
-        llm_decision = llm_result.get('decision', {})
-        llm_action = llm_decision.get('action', 'hold')
-        llm_confidence = llm_decision.get('confidence', 0.5)
+        llm_decision = llm_result.get("decision", {})
+        llm_action = llm_decision.get("action", "hold")
+        llm_confidence = llm_decision.get("confidence", 0.5)
 
         # 提取LLM情绪
-        llm_sentiment = llm_result.get('sentiment', {})
-        sentiment_type = llm_sentiment.get('sentiment', 'neutral')
-        sentiment_confidence = llm_sentiment.get('confidence', 0.5)
+        llm_sentiment = llm_result.get("sentiment", {})
+        sentiment_type = llm_sentiment.get("sentiment", "neutral")
+        sentiment_confidence = llm_sentiment.get("confidence", 0.5)
 
         # 规则分析结果
-        rule_action = rule_result['action']
-        rule_confidence = rule_result['confidence']
+        rule_action = rule_result["action"]
+        rule_confidence = rule_result["confidence"]
 
-        logger.info(f"合并分析 - 规则: {rule_action}({rule_confidence*100:.1f}%), LLM: {llm_action}({llm_confidence*100:.1f}%), 情绪: {sentiment_type}")
+        logger.info(
+            f"合并分析 - 规则: {rule_action}({rule_confidence*100:.1f}%), LLM: {llm_action}({llm_confidence*100:.1f}%), 情绪: {sentiment_type}"
+        )
 
         # 决策合并逻辑
         final_action = rule_action
@@ -175,7 +182,9 @@ class LLMEnhancedAnalyzer:
             final_confidence = min(final_confidence * 1.2, 0.95)  # 提升20%,最高95%
 
             reason = f"规则分析和LLM分析均建议{final_action}, 信心度提升"
-            logger.success(f"✅ 分析一致: {final_action}, 信心度提升至 {final_confidence*100:.1f}%")
+            logger.success(
+                f"✅ 分析一致: {final_action}, 信心度提升至 {final_confidence*100:.1f}%"
+            )
 
         # 2. 两者建议冲突 -> 降低信心度,倾向保守
         else:
@@ -191,56 +200,56 @@ class LLMEnhancedAnalyzer:
                     reason = f"LLM分析信心度更高({llm_confidence*100:.1f}% vs {rule_confidence*100:.1f}%), 采用LLM建议但降低信心度"
             else:
                 # 信心度相近,采用保守策略
-                final_action = 'hold'
+                final_action = "hold"
                 final_confidence = (rule_confidence + llm_confidence) / 2 * 0.7
                 reason = f"规则建议{rule_action}, LLM建议{llm_action}, 采用保守策略hold"
 
-            logger.warning(f"⚠️ 分析冲突: 规则={rule_action}, LLM={llm_action}, 最终={final_action} ({final_confidence*100:.1f}%)")
+            logger.warning(
+                f"⚠️ 分析冲突: 规则={rule_action}, LLM={llm_action}, 最终={final_action} ({final_confidence*100:.1f}%)"
+            )
 
         # 3. 结合情绪分析微调
-        if sentiment_type == 'bullish' and final_action in ['buy', 'add']:
+        if sentiment_type == "bullish" and final_action in ["buy", "add"]:
             final_confidence = min(final_confidence * 1.1, 0.95)  # 提升10%
             reason += ", 市场情绪看涨进一步增强信心"
-        elif sentiment_type == 'bearish' and final_action in ['sell', 'reduce']:
+        elif sentiment_type == "bearish" and final_action in ["sell", "reduce"]:
             final_confidence = min(final_confidence * 1.1, 0.95)
             reason += ", 市场情绪看跌进一步增强信心"
-        elif sentiment_type == 'bullish' and final_action in ['sell', 'reduce']:
+        elif sentiment_type == "bullish" and final_action in ["sell", "reduce"]:
             final_confidence *= 0.9  # 降低10%
             reason += ", 但市场情绪看涨,降低卖出信心"
-        elif sentiment_type == 'bearish' and final_action in ['buy', 'add']:
+        elif sentiment_type == "bearish" and final_action in ["buy", "add"]:
             final_confidence *= 0.9
             reason += ", 但市场情绪看跌,降低买入信心"
 
         # 构建最终结果
         merged_result = {
-            'action': final_action,
-            'confidence': final_confidence,
-            'reason': reason,
-            'risk_level': self._calculate_risk_level(final_confidence, sentiment_type),
-
+            "action": final_action,
+            "confidence": final_confidence,
+            "reason": reason,
+            "risk_level": self._calculate_risk_level(final_confidence, sentiment_type),
             # 详细分析信息
-            'details': {
-                'rule_analysis': {
-                    'action': rule_action,
-                    'confidence': rule_confidence,
-                    'reason': rule_result.get('reason', '')
+            "details": {
+                "rule_analysis": {
+                    "action": rule_action,
+                    "confidence": rule_confidence,
+                    "reason": rule_result.get("reason", ""),
                 },
-                'llm_analysis': {
-                    'action': llm_action,
-                    'confidence': llm_confidence,
-                    'reason': llm_decision.get('reason', ''),
-                    'key_points': llm_decision.get('key_points', [])
+                "llm_analysis": {
+                    "action": llm_action,
+                    "confidence": llm_confidence,
+                    "reason": llm_decision.get("reason", ""),
+                    "key_points": llm_decision.get("key_points", []),
                 },
-                'sentiment_analysis': {
-                    'sentiment': sentiment_type,
-                    'confidence': sentiment_confidence,
-                    'factors': llm_sentiment.get('factors', [])
+                "sentiment_analysis": {
+                    "sentiment": sentiment_type,
+                    "confidence": sentiment_confidence,
+                    "factors": llm_sentiment.get("factors", []),
                 },
-                'news_headlines': llm_result.get('news_headlines', [])
+                "news_headlines": llm_result.get("news_headlines", []),
             },
-
             # 仓位建议 (如果有)
-            'position_advice': rule_result.get('position_advice', {})
+            "position_advice": rule_result.get("position_advice", {}),
         }
 
         return merged_result
@@ -257,17 +266,17 @@ class LLMEnhancedAnalyzer:
             风险等级: low, medium, high
         """
         if confidence >= 0.8:
-            return 'low'
+            return "low"
         elif confidence >= 0.6:
-            return 'medium'
+            return "medium"
         else:
-            return 'high'
+            return "high"
 
     def _get_cached_llm_result(self, cache_key: str) -> Optional[Dict]:
         """获取缓存的LLM结果"""
         if cache_key in self.llm_cache:
             cached_data = self.llm_cache[cache_key]
-            cached_time = datetime.fromisoformat(cached_data['timestamp'])
+            cached_time = datetime.fromisoformat(cached_data["timestamp"])
 
             # 检查缓存是否过期
             if datetime.now() - cached_time < self.cache_duration:
@@ -286,8 +295,7 @@ class LLMEnhancedAnalyzer:
         if len(self.llm_cache) > 100:
             # 删除最旧的缓存
             oldest_key = min(
-                self.llm_cache.keys(),
-                key=lambda k: self.llm_cache[k]['timestamp']
+                self.llm_cache.keys(), key=lambda k: self.llm_cache[k]["timestamp"]
             )
             del self.llm_cache[oldest_key]
 
@@ -305,37 +313,23 @@ class LLMEnhancedAnalyzer:
         try:
             # 获取新闻
             news_list = await self.news_fetcher.fetch_all_news(
-                symbol=symbol,
-                limit=limit,
-                use_mock=False
+                symbol=symbol, limit=limit, use_mock=False
             )
 
             if not news_list:
-                return {
-                    'summary': '暂无相关新闻',
-                    'news_count': 0,
-                    'news': []
-                }
+                return {"summary": "暂无相关新闻", "news_count": 0, "news": []}
 
             # 提取新闻标题
-            headlines = [news['title'] for news in news_list]
+            headlines = [news["title"] for news in news_list]
 
             # 调用LLM总结新闻
             summary = await self.llm_client.summarize_news(headlines)
 
-            return {
-                'summary': summary,
-                'news_count': len(news_list),
-                'news': news_list
-            }
+            return {"summary": summary, "news_count": len(news_list), "news": news_list}
 
         except Exception as e:
             logger.error(f"新闻总结失败: {e}")
-            return {
-                'summary': f'新闻总结失败: {str(e)}',
-                'news_count': 0,
-                'news': []
-            }
+            return {"summary": f"新闻总结失败: {str(e)}", "news_count": 0, "news": []}
 
 
 # 全局LLM增强分析器实例

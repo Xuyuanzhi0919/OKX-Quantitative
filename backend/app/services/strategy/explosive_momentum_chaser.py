@@ -4,6 +4,7 @@ High-risk strategy. It looks for one-hour volume-backed breakouts in liquid
 altcoin swaps, only opens longs when the BTC short-term filter is positive, and
 exits by fixed take-profit, hard stop, or fixed holding time.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,7 +56,14 @@ class ExplosivePosition:
 class ExplosiveMomentumChaserStrategy(StrategyBase):
     """One-hour breakout continuation strategy with BTC filter and hard stop."""
 
-    def __init__(self, strategy_id: int, exchange, symbol: str, parameters: Dict, user_id: int = 1):
+    def __init__(
+        self,
+        strategy_id: int,
+        exchange,
+        symbol: str,
+        parameters: Dict,
+        user_id: int = 1,
+    ):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
         p = parameters or {}
         self._self_driven = True
@@ -66,7 +74,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         self.timeframe_seconds = TIMEFRAME_SECONDS[self.timeframe]
         self.lookback_1h_bars = max(1, math.ceil(60 * 60 / self.timeframe_seconds))
         self.lookback_4h_bars = max(1, math.ceil(4 * 60 * 60 / self.timeframe_seconds))
-        self.lookback_24h_bars = max(1, math.ceil(24 * 60 * 60 / self.timeframe_seconds))
+        self.lookback_24h_bars = max(
+            1, math.ceil(24 * 60 * 60 / self.timeframe_seconds)
+        )
 
         self.rank_feature = str(p.get("rank_feature", "ret_1h"))
         if self.rank_feature not in {"ret_1h", "ret_4h", "continuation"}:
@@ -82,7 +92,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         self.max_vol_ratio = self._optional_positive_float(p.get("max_vol_ratio"))
         self.min_pre_3h = float(p.get("min_pre_3h", -1.0))
         self.max_upper_wick = self._optional_positive_float(p.get("max_upper_wick"))
-        self.min_close_location = max(0.0, min(float(p.get("min_close_location", 0.0)), 1.0))
+        self.min_close_location = max(
+            0.0, min(float(p.get("min_close_location", 0.0)), 1.0)
+        )
         self.min_btc_4h = self._optional_float(p.get("min_btc_4h"))
         self.max_btc_4h = self._optional_positive_float(p.get("max_btc_4h"))
         self.min_btc_24h = self._optional_float(p.get("min_btc_24h"))
@@ -95,7 +107,11 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         self.stop_loss_pct = float(p.get("stop_loss_pct", 0.08))
         raw_take_profit_pct = p.get("take_profit_pct", 0.10)
         try:
-            self.take_profit_pct = float(raw_take_profit_pct) if raw_take_profit_pct not in (None, "", 0, "0") else None
+            self.take_profit_pct = (
+                float(raw_take_profit_pct)
+                if raw_take_profit_pct not in (None, "", 0, "0")
+                else None
+            )
         except (TypeError, ValueError):
             self.take_profit_pct = None
         if self.take_profit_pct is not None and self.take_profit_pct <= 0:
@@ -108,16 +124,24 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         if self.margin_mode not in {"isolated", "cross"}:
             self.margin_mode = "isolated"
         self.max_position_usd = float(p.get("max_position_usd", 300))
-        self.max_total_position_usd = float(p.get("max_total_position_usd", self.max_position_usd))
-        self.balance_usage_fraction = max(0.05, min(float(p.get("balance_usage_fraction", 0.75)), 1.0))
+        self.max_total_position_usd = float(
+            p.get("max_total_position_usd", self.max_position_usd)
+        )
+        self.balance_usage_fraction = max(
+            0.05, min(float(p.get("balance_usage_fraction", 0.75)), 1.0)
+        )
         self.max_open_positions = max(1, min(int(p.get("max_open_positions", 1)), 2))
         self.loop_interval_seconds = max(15, int(p.get("loop_interval_seconds", 60)))
         self.cooldown_seconds = max(0, int(p.get("cooldown_seconds", 2 * 3600)))
         self.observe_first_scan = bool(p.get("observe_first_scan", True))
         self.use_attached_tp_sl = bool(p.get("use_attached_tp_sl", True))
         self.use_volume_profile_filter = bool(p.get("use_volume_profile_filter", False))
-        self.volume_profile_hours = max(4, min(int(p.get("volume_profile_hours", 8)), 12))
-        self.volume_profile_bins = max(20, min(int(p.get("volume_profile_bins", 48)), 100))
+        self.volume_profile_hours = max(
+            4, min(int(p.get("volume_profile_hours", 8)), 12)
+        )
+        self.volume_profile_bins = max(
+            20, min(int(p.get("volume_profile_bins", 48)), 100)
+        )
         self.volume_profile_level = str(p.get("volume_profile_level", "poc")).lower()
         if self.volume_profile_level not in {"poc", "vah"}:
             self.volume_profile_level = "poc"
@@ -158,7 +182,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         await self._restore_exchange_positions()
         self.is_running = True
         self._runner_task = asyncio.create_task(self._run_loop())
-        take_profit_label = f"{self.take_profit_pct:.2%}" if self.take_profit_pct is not None else "off"
+        take_profit_label = (
+            f"{self.take_profit_pct:.2%}" if self.take_profit_pct is not None else "off"
+        )
         logger.info(
             f"策略 {self.strategy_id} 爆量急拉追涨已启动: signal={self.min_signal:.2%}, "
             f"timeframe={self.timeframe}, hold={self.hold_hours}h, "
@@ -174,11 +200,13 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 db.query(StrategyEvent)
                 .filter(
                     StrategyEvent.strategy_id == self.strategy_id,
-                    StrategyEvent.event_type.in_([
-                        "open_position",
-                        "close_position",
-                        "external_close_unresolved",
-                    ]),
+                    StrategyEvent.event_type.in_(
+                        [
+                            "open_position",
+                            "close_position",
+                            "external_close_unresolved",
+                        ]
+                    ),
                 )
                 .order_by(StrategyEvent.created_at.asc(), StrategyEvent.id.asc())
                 .all()
@@ -236,11 +264,13 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 db.query(StrategyEvent)
                 .filter(
                     StrategyEvent.strategy_id == self.strategy_id,
-                    StrategyEvent.event_type.in_([
-                        "open_position",
-                        "close_position",
-                        "external_close_unresolved",
-                    ]),
+                    StrategyEvent.event_type.in_(
+                        [
+                            "open_position",
+                            "close_position",
+                            "external_close_unresolved",
+                        ]
+                    ),
                 )
                 .order_by(StrategyEvent.created_at.asc(), StrategyEvent.id.asc())
                 .all()
@@ -252,7 +282,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 if not symbol:
                     continue
                 if event.event_type == "open_position":
-                    fees[symbol] = fees.get(symbol, 0.0) + self._safe_float(data.get("entry_fee"))
+                    fees[symbol] = fees.get(symbol, 0.0) + self._safe_float(
+                        data.get("entry_fee")
+                    )
                 else:
                     fees.pop(symbol, None)
             return fees
@@ -268,7 +300,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         try:
             exchange_positions = await self.exchange.get_positions(inst_type="SWAP")
         except Exception as exc:
-            raise RuntimeError(f"恢复交易所持仓失败，已阻止策略启动以避免重复开仓: {exc}") from exc
+            raise RuntimeError(
+                f"恢复交易所持仓失败，已阻止策略启动以避免重复开仓: {exc}"
+            ) from exc
 
         restored = {}
         exchange_unrealized = 0.0
@@ -278,9 +312,13 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 continue
             raw_qty = self._safe_float(item.get("pos"))
             pos_side = str(item.get("posSide") or "net").lower()
-            is_long = (pos_side == "long" and raw_qty > 0) or (pos_side == "net" and raw_qty > 0)
+            is_long = (pos_side == "long" and raw_qty > 0) or (
+                pos_side == "net" and raw_qty > 0
+            )
             if not is_long:
-                logger.warning(f"[{symbol}] 历史策略记录为多仓，但交易所方向不匹配，跳过接管")
+                logger.warning(
+                    f"[{symbol}] 历史策略记录为多仓，但交易所方向不匹配，跳过接管"
+                )
                 continue
 
             info = await self._instrument(symbol)
@@ -288,7 +326,11 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             current = self._safe_float(item.get("markPx") or item.get("last")) or entry
             opened_ms = self._safe_float(item.get("cTime"))
             stop_px = entry * (1 - self.stop_loss_pct)
-            take_profit_px = entry * (1 + self.take_profit_pct) if self.take_profit_pct is not None else None
+            take_profit_px = (
+                entry * (1 + self.take_profit_pct)
+                if self.take_profit_pct is not None
+                else None
+            )
             restored[symbol] = ExplosivePosition(
                 symbol=symbol,
                 qty=abs(raw_qty),
@@ -306,7 +348,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         self.positions = restored
         self._unrealized_pnl = exchange_unrealized
         if restored:
-            details = ", ".join(f"{symbol} {pos.qty:g}张" for symbol, pos in restored.items())
+            details = ", ".join(
+                f"{symbol} {pos.qty:g}张" for symbol, pos in restored.items()
+            )
             logger.warning(f"策略 {self.strategy_id} 已从交易所恢复真实持仓: {details}")
             self._log_event(
                 "position_restored",
@@ -359,7 +403,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 self.last_error_at = time.time()
                 self.last_error_message = str(exc)
                 logger.error(f"爆量急拉追涨循环异常: {exc}")
-                self._log_event("runtime_error", "爆量急拉追涨循环异常", str(exc), level="error")
+                self._log_event(
+                    "runtime_error", "爆量急拉追涨循环异常", str(exc), level="error"
+                )
                 await self._notify_android_push(
                     "爆量急拉策略异常",
                     str(exc),
@@ -387,7 +433,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         tickers = await self.exchange.get_tickers("SWAP")
         if not await self._market_filter_ok():
             self._last_scan_candle_ts = scan_candle_ts
-            self._publish_status(f"BTC/ETH市场过滤未通过，跳过本根{self.timeframe} K线", candidates=[])
+            self._publish_status(
+                f"BTC/ETH市场过滤未通过，跳过本根{self.timeframe} K线", candidates=[]
+            )
             return
 
         candidates = await self._rank_candidates(tickers)
@@ -399,7 +447,12 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         )
         if self.observe_first_scan and not self._has_completed_first_scan:
             self._has_completed_first_scan = True
-            self._log_event("observe", "爆量急拉首轮观察", "首轮扫描只观察，不开仓", data={"candidates": candidates[:5]})
+            self._log_event(
+                "observe",
+                "爆量急拉首轮观察",
+                "首轮扫描只观察，不开仓",
+                data={"candidates": candidates[:5]},
+            )
             if candidates:
                 await self._notify_signal(candidates[0], observe=True)
             return
@@ -413,7 +466,10 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             symbol = item["symbol"]
             if symbol in self.positions:
                 continue
-            if time.time() - self._last_trade_at.get(symbol, 0.0) < self.cooldown_seconds:
+            if (
+                time.time() - self._last_trade_at.get(symbol, 0.0)
+                < self.cooldown_seconds
+            ):
                 continue
             await self._open_position(symbol, item)
 
@@ -483,9 +539,13 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         rejections = []
         market_pump_count = 0
         self._last_selection_reason = None
-        for liquidity_rank, (_, symbol, last) in enumerate(liquid[: self.universe_size], start=1):
+        for liquidity_rank, (_, symbol, last) in enumerate(
+            liquid[: self.universe_size], start=1
+        ):
             try:
-                candles = await self._load_candles(symbol, limit=min(300, max(32, self.lookback_4h_bars + 25)))
+                candles = await self._load_candles(
+                    symbol, limit=min(300, max(32, self.lookback_4h_bars + 25))
+                )
                 signal, rejection = self._evaluate_candidate(symbol, candles, last)
                 if signal:
                     signal["liquidity_rank"] = liquidity_rank
@@ -497,12 +557,14 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                     market_pump_count += int(bool(rejection.get("base_market_pump")))
             except Exception as exc:
                 logger.debug(f"[{symbol}] 爆量候选计算失败: {exc}")
-                rejections.append({
-                    "symbol": symbol,
-                    "liquidity_rank": liquidity_rank,
-                    "reason": "calculation_error",
-                    "reason_text": "候选计算失败",
-                })
+                rejections.append(
+                    {
+                        "symbol": symbol,
+                        "liquidity_rank": liquidity_rank,
+                        "reason": "calculation_error",
+                        "reason_text": "候选计算失败",
+                    }
+                )
             await asyncio.sleep(0.02)
 
         self._last_rejections = sorted(
@@ -511,7 +573,10 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             reverse=True,
         )
         self._last_market_snapshot["market_pump_count"] = market_pump_count
-        if self.max_market_pumps is not None and market_pump_count > self.max_market_pumps:
+        if (
+            self.max_market_pumps is not None
+            and market_pump_count > self.max_market_pumps
+        ):
             self._last_selection_reason = {
                 "reason": "market_too_crowded",
                 "reason_text": "同时爆量币数量超过上限",
@@ -526,7 +591,10 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 "reason_text": "没有币种通过基础信号过滤",
             }
             return []
-        if len(by_ret_1h) > 1 and by_ret_1h[0]["ret_1h"] - by_ret_1h[1]["ret_1h"] < self.min_gap:
+        if (
+            len(by_ret_1h) > 1
+            and by_ret_1h[0]["ret_1h"] - by_ret_1h[1]["ret_1h"] < self.min_gap
+        ):
             self._last_selection_reason = {
                 "reason": "insufficient_lead_gap",
                 "reason_text": "第一候选与第二候选的涨幅差不足",
@@ -538,7 +606,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             return []
         candidates.sort(key=lambda item: item["score"], reverse=True)
         if self.use_volume_profile_filter:
-            accepted, profile_data = await self._volume_profile_acceptance(candidates[0])
+            accepted, profile_data = await self._volume_profile_acceptance(
+                candidates[0]
+            )
             candidates[0]["volume_profile"] = profile_data
             if not accepted:
                 reason = str(profile_data.get("reason") or "成交量分布过滤未通过")
@@ -593,7 +663,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
 
         return volume_contracts
 
-    def _candidate_signal(self, symbol: str, candles: List[Dict], last: float) -> Optional[Dict]:
+    def _candidate_signal(
+        self, symbol: str, candles: List[Dict], last: float
+    ) -> Optional[Dict]:
         signal, _ = self._evaluate_candidate(symbol, candles, last)
         return signal
 
@@ -622,9 +694,15 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         base_4h_close = candles[-self.lookback_4h_bars - 1]["close"]
         pre_signal_close = candles[-self.lookback_1h_bars - 1]["close"]
         pre_3h = pre_signal_close / base_4h_close - 1 if base_4h_close > 0 else 0.0
-        upper_wick = max(0.0, c["high"] - max(c["open"], c["close"])) / c["open"] if c["open"] > 0 else 1.0
+        upper_wick = (
+            max(0.0, c["high"] - max(c["open"], c["close"])) / c["open"]
+            if c["open"] > 0
+            else 1.0
+        )
         candle_range = c["high"] - c["low"]
-        close_location = (c["close"] - c["low"]) / candle_range if candle_range > 0 else 0.5
+        close_location = (
+            (c["close"] - c["low"]) / candle_range if candle_range > 0 else 0.5
+        )
         if self.rank_feature == "ret_4h":
             score = ret_4h
         elif self.rank_feature == "continuation":
@@ -655,23 +733,37 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             return None, result
 
         if ret_1h < self.min_signal:
-            return rejected("below_min_signal", "涨幅未达到最低信号阈值", self.min_signal)
+            return rejected(
+                "below_min_signal", "涨幅未达到最低信号阈值", self.min_signal
+            )
         if vol_ratio < self.min_vol_ratio:
-            return rejected("below_min_vol_ratio", "量比未达到最低阈值", self.min_vol_ratio)
+            return rejected(
+                "below_min_vol_ratio", "量比未达到最低阈值", self.min_vol_ratio
+            )
         if self.max_signal is not None and ret_1h > self.max_signal:
             return rejected("above_max_signal", "涨幅超过过热上限", self.max_signal)
         if self.max_ret_4h is not None and ret_4h > self.max_ret_4h:
-            return rejected("above_max_ret_4h", "4小时涨幅超过过热上限", self.max_ret_4h)
+            return rejected(
+                "above_max_ret_4h", "4小时涨幅超过过热上限", self.max_ret_4h
+            )
         if self.max_ret_24h is not None and ret_24h > self.max_ret_24h:
-            return rejected("above_max_ret_24h", "24小时涨幅超过过热上限", self.max_ret_24h)
+            return rejected(
+                "above_max_ret_24h", "24小时涨幅超过过热上限", self.max_ret_24h
+            )
         if self.max_vol_ratio is not None and vol_ratio > self.max_vol_ratio:
-            return rejected("above_max_vol_ratio", "量比超过过热上限", self.max_vol_ratio)
+            return rejected(
+                "above_max_vol_ratio", "量比超过过热上限", self.max_vol_ratio
+            )
         if pre_3h < self.min_pre_3h:
             return rejected("below_min_pre_3h", "信号前3小时涨幅不足", self.min_pre_3h)
         if self.max_upper_wick is not None and upper_wick > self.max_upper_wick:
-            return rejected("above_max_upper_wick", "上影线超过上限", self.max_upper_wick)
+            return rejected(
+                "above_max_upper_wick", "上影线超过上限", self.max_upper_wick
+            )
         if close_location < self.min_close_location:
-            return rejected("below_min_close_location", "收盘位置低于要求", self.min_close_location)
+            return rejected(
+                "below_min_close_location", "收盘位置低于要求", self.min_close_location
+            )
         return {
             **metrics,
             "signal_high": c["high"],
@@ -692,7 +784,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         signal_high = self._safe_float(signal.get("signal_high"))
         required_price = profile[self.volume_profile_level]
         pullback = max(0.0, 1 - current_price / signal_high) if signal_high > 0 else 1.0
-        accepted = current_price >= required_price and pullback <= self.max_high_pullback_pct
+        accepted = (
+            current_price >= required_price and pullback <= self.max_high_pullback_pct
+        )
         reason = (
             "通过POC成交量分布确认"
             if accepted
@@ -793,10 +887,20 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         info = await self._instrument(symbol)
         price = float(signal["last"])
         stop_px = price * (1 - self.stop_loss_pct)
-        take_profit_px = price * (1 + self.take_profit_pct) if self.take_profit_pct is not None else None
+        take_profit_px = (
+            price * (1 + self.take_profit_pct)
+            if self.take_profit_pct is not None
+            else None
+        )
         qty = await self._calc_contract_qty(price, info)
         if qty <= 0:
-            self._log_event("skip", "爆量急拉跳过开仓", f"{symbol} 计算下单数量为0", level="warning", data=signal)
+            self._log_event(
+                "skip",
+                "爆量急拉跳过开仓",
+                f"{symbol} 计算下单数量为0",
+                level="warning",
+                data=signal,
+            )
             return
 
         await self._ensure_leverage(symbol)
@@ -809,7 +913,8 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             pos_side=await self._pos_side(),
             attach_algo_ords=(
                 self._attached_tp_sl(take_profit_px, stop_px)
-                if self.use_attached_tp_sl else None
+                if self.use_attached_tp_sl
+                else None
             ),
         )
         detail = await self._load_order_detail(symbol, order)
@@ -828,7 +933,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         )
         self.positions[symbol] = pos
         self._last_trade_at[symbol] = time.time()
-        await self._save_symbol_order_to_db(symbol, detail, "buy", "market", None, Decimal(str(qty)))
+        await self._save_symbol_order_to_db(
+            symbol, detail, "buy", "market", None, Decimal(str(qty))
+        )
         self._log_event(
             "open_position",
             "爆量急拉开多",
@@ -874,15 +981,21 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 continue
             try:
                 exchange_positions = await self.exchange.get_positions(inst_id=symbol)
-                exchange_position = next((
-                    item for item in exchange_positions
-                    if str(item.get("instId") or "") == symbol
-                    and str(item.get("posSide") or "net") in {"long", "net"}
-                    and self._safe_float(item.get("pos")) > 0
-                ), None)
+                exchange_position = next(
+                    (
+                        item
+                        for item in exchange_positions
+                        if str(item.get("instId") or "") == symbol
+                        and str(item.get("posSide") or "net") in {"long", "net"}
+                        and self._safe_float(item.get("pos")) > 0
+                    ),
+                    None,
+                )
                 has_position = exchange_position is not None
             except Exception as exc:
-                logger.warning(f"[{symbol}] 获取交易所持仓失败，保留本地持仓等待下轮核对: {exc}")
+                logger.warning(
+                    f"[{symbol}] 获取交易所持仓失败，保留本地持仓等待下轮核对: {exc}"
+                )
                 continue
             if not has_position:
                 await self._reconcile_exchange_close(symbol)
@@ -892,7 +1005,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             # the exchange so a later exit never closes only the stale subset.
             exchange_qty = abs(self._safe_float(exchange_position.get("pos")))
             if 0 < exchange_qty < pos.qty:
-                await self._reconcile_partial_exchange_close(symbol, pos.qty, exchange_qty)
+                await self._reconcile_partial_exchange_close(
+                    symbol, pos.qty, exchange_qty
+                )
             pos.qty = exchange_qty
             exchange_entry = self._safe_float(exchange_position.get("avgPx"))
             if exchange_entry > 0:
@@ -904,7 +1019,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                     else None
                 )
             try:
-                price = self._safe_float(exchange_position.get("markPx") or exchange_position.get("last"))
+                price = self._safe_float(
+                    exchange_position.get("markPx") or exchange_position.get("last")
+                )
                 if price <= 0:
                     ticker = await self.exchange.get_ticker(symbol)
                     price = self._safe_float(ticker.get("last"))
@@ -915,7 +1032,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 continue
             pos.current_price = price
             pos.highest_price = max(pos.highest_price, price)
-            self._unrealized_pnl = sum(self._position_pnl(item) for item in self.positions.values())
+            self._unrealized_pnl = sum(
+                self._position_pnl(item) for item in self.positions.values()
+            )
             elapsed = time.time() - pos.open_time
             if price <= pos.stop_px:
                 await self._close_position(symbol, "hard_stop")
@@ -951,7 +1070,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             gross_pnl = (exit_price - pos.entry_price) * pos.qty * pos.ct_val
         exit_fee = self._safe_float(detail.get("fee"))
         pnl = gross_pnl + pos.entry_fee + exit_fee
-        await self._save_symbol_order_to_db(symbol, detail, "sell", "market", None, Decimal(str(pos.qty)))
+        await self._save_symbol_order_to_db(
+            symbol, detail, "sell", "market", None, Decimal(str(pos.qty))
+        )
         await self._finalize_position(
             symbol,
             reason,
@@ -979,17 +1100,23 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         for close_order_id in str(order_id or "").split(","):
             normalized = close_order_id.strip()
             if normalized:
-                self._accounted_close_order_ids.setdefault(symbol, set()).add(normalized)
+                self._accounted_close_order_ids.setdefault(symbol, set()).add(
+                    normalized
+                )
         pos.current_price = exit_price
         self.realized_pnl += pnl
         self.total_trades += 1
         if pnl > 0:
             self._win_trades += 1
-        self.win_rate = self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        self.win_rate = (
+            self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        )
         self.record_trade_result(pnl)
         self._last_trade_at[symbol] = time.time()
         self.positions.pop(symbol, None)
-        self._unrealized_pnl = sum(self._position_pnl(item) for item in self.positions.values())
+        self._unrealized_pnl = sum(
+            self._position_pnl(item) for item in self.positions.values()
+        )
         self._log_event(
             "close_position",
             "爆量急拉平仓",
@@ -1031,7 +1158,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         self.realized_pnl += pnl
         self.runtime_realized_pnl += pnl
         self.daily_realized_pnl += pnl
-        self.runtime_equity_peak = max(self.runtime_equity_peak, self.runtime_realized_pnl)
+        self.runtime_equity_peak = max(
+            self.runtime_equity_peak, self.runtime_realized_pnl
+        )
         self.max_runtime_drawdown = max(
             self.max_runtime_drawdown,
             self.runtime_equity_peak - self.runtime_realized_pnl,
@@ -1063,8 +1192,14 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         reductions = []
         for detail in orders:
             order_id = str(detail.get("ordId") or "").strip()
-            fill_time = int(self._safe_float(detail.get("fillTime") or detail.get("uTime") or detail.get("cTime")))
-            fill_qty = self._safe_float(detail.get("accFillSz") or detail.get("fillSz") or detail.get("sz"))
+            fill_time = int(
+                self._safe_float(
+                    detail.get("fillTime") or detail.get("uTime") or detail.get("cTime")
+                )
+            )
+            fill_qty = self._safe_float(
+                detail.get("accFillSz") or detail.get("fillSz") or detail.get("sz")
+            )
             if (
                 str(detail.get("instId") or "") == symbol
                 and str(detail.get("side") or "").lower() == "sell"
@@ -1081,7 +1216,10 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         for _, detail, fill_qty, order_id in reductions:
             if captured_qty >= missing_qty - 1e-9:
                 break
-            fill_price = self._safe_float(detail.get("avgPx") or detail.get("fillPx")) or pos.current_price
+            fill_price = (
+                self._safe_float(detail.get("avgPx") or detail.get("fillPx"))
+                or pos.current_price
+            )
             raw_pnl = detail.get("pnl")
             gross_pnl = (
                 self._safe_float(raw_pnl)
@@ -1135,27 +1273,44 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
 
         opened_ms = int(pos.open_time * 1000)
         close_orders = [
-            item for item in orders
+            item
+            for item in orders
             if str(item.get("instId") or "") == symbol
             and str(item.get("side") or "").lower() == "sell"
-            and self._safe_float(item.get("accFillSz") or item.get("fillSz") or item.get("sz")) > 0
-            and int(self._safe_float(item.get("fillTime") or item.get("uTime") or item.get("cTime"))) >= opened_ms
-            and str(item.get("ordId") or "") not in self._accounted_close_order_ids.get(symbol, set())
+            and self._safe_float(
+                item.get("accFillSz") or item.get("fillSz") or item.get("sz")
+            )
+            > 0
+            and int(
+                self._safe_float(
+                    item.get("fillTime") or item.get("uTime") or item.get("cTime")
+                )
+            )
+            >= opened_ms
+            and str(item.get("ordId") or "")
+            not in self._accounted_close_order_ids.get(symbol, set())
         ]
         close_orders.sort(
-            key=lambda item: self._safe_float(item.get("fillTime") or item.get("uTime") or item.get("cTime")),
+            key=lambda item: self._safe_float(
+                item.get("fillTime") or item.get("uTime") or item.get("cTime")
+            ),
             reverse=True,
         )
         if close_orders:
             fills = []
             for detail in close_orders:
-                fill_qty = self._safe_float(detail.get("accFillSz") or detail.get("fillSz") or detail.get("sz"))
-                fill_price = self._safe_float(detail.get("avgPx") or detail.get("fillPx"))
+                fill_qty = self._safe_float(
+                    detail.get("accFillSz") or detail.get("fillSz") or detail.get("sz")
+                )
+                fill_price = self._safe_float(
+                    detail.get("avgPx") or detail.get("fillPx")
+                )
                 if fill_qty > 0 and fill_price > 0:
                     fills.append((detail, fill_qty, fill_price))
             total_fill_qty = sum(fill_qty for _, fill_qty, _ in fills)
             exit_price = (
-                sum(fill_qty * fill_price for _, fill_qty, fill_price in fills) / total_fill_qty
+                sum(fill_qty * fill_price for _, fill_qty, fill_price in fills)
+                / total_fill_qty
                 if total_fill_qty > 0
                 else pos.current_price
             )
@@ -1167,11 +1322,16 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                     if raw_pnl not in (None, "")
                     else (fill_price - pos.entry_price) * fill_qty * pos.ct_val
                 )
-            exit_fee = sum(self._safe_float(detail.get("fee")) for detail, _, _ in fills)
+            exit_fee = sum(
+                self._safe_float(detail.get("fee")) for detail, _, _ in fills
+            )
             pnl = gross_pnl + pos.entry_fee + exit_fee
             reason = (
                 "native_protection"
-                if any(detail.get("algoId") or detail.get("attachAlgoClOrdId") for detail, _, _ in fills)
+                if any(
+                    detail.get("algoId") or detail.get("attachAlgoClOrdId")
+                    for detail, _, _ in fills
+                )
                 else "external_close"
             )
             await self._finalize_position(
@@ -1181,13 +1341,17 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 pnl,
                 gross_pnl=gross_pnl,
                 exit_fee=exit_fee,
-                order_id=",".join(str(detail.get("ordId") or "") for detail, _, _ in fills),
+                order_id=",".join(
+                    str(detail.get("ordId") or "") for detail, _, _ in fills
+                ),
             )
             return
 
         self.positions.pop(symbol, None)
         self._last_trade_at[symbol] = time.time()
-        self._unrealized_pnl = sum(self._position_pnl(item) for item in self.positions.values())
+        self._unrealized_pnl = sum(
+            self._position_pnl(item) for item in self.positions.values()
+        )
         self._log_event(
             "external_close_unresolved",
             "爆量急拉外部平仓待核账",
@@ -1211,7 +1375,12 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 "high": float(item["h"]),
                 "low": float(item["l"]),
                 "close": float(item["c"]),
-                "volume": float(item.get("volCcyQuote") or item.get("volCcy") or item.get("vol") or 0),
+                "volume": float(
+                    item.get("volCcyQuote")
+                    or item.get("volCcy")
+                    or item.get("vol")
+                    or 0
+                ),
             }
             for item in raw
             if str(item.get("confirm", "1")) == "1"
@@ -1229,7 +1398,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         equity = total_eq or available
         if equity <= 0 or available <= 0:
             return 0.0
-        remaining_total_usd = max(0.0, self.max_total_position_usd - self._current_notional_usd())
+        remaining_total_usd = max(
+            0.0, self.max_total_position_usd - self._current_notional_usd()
+        )
         if remaining_total_usd <= 0:
             return 0.0
         notional = min(
@@ -1240,7 +1411,10 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         return self._round_qty(notional / (price * info["ct_val"]), info)
 
     def _current_notional_usd(self) -> float:
-        return sum(max(pos.current_price, pos.entry_price) * pos.qty * pos.ct_val for pos in self.positions.values())
+        return sum(
+            max(pos.current_price, pos.entry_price) * pos.qty * pos.ct_val
+            for pos in self.positions.values()
+        )
 
     def _position_pnl(self, pos: ExplosivePosition) -> float:
         return (pos.current_price - pos.entry_price) * pos.qty * pos.ct_val
@@ -1303,13 +1477,17 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             "slOrdPx": "-1",
         }
         if take_profit_px is not None:
-            protection.update({
-                "tpTriggerPx": str(round(take_profit_px, 12)),
-                "tpOrdPx": "-1",
-            })
+            protection.update(
+                {
+                    "tpTriggerPx": str(round(take_profit_px, 12)),
+                    "tpOrdPx": "-1",
+                }
+            )
         return [protection]
 
-    def _publish_status(self, message: str, candidates: List[Dict], record_scan: bool = False):
+    def _publish_status(
+        self, message: str, candidates: List[Dict], record_scan: bool = False
+    ):
         candidate_summary = [
             {
                 "symbol": item["symbol"],
@@ -1344,7 +1522,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 "level": self.volume_profile_level,
                 "max_high_pullback_pct": self.max_high_pullback_pct,
             },
-            "open_positions": {symbol: pos.__dict__ for symbol, pos in self.positions.items()},
+            "open_positions": {
+                symbol: pos.__dict__ for symbol, pos in self.positions.items()
+            },
             "candidates": candidate_summary,
             "last_scan": self._last_scan_snapshot,
         }
@@ -1372,22 +1552,35 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
             "win_rate": self.win_rate,
             "last_signal": self._signal_status,
             "open_positions": len(self.positions),
-            "positions": {symbol: pos.__dict__ for symbol, pos in self.positions.items()},
+            "positions": {
+                symbol: pos.__dict__ for symbol, pos in self.positions.items()
+            },
         }
 
-    def _log_event(self, event_type: str, title: str, message: str, level: str = "info", data: Optional[Dict] = None):
+    def _log_event(
+        self,
+        event_type: str,
+        title: str,
+        message: str,
+        level: str = "info",
+        data: Optional[Dict] = None,
+    ):
         db = SessionLocal()
         try:
-            db.add(StrategyEvent(
-                strategy_id=self.strategy_id,
-                user_id=self.user_id,
-                event_type=event_type,
-                level=level,
-                title=title,
-                message=message,
-                data=data or {},
-                parameter_snapshot=self.parameters if isinstance(self.parameters, dict) else None,
-            ))
+            db.add(
+                StrategyEvent(
+                    strategy_id=self.strategy_id,
+                    user_id=self.user_id,
+                    event_type=event_type,
+                    level=level,
+                    title=title,
+                    message=message,
+                    data=data or {},
+                    parameter_snapshot=(
+                        self.parameters if isinstance(self.parameters, dict) else None
+                    ),
+                )
+            )
             db.commit()
         except Exception as exc:
             db.rollback()
@@ -1413,14 +1606,17 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
                 "市场过滤": self.market_filter,
                 "成交量分布": (
                     f"{self.volume_profile_level.upper()}确认/高点回撤≤{self.max_high_pullback_pct:.2%}"
-                    if self.use_volume_profile_filter else "关闭"
+                    if self.use_volume_profile_filter
+                    else "关闭"
                 ),
                 "止损": f"{self.stop_loss_pct * 100:.2f}%",
                 "持仓上限": f"{self.hold_hours}小时",
             },
         )
 
-    async def _notify_android_push(self, title: str, message: str, level: str = "info", data: Optional[Dict] = None):
+    async def _notify_android_push(
+        self, title: str, message: str, level: str = "info", data: Optional[Dict] = None
+    ):
         try:
             await notification_service.send_android_push_alert(
                 title=title,
@@ -1456,7 +1652,9 @@ class ExplosiveMomentumChaserStrategy(StrategyBase):
         original_symbol = self.symbol
         self.symbol = symbol
         try:
-            return await self._save_order_to_db(order_data, side, order_type, price, amount)
+            return await self._save_order_to_db(
+                order_data, side, order_type, price, amount
+            )
         finally:
             self.symbol = original_symbol
 

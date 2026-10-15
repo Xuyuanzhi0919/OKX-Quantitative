@@ -1,6 +1,7 @@
 """
 账户净值快照模型 - 用于计算最大回撤和今日盈亏
 """
+
 from sqlalchemy import Column, Integer, Float, DateTime
 from sqlalchemy import func
 from app.core.database import Base
@@ -20,5 +21,5 @@ class AccountSnapshot(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         index=True,
-        comment="快照时间"
+        comment="快照时间",
     )

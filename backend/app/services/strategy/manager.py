@@ -1,6 +1,7 @@
 """
 策略管理器 - 管理所有运行中的策略实例
 """
+
 from typing import Dict, Optional
 from loguru import logger
 from .base import StrategyBase
@@ -8,7 +9,11 @@ from app.services.exchange.okx import OKXExchange
 from app.models.strategy import StrategyType, Strategy, StrategyEvent, StrategyStatus
 from app.core.database import SessionLocal
 from app.services.notification.notification_service import notification_service
-from app.websocket.manager import broadcast_strategy_stats, broadcast_strategy_update, broadcast_notification
+from app.websocket.manager import (
+    broadcast_strategy_stats,
+    broadcast_strategy_update,
+    broadcast_notification,
+)
 import asyncio
 from datetime import datetime
 import inspect
@@ -43,16 +48,16 @@ class StrategyManager:
         self._initialized = True
         logger.info("策略管理器初始化完成")
 
-    def get_exchange(self, api_key: str, secret_key: str, passphrase: str) -> OKXExchange:
+    def get_exchange(
+        self, api_key: str, secret_key: str, passphrase: str
+    ) -> OKXExchange:
         """获取或创建交易所实例"""
         # 使用API key作为缓存键
         cache_key = api_key
 
         if cache_key not in self.exchanges:
             self.exchanges[cache_key] = OKXExchange(
-                api_key=api_key,
-                secret_key=secret_key,
-                passphrase=passphrase
+                api_key=api_key, secret_key=secret_key, passphrase=passphrase
             )
             logger.info(f"创建新的交易所实例: {cache_key}")
 
@@ -77,16 +82,18 @@ class StrategyManager:
             if resolved_user_id is None:
                 return
 
-            db.add(StrategyEvent(
-                strategy_id=strategy_id,
-                user_id=resolved_user_id,
-                event_type=event_type,
-                level=level,
-                title=title,
-                message=message,
-                data=data or {},
-                parameter_snapshot=parameter_snapshot,
-            ))
+            db.add(
+                StrategyEvent(
+                    strategy_id=strategy_id,
+                    user_id=resolved_user_id,
+                    event_type=event_type,
+                    level=level,
+                    title=title,
+                    message=message,
+                    data=data or {},
+                    parameter_snapshot=parameter_snapshot,
+                )
+            )
             db.commit()
         except Exception as exc:
             db.rollback()
@@ -101,7 +108,7 @@ class StrategyManager:
         symbol: str,
         parameters: dict,
         exchange: OKXExchange,
-        user_id: int = 1
+        user_id: int = 1,
     ) -> StrategyBase:
         """创建策略实例"""
 
@@ -115,7 +122,10 @@ class StrategyManager:
             strategy_type_enum = strategy_type
 
         if strategy_type_enum == StrategyType.ADAPTIVE_GRID_TREND:
-            from app.services.strategy.adaptive_grid_trend import AdaptiveGridTrendStrategy
+            from app.services.strategy.adaptive_grid_trend import (
+                AdaptiveGridTrendStrategy,
+            )
+
             return AdaptiveGridTrendStrategy(
                 strategy_id=strategy_id,
                 exchange=exchange,
@@ -125,7 +135,10 @@ class StrategyManager:
             )
 
         if strategy_type_enum == StrategyType.ARBITRAGE:
-            from app.services.strategy.spot_perp_arbitrage import SpotPerpArbitrageStrategy
+            from app.services.strategy.spot_perp_arbitrage import (
+                SpotPerpArbitrageStrategy,
+            )
+
             return SpotPerpArbitrageStrategy(
                 strategy_id=strategy_id,
                 exchange=exchange,
@@ -135,7 +148,10 @@ class StrategyManager:
             )
 
         if strategy_type_enum == StrategyType.TOP_GAINERS_MOMENTUM:
-            from app.services.strategy.top_gainers_momentum import TopGainersMomentumStrategy
+            from app.services.strategy.top_gainers_momentum import (
+                TopGainersMomentumStrategy,
+            )
+
             return TopGainersMomentumStrategy(
                 strategy_id=strategy_id,
                 exchange=exchange,
@@ -145,7 +161,10 @@ class StrategyManager:
             )
 
         if strategy_type_enum == StrategyType.EXPLOSIVE_MOMENTUM_CHASER:
-            from app.services.strategy.explosive_momentum_chaser import ExplosiveMomentumChaserStrategy
+            from app.services.strategy.explosive_momentum_chaser import (
+                ExplosiveMomentumChaserStrategy,
+            )
+
             return ExplosiveMomentumChaserStrategy(
                 strategy_id=strategy_id,
                 exchange=exchange,
@@ -154,7 +173,9 @@ class StrategyManager:
                 user_id=user_id,
             )
 
-        raise ValueError("后端当前仅支持自适应趋势网格策略、现货-永续套利策略、涨幅榜前三15m动量策略和爆量急拉追涨策略")
+        raise ValueError(
+            "后端当前仅支持自适应趋势网格策略、现货-永续套利策略、涨幅榜前三15m动量策略和爆量急拉追涨策略"
+        )
 
     async def _persist_strategy_state(self, strategy_id: int, strategy: StrategyBase):
         """持久化策略状态到数据库"""
@@ -167,33 +188,50 @@ class StrategyManager:
                 return
 
             # 从策略获取运行时数据（通用方法）
-            realized = strategy.realized_pnl if hasattr(strategy, 'realized_pnl') else 0
-            unrealized = getattr(strategy, '_unrealized_pnl', 0)
-            db_strategy.total_profit = round(realized + unrealized, 4)  # 总盈亏 = 已实现 + 未实现
-            db_strategy.total_trades = strategy.total_trades if hasattr(strategy, 'total_trades') else 0
-            db_strategy.win_rate = strategy.win_rate if hasattr(strategy, 'win_rate') else 0
+            realized = strategy.realized_pnl if hasattr(strategy, "realized_pnl") else 0
+            unrealized = getattr(strategy, "_unrealized_pnl", 0)
+            db_strategy.total_profit = round(
+                realized + unrealized, 4
+            )  # 总盈亏 = 已实现 + 未实现
+            db_strategy.total_trades = (
+                strategy.total_trades if hasattr(strategy, "total_trades") else 0
+            )
+            db_strategy.win_rate = (
+                strategy.win_rate if hasattr(strategy, "win_rate") else 0
+            )
 
             # 持仓状态持久化（用于重启后恢复，防止重复开仓）
-            position_side = getattr(strategy, '_position_side', None)
+            position_side = getattr(strategy, "_position_side", None)
             if position_side is not None:
                 # 新版双向持仓策略（TrendFollowStrategy）
-                db_strategy.position_in_position   = position_side != ""
-                db_strategy.position_side          = position_side
-                db_strategy.position_entry_price   = getattr(strategy, '_entry_price', 0.0)
-                db_strategy.position_qty           = getattr(strategy, '_position_qty', 0.0)
-                db_strategy.position_open_time     = getattr(strategy, '_open_time', 0.0)
-                db_strategy.position_highest_price = getattr(strategy, '_extreme_price',
-                                                     getattr(strategy, '_highest_price', 0.0))
-                db_strategy.position_trail_stop_px = getattr(strategy, '_trail_stop_px', 0.0)
-            elif hasattr(strategy, '_in_position'):
+                db_strategy.position_in_position = position_side != ""
+                db_strategy.position_side = position_side
+                db_strategy.position_entry_price = getattr(
+                    strategy, "_entry_price", 0.0
+                )
+                db_strategy.position_qty = getattr(strategy, "_position_qty", 0.0)
+                db_strategy.position_open_time = getattr(strategy, "_open_time", 0.0)
+                db_strategy.position_highest_price = getattr(
+                    strategy, "_extreme_price", getattr(strategy, "_highest_price", 0.0)
+                )
+                db_strategy.position_trail_stop_px = getattr(
+                    strategy, "_trail_stop_px", 0.0
+                )
+            elif hasattr(strategy, "_in_position"):
                 # 旧版单向持仓策略（向后兼容）
-                db_strategy.position_in_position   = strategy._in_position
-                db_strategy.position_side          = "long" if strategy._in_position else ""
-                db_strategy.position_entry_price   = getattr(strategy, '_entry_price', 0.0)
-                db_strategy.position_qty           = getattr(strategy, '_position_qty', 0.0)
-                db_strategy.position_open_time     = getattr(strategy, '_open_time', 0.0)
-                db_strategy.position_highest_price = getattr(strategy, '_highest_price', 0.0)
-                db_strategy.position_trail_stop_px = getattr(strategy, '_trail_stop_px', 0.0)
+                db_strategy.position_in_position = strategy._in_position
+                db_strategy.position_side = "long" if strategy._in_position else ""
+                db_strategy.position_entry_price = getattr(
+                    strategy, "_entry_price", 0.0
+                )
+                db_strategy.position_qty = getattr(strategy, "_position_qty", 0.0)
+                db_strategy.position_open_time = getattr(strategy, "_open_time", 0.0)
+                db_strategy.position_highest_price = getattr(
+                    strategy, "_highest_price", 0.0
+                )
+                db_strategy.position_trail_stop_px = getattr(
+                    strategy, "_trail_stop_px", 0.0
+                )
 
             db.commit()
 
@@ -204,14 +242,17 @@ class StrategyManager:
 
             # 通过WebSocket广播策略状态更新
             try:
-                await broadcast_strategy_update(strategy_id, {
-                    "strategy_id": strategy_id,
-                    "total_profit": db_strategy.total_profit,
-                    "total_trades": db_strategy.total_trades,
-                    "win_rate": db_strategy.win_rate,
-                    "status": "running",
-                    "timestamp": asyncio.get_event_loop().time()
-                })
+                await broadcast_strategy_update(
+                    strategy_id,
+                    {
+                        "strategy_id": strategy_id,
+                        "total_profit": db_strategy.total_profit,
+                        "total_trades": db_strategy.total_trades,
+                        "win_rate": db_strategy.win_rate,
+                        "status": "running",
+                        "timestamp": asyncio.get_event_loop().time(),
+                    },
+                )
             except Exception as ws_err:
                 logger.error(f"广播策略状态失败: {ws_err}")
 
@@ -222,7 +263,9 @@ class StrategyManager:
         finally:
             db.close()
 
-    async def _pause_strategy_for_fuse(self, strategy_id: int, strategy: StrategyBase, reason: str):
+    async def _pause_strategy_for_fuse(
+        self, strategy_id: int, strategy: StrategyBase, reason: str
+    ):
         """运行期风控触发后暂停策略。"""
         logger.warning(f"策略 {strategy_id} 触发运行期风控熔断: {reason}")
         self.log_strategy_event(
@@ -238,11 +281,17 @@ class StrategyManager:
                 "consecutive_losses": strategy.consecutive_losses,
                 "recent_trade_pnl": strategy.trade_pnl_history[-10:],
             },
-            parameter_snapshot=strategy.parameters if isinstance(strategy.parameters, dict) else None,
+            parameter_snapshot=(
+                strategy.parameters if isinstance(strategy.parameters, dict) else None
+            ),
             user_id=strategy.user_id,
         )
 
-        risk_fuse = strategy.parameters.get("risk_fuse", {}) if isinstance(strategy.parameters, dict) else {}
+        risk_fuse = (
+            strategy.parameters.get("risk_fuse", {})
+            if isinstance(strategy.parameters, dict)
+            else {}
+        )
         if not isinstance(risk_fuse, dict):
             risk_fuse = {}
         close_position = bool(risk_fuse.get("close_position_on_trigger", False))
@@ -251,10 +300,10 @@ class StrategyManager:
         try:
             stop_sig = inspect.signature(strategy.stop)
             kwargs = {}
-            if 'cancel_orders' in stop_sig.parameters:
-                kwargs['cancel_orders'] = cancel_orders
-            if 'close_position' in stop_sig.parameters:
-                kwargs['close_position'] = close_position
+            if "cancel_orders" in stop_sig.parameters:
+                kwargs["cancel_orders"] = cancel_orders
+            if "close_position" in stop_sig.parameters:
+                kwargs["close_position"] = close_position
             await strategy.stop(**kwargs)
         except Exception as exc:
             logger.error(f"策略 {strategy_id} 熔断暂停时 stop() 失败: {exc}")
@@ -286,19 +335,24 @@ class StrategyManager:
                     "consecutive_losses": strategy.consecutive_losses,
                 },
             )
-            await broadcast_notification({
-                "type": "warning",
-                "title": "策略已自动暂停",
-                "message": f"策略 {strategy.symbol} 触发运行期风控: {reason}",
-                "strategy_id": strategy_id,
-                "timestamp": time.time()
-            })
-            await broadcast_strategy_update(strategy_id, {
-                "strategy_id": strategy_id,
-                "status": StrategyStatus.PAUSED.value,
-                "fuse_reason": reason,
-                "timestamp": time.time()
-            })
+            await broadcast_notification(
+                {
+                    "type": "warning",
+                    "title": "策略已自动暂停",
+                    "message": f"策略 {strategy.symbol} 触发运行期风控: {reason}",
+                    "strategy_id": strategy_id,
+                    "timestamp": time.time(),
+                }
+            )
+            await broadcast_strategy_update(
+                strategy_id,
+                {
+                    "strategy_id": strategy_id,
+                    "status": StrategyStatus.PAUSED.value,
+                    "fuse_reason": reason,
+                    "timestamp": time.time(),
+                },
+            )
         except Exception as ws_err:
             logger.error(f"广播策略熔断状态失败: {ws_err}")
 
@@ -323,7 +377,9 @@ class StrategyManager:
             title="策略触发安全暂停",
             message=reason,
             data=event_data,
-            parameter_snapshot=strategy.parameters if isinstance(strategy.parameters, dict) else None,
+            parameter_snapshot=(
+                strategy.parameters if isinstance(strategy.parameters, dict) else None
+            ),
             user_id=strategy.user_id,
         )
 
@@ -348,23 +404,30 @@ class StrategyManager:
                 level="warning",
                 data=event_data,
             )
-            await broadcast_notification({
-                "type": "warning",
-                "title": "策略安全暂停",
-                "message": f"策略 {strategy.symbol}: {reason}",
-                "strategy_id": strategy_id,
-                "timestamp": time.time(),
-            })
-            await broadcast_strategy_update(strategy_id, {
-                "strategy_id": strategy_id,
-                "status": StrategyStatus.PAUSED.value,
-                "safety_reason": reason,
-                "timestamp": time.time(),
-            })
+            await broadcast_notification(
+                {
+                    "type": "warning",
+                    "title": "策略安全暂停",
+                    "message": f"策略 {strategy.symbol}: {reason}",
+                    "strategy_id": strategy_id,
+                    "timestamp": time.time(),
+                }
+            )
+            await broadcast_strategy_update(
+                strategy_id,
+                {
+                    "strategy_id": strategy_id,
+                    "status": StrategyStatus.PAUSED.value,
+                    "safety_reason": reason,
+                    "timestamp": time.time(),
+                },
+            )
         except Exception as notify_err:
             logger.error(f"发送策略安全暂停通知失败: {notify_err}")
 
-    async def _check_exchange_position_sync(self, strategy: StrategyBase) -> Optional[dict]:
+    async def _check_exchange_position_sync(
+        self, strategy: StrategyBase
+    ) -> Optional[dict]:
         """校验策略内存持仓和交易所真实持仓是否一致。"""
         position_side = getattr(strategy, "_position_side", "")
         position_qty = float(getattr(strategy, "_position_qty", 0) or 0)
@@ -383,14 +446,16 @@ class StrategyManager:
             pos_side = str(pos.get("posSide") or "").lower()
             if pos_side == "net":
                 pos_side = position_side or "net"
-            active_positions.append({
-                "inst_id": pos.get("instId"),
-                "pos_side": pos_side,
-                "size": size,
-                "avg_price": pos.get("avgPx"),
-                "upl": pos.get("upl"),
-                "notional_usd": pos.get("notionalUsd"),
-            })
+            active_positions.append(
+                {
+                    "inst_id": pos.get("instId"),
+                    "pos_side": pos_side,
+                    "size": size,
+                    "avg_price": pos.get("avgPx"),
+                    "upl": pos.get("upl"),
+                    "notional_usd": pos.get("notionalUsd"),
+                }
+            )
 
         if position_side and not active_positions:
             return {
@@ -409,7 +474,14 @@ class StrategyManager:
             }
 
         if position_side and active_positions:
-            matched = next((p for p in active_positions if p["pos_side"] in {position_side, "net"}), None)
+            matched = next(
+                (
+                    p
+                    for p in active_positions
+                    if p["pos_side"] in {position_side, "net"}
+                ),
+                None,
+            )
             if not matched:
                 return {
                     "reason": "交易所持仓方向与策略方向不一致",
@@ -446,7 +518,9 @@ class StrategyManager:
 
         max_losses = int(risk_fuse.get("max_consecutive_losses", 3))
         if max_losses > 0 and strategy.consecutive_losses >= max_losses:
-            return f"连续亏损 {strategy.consecutive_losses} 次，达到阈值 {max_losses} 次"
+            return (
+                f"连续亏损 {strategy.consecutive_losses} 次，达到阈值 {max_losses} 次"
+            )
 
         max_position_usd = float(strategy.parameters.get("max_position_usd", 0) or 0)
         risk_base_usd = float(
@@ -486,7 +560,11 @@ class StrategyManager:
         pf_window = int(risk_fuse.get("profit_factor_window", 10))
         min_pf_trades = int(risk_fuse.get("min_trades_for_profit_factor", 8))
         min_profit_factor = float(risk_fuse.get("min_profit_factor", 0.8))
-        recent_count = len(strategy.trade_pnl_history[-pf_window:]) if pf_window > 0 else len(strategy.trade_pnl_history)
+        recent_count = (
+            len(strategy.trade_pnl_history[-pf_window:])
+            if pf_window > 0
+            else len(strategy.trade_pnl_history)
+        )
         if min_profit_factor > 0 and recent_count >= min_pf_trades:
             profit_factor = strategy.runtime_profit_factor(pf_window)
             if profit_factor is not None and profit_factor < min_profit_factor:
@@ -519,7 +597,10 @@ class StrategyManager:
                         strategy.last_tick_ok_at = time.time()
 
                     position_sync_counter += 1
-                    if not getattr(strategy, "_self_driven", False) and position_sync_counter >= 12:
+                    if (
+                        not getattr(strategy, "_self_driven", False)
+                        and position_sync_counter >= 12
+                    ):
                         position_sync_counter = 0
                         sync_issue = await self._check_exchange_position_sync(strategy)
                         if sync_issue:
@@ -533,7 +614,9 @@ class StrategyManager:
 
                     fuse_reason = self._check_runtime_fuse(strategy)
                     if fuse_reason:
-                        await self._pause_strategy_for_fuse(strategy_id, strategy, fuse_reason)
+                        await self._pause_strategy_for_fuse(
+                            strategy_id, strategy, fuse_reason
+                        )
                         break
 
                     # 2. 定期持久化策略状态到数据库
@@ -576,13 +659,15 @@ class StrategyManager:
                                     "error": str(e),
                                 },
                             )
-                        await broadcast_notification({
-                            "type": "warning",
-                            "title": "策略监控异常",
-                            "message": f"策略 {strategy.symbol} 监控循环出现错误: {str(e)}",
-                            "strategy_id": strategy_id,
-                            "timestamp": time.time()
-                        })
+                        await broadcast_notification(
+                            {
+                                "type": "warning",
+                                "title": "策略监控异常",
+                                "message": f"策略 {strategy.symbol} 监控循环出现错误: {str(e)}",
+                                "strategy_id": strategy_id,
+                                "timestamp": time.time(),
+                            }
+                        )
                     except Exception as notify_err:
                         logger.error(f"发送监控异常通知失败: {notify_err}")
 
@@ -607,7 +692,7 @@ class StrategyManager:
         symbol: str,
         parameters: dict,
         exchange: OKXExchange,
-        user_id: int = 1
+        user_id: int = 1,
     ) -> bool:
         """启动策略"""
         try:
@@ -623,7 +708,7 @@ class StrategyManager:
                 symbol=symbol,
                 parameters=parameters,
                 exchange=exchange,
-                user_id=user_id
+                user_id=user_id,
             )
 
             # 启动策略
@@ -636,7 +721,11 @@ class StrategyManager:
                 message=f"{symbol} 策略已启动",
                 data={
                     "symbol": symbol,
-                    "strategy_type": strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type),
+                    "strategy_type": (
+                        strategy_type.value
+                        if hasattr(strategy_type, "value")
+                        else str(strategy_type)
+                    ),
                 },
                 parameter_snapshot=parameters,
                 user_id=user_id,
@@ -648,11 +737,27 @@ class StrategyManager:
                 level="success",
                 data={
                     "symbol": symbol,
-                    "strategy_type": strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type),
+                    "strategy_type": (
+                        strategy_type.value
+                        if hasattr(strategy_type, "value")
+                        else str(strategy_type)
+                    ),
                     "simulated": getattr(exchange, "simulated", None),
-                    "timeframe": parameters.get("trend_timeframe") if isinstance(parameters, dict) else None,
-                    "leverage": parameters.get("leverage") if isinstance(parameters, dict) else None,
-                    "max_position_usd": parameters.get("max_position_usd") if isinstance(parameters, dict) else None,
+                    "timeframe": (
+                        parameters.get("trend_timeframe")
+                        if isinstance(parameters, dict)
+                        else None
+                    ),
+                    "leverage": (
+                        parameters.get("leverage")
+                        if isinstance(parameters, dict)
+                        else None
+                    ),
+                    "max_position_usd": (
+                        parameters.get("max_position_usd")
+                        if isinstance(parameters, dict)
+                        else None
+                    ),
                 },
             )
 
@@ -673,7 +778,9 @@ class StrategyManager:
             logger.error(f"启动策略 {strategy_id} 失败: {e}")
             raise
 
-    async def stop_strategy(self, strategy_id: int, cancel_orders: bool = True, close_position: bool = True) -> bool:
+    async def stop_strategy(
+        self, strategy_id: int, cancel_orders: bool = True, close_position: bool = True
+    ) -> bool:
         """停止策略"""
         try:
             strategy = self.strategies.get(strategy_id)
@@ -684,10 +791,10 @@ class StrategyManager:
             # 停止策略（兼容有无 cancel_orders/close_position 参数的实现）
             stop_sig = inspect.signature(strategy.stop)
             kwargs = {}
-            if 'cancel_orders' in stop_sig.parameters:
-                kwargs['cancel_orders'] = cancel_orders
-            if 'close_position' in stop_sig.parameters:
-                kwargs['close_position'] = close_position
+            if "cancel_orders" in stop_sig.parameters:
+                kwargs["cancel_orders"] = cancel_orders
+            if "close_position" in stop_sig.parameters:
+                kwargs["close_position"] = close_position
             await strategy.stop(**kwargs)
             # 策略本体已经停止后，事件和通知都只能是 best effort。
             # 这些外围操作失败不能把“已停止”重新表现成接口 500。
@@ -705,7 +812,11 @@ class StrategyManager:
                         "unrealized_pnl": getattr(strategy, "_unrealized_pnl", 0),
                         "total_trades": getattr(strategy, "total_trades", 0),
                     },
-                    parameter_snapshot=strategy.parameters if isinstance(strategy.parameters, dict) else None,
+                    parameter_snapshot=(
+                        strategy.parameters
+                        if isinstance(strategy.parameters, dict)
+                        else None
+                    ),
                     user_id=strategy.user_id,
                 )
             except Exception as event_error:
@@ -721,13 +832,19 @@ class StrategyManager:
                         "symbol": strategy.symbol,
                         "cancel_orders": cancel_orders,
                         "close_position": close_position,
-                        "realized_pnl": round(float(getattr(strategy, "realized_pnl", 0) or 0), 4),
-                        "unrealized_pnl": round(float(getattr(strategy, "_unrealized_pnl", 0) or 0), 4),
+                        "realized_pnl": round(
+                            float(getattr(strategy, "realized_pnl", 0) or 0), 4
+                        ),
+                        "unrealized_pnl": round(
+                            float(getattr(strategy, "_unrealized_pnl", 0) or 0), 4
+                        ),
                         "total_trades": getattr(strategy, "total_trades", 0),
                     },
                 )
             except Exception as notification_error:
-                logger.warning(f"发送策略 {strategy_id} 停止通知失败: {notification_error}")
+                logger.warning(
+                    f"发送策略 {strategy_id} 停止通知失败: {notification_error}"
+                )
 
             # 取消监控任务
             task = self.strategy_tasks.get(strategy_id)
@@ -767,10 +884,12 @@ class StrategyManager:
         if not strategy:
             return None
 
-        realized = strategy.realized_pnl if hasattr(strategy, 'realized_pnl') else 0
-        unrealized = getattr(strategy, '_unrealized_pnl', 0)
+        realized = strategy.realized_pnl if hasattr(strategy, "realized_pnl") else 0
+        unrealized = getattr(strategy, "_unrealized_pnl", 0)
         runtime_profit_factor = strategy.runtime_profit_factor()
-        if runtime_profit_factor is not None and not math.isfinite(runtime_profit_factor):
+        if runtime_profit_factor is not None and not math.isfinite(
+            runtime_profit_factor
+        ):
             runtime_profit_factor = None
         signal_status = None
         if hasattr(strategy, "get_signal_status"):
@@ -800,11 +919,19 @@ class StrategyManager:
         if current_price and stop_px > 0 and take_profit_px > 0:
             current_price = float(current_price)
             if position_side == "long":
-                position_status["distance_to_stop_pct"] = (current_price - stop_px) / current_price * 100
-                position_status["distance_to_take_profit_pct"] = (take_profit_px - current_price) / current_price * 100
+                position_status["distance_to_stop_pct"] = (
+                    (current_price - stop_px) / current_price * 100
+                )
+                position_status["distance_to_take_profit_pct"] = (
+                    (take_profit_px - current_price) / current_price * 100
+                )
             elif position_side == "short":
-                position_status["distance_to_stop_pct"] = (stop_px - current_price) / current_price * 100
-                position_status["distance_to_take_profit_pct"] = (current_price - take_profit_px) / current_price * 100
+                position_status["distance_to_stop_pct"] = (
+                    (stop_px - current_price) / current_price * 100
+                )
+                position_status["distance_to_take_profit_pct"] = (
+                    (current_price - take_profit_px) / current_price * 100
+                )
 
         dynamic_positions = getattr(strategy, "positions", None)
         if isinstance(dynamic_positions, dict):
@@ -851,9 +978,13 @@ class StrategyManager:
                         item["distance_to_stop_pct"] = (stop - current) / current * 100
                 if current and take > 0:
                     if side == "long":
-                        item["distance_to_take_profit_pct"] = (take - current) / current * 100
+                        item["distance_to_take_profit_pct"] = (
+                            (take - current) / current * 100
+                        )
                     elif side == "short":
-                        item["distance_to_take_profit_pct"] = (current - take) / current * 100
+                        item["distance_to_take_profit_pct"] = (
+                            (current - take) / current * 100
+                        )
                 position_items.append(item)
 
             position_status = {
@@ -868,14 +999,30 @@ class StrategyManager:
                 ),
             }
 
-        risk_fuse = strategy.parameters.get("risk_fuse", {}) if isinstance(strategy.parameters, dict) else {}
+        risk_fuse = (
+            strategy.parameters.get("risk_fuse", {})
+            if isinstance(strategy.parameters, dict)
+            else {}
+        )
         if not isinstance(risk_fuse, dict):
             risk_fuse = {}
-        max_position_usd = float(strategy.parameters.get("max_position_usd", 0) or 0) if isinstance(strategy.parameters, dict) else 0
+        max_position_usd = (
+            float(strategy.parameters.get("max_position_usd", 0) or 0)
+            if isinstance(strategy.parameters, dict)
+            else 0
+        )
         risk_base_usd = float(
             risk_fuse.get("risk_base_usd")
-            or (strategy.parameters.get("risk_base_usd") if isinstance(strategy.parameters, dict) else 0)
-            or (strategy.parameters.get("initial_capital") if isinstance(strategy.parameters, dict) else 0)
+            or (
+                strategy.parameters.get("risk_base_usd")
+                if isinstance(strategy.parameters, dict)
+                else 0
+            )
+            or (
+                strategy.parameters.get("initial_capital")
+                if isinstance(strategy.parameters, dict)
+                else 0
+            )
             or max(max_position_usd * 2, 1000)
         )
         daily_loss_limit_pct = risk_fuse.get("daily_loss_limit_pct", 0.02)
@@ -901,7 +1048,9 @@ class StrategyManager:
             "consecutive_losses": strategy.consecutive_losses,
             "max_consecutive_losses": max_consecutive_losses_limit,
             "runtime_profit_factor": runtime_profit_factor,
-            "min_profit_factor": float(min_profit_factor) if min_profit_factor is not None else None,
+            "min_profit_factor": (
+                float(min_profit_factor) if min_profit_factor is not None else None
+            ),
             "profit_factor_window": profit_factor_window,
         }
 
@@ -912,10 +1061,12 @@ class StrategyManager:
             "realized_pnl": realized,
             "unrealized_pnl": unrealized,
             "total_pnl": round(realized + unrealized, 4),
-            "total_trades": strategy.total_trades if hasattr(strategy, 'total_trades') else 0,
-            "buy_count": getattr(strategy, '_buy_count', 0),
-            "sell_count": getattr(strategy, '_sell_count', 0),
-            "win_rate": strategy.win_rate if hasattr(strategy, 'win_rate') else 0,
+            "total_trades": (
+                strategy.total_trades if hasattr(strategy, "total_trades") else 0
+            ),
+            "buy_count": getattr(strategy, "_buy_count", 0),
+            "sell_count": getattr(strategy, "_sell_count", 0),
+            "win_rate": strategy.win_rate if hasattr(strategy, "win_rate") else 0,
             "consecutive_losses": strategy.consecutive_losses,
             "max_consecutive_losses": strategy.max_consecutive_losses,
             "trade_pnl_history": strategy.trade_pnl_history,

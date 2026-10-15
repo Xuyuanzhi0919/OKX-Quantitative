@@ -27,22 +27,8 @@ trap cleanup EXIT
 
 echo "==> 打包本地代码: ${LOCAL_ARCHIVE}"
 cd "${ROOT_DIR}"
-tar -czf "${LOCAL_ARCHIVE}" \
-  --exclude='.git' \
-  --exclude='.idea' \
-  --exclude='.DS_Store' \
-  --exclude='.env' \
-  --exclude='.env.local' \
-  --exclude='.env.prod' \
-  --exclude='backend/.env' \
-  --exclude='backend/venv' \
-  --exclude='backend/venv-*' \
-  --exclude='backend/__pycache__' \
-  --exclude='backend/logs' \
-  --exclude='frontend/node_modules' \
-  --exclude='frontend/dist' \
-  --exclude='nginx/logs' \
-  .
+# Package versioned source only; local secrets, caches and runtime data stay local.
+git ls-files -z | tar --null -T - -czf "${LOCAL_ARCHIVE}"
 
 echo "==> 上传代码包到服务器: ${REMOTE}:${REMOTE_ARCHIVE}"
 scp -P "${DEPLOY_PORT}" "${LOCAL_ARCHIVE}" "${REMOTE}:${REMOTE_ARCHIVE}"

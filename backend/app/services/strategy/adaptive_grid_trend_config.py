@@ -1,4 +1,5 @@
 """Shared defaults and coin selection for adaptive grid trend strategies."""
+
 from __future__ import annotations
 
 import math
@@ -108,10 +109,14 @@ def _safe_float(value, default: float = 0.0) -> float:
 def _ticker_by_symbol(tickers: Optional[Iterable[Dict]]) -> Dict[str, Dict]:
     if not tickers:
         return {}
-    return {str(item.get("instId") or ""): item for item in tickers if item.get("instId")}
+    return {
+        str(item.get("instId") or ""): item for item in tickers if item.get("instId")
+    }
 
 
-def select_stable_1000u_symbols(tickers: Optional[Iterable[Dict]] = None, active_limit: int = 3) -> Dict:
+def select_stable_1000u_symbols(
+    tickers: Optional[Iterable[Dict]] = None, active_limit: int = 3
+) -> Dict:
     """
     Rank adaptive-grid-trend symbols for a 1000 USDT account.
 
@@ -119,16 +124,20 @@ def select_stable_1000u_symbols(tickers: Optional[Iterable[Dict]] = None, active
     yesterday's highest return. Liquidity is added when live OKX tickers are provided.
     """
     ticker_map = _ticker_by_symbol(tickers)
-    candidate_symbols = list(dict.fromkeys(
-        STABLE_1000U_ACTIVE_SYMBOLS
-        + STABLE_1000U_WATCH_SYMBOLS
-        + list(STABLE_1000U_VALIDATION.keys())
-    ))
+    candidate_symbols = list(
+        dict.fromkeys(
+            STABLE_1000U_ACTIVE_SYMBOLS
+            + STABLE_1000U_WATCH_SYMBOLS
+            + list(STABLE_1000U_VALIDATION.keys())
+        )
+    )
     volumes = [
         _safe_float(ticker_map.get(symbol, {}).get("volCcy24h"))
         for symbol in candidate_symbols
     ]
-    max_log_volume = max((math.log10(value + 1) for value in volumes if value > 0), default=1.0)
+    max_log_volume = max(
+        (math.log10(value + 1) for value in volumes if value > 0), default=1.0
+    )
 
     candidates: List[Dict] = []
     for symbol in candidate_symbols:
@@ -137,34 +146,50 @@ def select_stable_1000u_symbols(tickers: Optional[Iterable[Dict]] = None, active
         drawdown_pct = _safe_float(validation.get("max_drawdown_pct"))
         ticker = ticker_map.get(symbol, {})
         volume = _safe_float(ticker.get("volCcy24h"))
-        liquidity_score = (math.log10(volume + 1) / max_log_volume * 20) if volume > 0 else 8
-        stability_bonus = 20 if symbol in STABLE_1000U_ACTIVE_SYMBOLS else 10 if symbol in STABLE_1000U_WATCH_SYMBOLS else 0
+        liquidity_score = (
+            (math.log10(volume + 1) / max_log_volume * 20) if volume > 0 else 8
+        )
+        stability_bonus = (
+            20
+            if symbol in STABLE_1000U_ACTIVE_SYMBOLS
+            else 10 if symbol in STABLE_1000U_WATCH_SYMBOLS else 0
+        )
         excluded_penalty = 50 if symbol in STABLE_1000U_EXCLUDED_SYMBOLS else 0
-        score = return_pct * 12 - drawdown_pct * 5 + liquidity_score + stability_bonus - excluded_penalty
-        candidates.append({
-            "symbol": symbol,
-            "score": round(score, 2),
-            "return_pct": return_pct,
-            "max_drawdown_pct": drawdown_pct,
-            "volume_24h": volume,
-            "liquidity_score": round(liquidity_score, 2),
-            "recommended": symbol in STABLE_1000U_ACTIVE_SYMBOLS,
-            "watch": symbol in STABLE_1000U_WATCH_SYMBOLS,
-            "excluded": symbol in STABLE_1000U_EXCLUDED_SYMBOLS,
-            "reason": _selection_reason(symbol),
-        })
+        score = (
+            return_pct * 12
+            - drawdown_pct * 5
+            + liquidity_score
+            + stability_bonus
+            - excluded_penalty
+        )
+        candidates.append(
+            {
+                "symbol": symbol,
+                "score": round(score, 2),
+                "return_pct": return_pct,
+                "max_drawdown_pct": drawdown_pct,
+                "volume_24h": volume,
+                "liquidity_score": round(liquidity_score, 2),
+                "recommended": symbol in STABLE_1000U_ACTIVE_SYMBOLS,
+                "watch": symbol in STABLE_1000U_WATCH_SYMBOLS,
+                "excluded": symbol in STABLE_1000U_EXCLUDED_SYMBOLS,
+                "reason": _selection_reason(symbol),
+            }
+        )
 
     ranked = sorted(candidates, key=lambda item: item["score"], reverse=True)
     excluded = [item for item in ranked if item["excluded"]]
     eligible = [item for item in ranked if not item["excluded"]]
-    active = [item for item in eligible if item["symbol"] in STABLE_1000U_ACTIVE_SYMBOLS][:active_limit]
+    active = [
+        item for item in eligible if item["symbol"] in STABLE_1000U_ACTIVE_SYMBOLS
+    ][:active_limit]
     active_symbols = {item["symbol"] for item in active}
     watch = [
-        item for item in eligible
-        if item["symbol"] not in active_symbols and (
-            item["symbol"] in STABLE_1000U_WATCH_SYMBOLS or item["score"] >= 20
-        )
-    ][:max(0, 6 - len(active))]
+        item
+        for item in eligible
+        if item["symbol"] not in active_symbols
+        and (item["symbol"] in STABLE_1000U_WATCH_SYMBOLS or item["score"] >= 20)
+    ][: max(0, 6 - len(active))]
 
     return {
         "profile": STABLE_1000U_PROFILE_NAME,

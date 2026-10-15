@@ -1,6 +1,7 @@
 """
 认证相关API
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -28,10 +29,14 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     """用户登录，返回JWT访问令牌。"""
     user = db.query(User).filter(User.username == request.username).first()
     if not user or not verify_password(request.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
 
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is disabled")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User is disabled"
+        )
 
     return {
         "access_token": create_access_token(user.id),
@@ -50,12 +55,16 @@ async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """用户注册"""
     exists = db.query(User).filter(User.username == request.username).first()
     if exists:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Username already exists"
+        )
 
     if request.email:
         email_exists = db.query(User).filter(User.email == request.email).first()
         if email_exists:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Email already exists"
+            )
 
     user = User(
         username=request.username,
@@ -84,7 +93,9 @@ async def get_current_user(
     """获取当前用户信息"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     return {
         "id": user.id,

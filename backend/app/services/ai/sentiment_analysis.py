@@ -2,6 +2,7 @@
 市场情绪分析模块
 分析资金费率、多空比、持仓量等情绪指标
 """
+
 from typing import Dict
 from decimal import Decimal
 from loguru import logger
@@ -33,13 +34,16 @@ class SentimentAnalysis:
         try:
             # 并行获取各项数据
             import asyncio
+
             tasks = [
                 self._get_funding_rate(symbol),
                 self._get_long_short_ratio(symbol),
-                self._get_open_interest_change(symbol)
+                self._get_open_interest_change(symbol),
             ]
 
-            funding_rate, ls_ratio, oi_change = await asyncio.gather(*tasks, return_exceptions=True)
+            funding_rate, ls_ratio, oi_change = await asyncio.gather(
+                *tasks, return_exceptions=True
+            )
 
             # 处理异常
             if isinstance(funding_rate, Exception):
@@ -120,7 +124,7 @@ class SentimentAnalysis:
                 "overall_score": max(long_score, short_score),
                 "long_score": long_score,
                 "short_score": short_score,
-                "details": sentiment_details
+                "details": sentiment_details,
             }
 
         except Exception as e:
@@ -173,6 +177,7 @@ class SentimentAnalysis:
         try:
             # 获取当前持仓量
             from app.services.exchange.okx import OKXExchange
+
             if isinstance(self.exchange, OKXExchange):
                 # OKX可能提供持仓量数据
                 ticker = await self.exchange.get_ticker(symbol)
@@ -197,6 +202,6 @@ class SentimentAnalysis:
                 "funding_rate": 0,
                 "long_short_ratio": 1.0,
                 "open_interest_change": 0,
-                "sentiment": "neutral"
-            }
+                "sentiment": "neutral",
+            },
         }

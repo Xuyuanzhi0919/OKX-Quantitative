@@ -1,4 +1,5 @@
 """Shared API authentication dependencies."""
+
 import secrets
 
 from fastapi import Depends, Header, HTTPException, Request, status
@@ -41,7 +42,9 @@ def _resolve_authenticated_user_id(db: Session, authorization: str | None) -> in
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if settings.API_ACCESS_TOKEN and secrets.compare_digest(token, settings.API_ACCESS_TOKEN):
+    if settings.API_ACCESS_TOKEN and secrets.compare_digest(
+        token, settings.API_ACCESS_TOKEN
+    ):
         return ensure_default_user(db)
 
     try:

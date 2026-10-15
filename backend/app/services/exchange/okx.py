@@ -2,6 +2,7 @@
 OKX交易所实现
 基于OKX API V5文档
 """
+
 from typing import Dict, List, Optional
 from decimal import Decimal
 import hmac
@@ -23,7 +24,14 @@ class OKXExchange(ExchangeBase):
     文档参考：https://www.okx.com/docs-v5/zh/
     """
 
-    def __init__(self, api_key: str, secret_key: str, passphrase: str, simulated: bool = False, proxy: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: str,
+        secret_key: str,
+        passphrase: str,
+        simulated: bool = False,
+        proxy: Optional[str] = None,
+    ):
         """
         初始化OKX交易所
 
@@ -61,7 +69,9 @@ class OKXExchange(ExchangeBase):
         # 注意: 模拟盘不使用MockOrderManager，而是直接调用OKX模拟盘API
         # 通过 x-simulated-trading 请求头区分模拟盘和实盘
 
-        logger.info(f"初始化OKX交易所 - 模式: {'模拟盘' if simulated else '实盘'}, 代理: {self.proxy or '未设置'}")
+        logger.info(
+            f"初始化OKX交易所 - 模式: {'模拟盘' if simulated else '实盘'}, 代理: {self.proxy or '未设置'}"
+        )
 
     def _check_proxy_available(self) -> None:
         """Fail fast when a local proxy is configured but not listening."""
@@ -88,7 +98,7 @@ class OKXExchange(ExchangeBase):
     @staticmethod
     def _plain_decimal(value) -> str:
         if isinstance(value, (Decimal, float)):
-            return format(value, 'f')
+            return format(value, "f")
         return str(value)
 
     @staticmethod
@@ -108,7 +118,7 @@ class OKXExchange(ExchangeBase):
         instrument: Dict,
         amount: Decimal,
         price: Optional[Decimal],
-        order_type: str
+        order_type: str,
     ) -> None:
         min_sz = instrument.get("minSz")
         lot_sz = instrument.get("lotSz")
@@ -120,10 +130,16 @@ class OKXExchange(ExchangeBase):
         if lot_sz and not cls._is_multiple(amount_decimal, lot_sz):
             raise ValueError(f"下单数量 {amount_decimal} 不符合数量步长 lotSz={lot_sz}")
 
-        if order_type in {"limit", "post_only", "fok", "ioc"} and price is not None and tick_sz:
+        if (
+            order_type in {"limit", "post_only", "fok", "ioc"}
+            and price is not None
+            and tick_sz
+        ):
             price_decimal = cls._decimal(price)
             if not cls._is_multiple(price_decimal, tick_sz):
-                raise ValueError(f"委托价格 {price_decimal} 不符合价格步长 tickSz={tick_sz}")
+                raise ValueError(
+                    f"委托价格 {price_decimal} 不符合价格步长 tickSz={tick_sz}"
+                )
 
     @staticmethod
     def _infer_inst_type(symbol: str) -> str:
@@ -188,7 +204,7 @@ class OKXExchange(ExchangeBase):
             method="GET",
             endpoint=endpoint,
             params=params,
-            auth_required=False  # 公共接口不需要认证
+            auth_required=False,  # 公共接口不需要认证
         )
 
         # OKX响应格式: {"code": "0", "msg": "", "data": [...]}
@@ -215,10 +231,7 @@ class OKXExchange(ExchangeBase):
         params = {"instType": inst_type}
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=False
+            method="GET", endpoint=endpoint, params=params, auth_required=False
         )
 
         if response.get("code") != "0":
@@ -232,7 +245,7 @@ class OKXExchange(ExchangeBase):
         timeframe: str = "1m",
         limit: int = 100,
         after: Optional[str] = None,
-        before: Optional[str] = None
+        before: Optional[str] = None,
     ) -> List[Dict]:
         """
         获取K线数据
@@ -264,11 +277,7 @@ class OKXExchange(ExchangeBase):
             ]
         """
         endpoint = "/api/v5/market/candles"
-        params = {
-            "instId": symbol,
-            "bar": timeframe,
-            "limit": str(limit)
-        }
+        params = {"instId": symbol, "bar": timeframe, "limit": str(limit)}
 
         if after:
             params["after"] = after
@@ -276,10 +285,7 @@ class OKXExchange(ExchangeBase):
             params["before"] = before
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=False
+            method="GET", endpoint=endpoint, params=params, auth_required=False
         )
 
         if response.get("code") != "0":
@@ -291,17 +297,19 @@ class OKXExchange(ExchangeBase):
         # 转换为字典格式方便使用
         result = []
         for candle in raw_data:
-            result.append({
-                'ts': candle[0],
-                'o': candle[1],
-                'h': candle[2],
-                'l': candle[3],
-                'c': candle[4],
-                'vol': candle[5],
-                'volCcy': candle[6],
-                'volCcyQuote': candle[7],
-                'confirm': candle[8]
-            })
+            result.append(
+                {
+                    "ts": candle[0],
+                    "o": candle[1],
+                    "h": candle[2],
+                    "l": candle[3],
+                    "c": candle[4],
+                    "vol": candle[5],
+                    "volCcy": candle[6],
+                    "volCcyQuote": candle[7],
+                    "confirm": candle[8],
+                }
+            )
 
         return result
 
@@ -311,7 +319,7 @@ class OKXExchange(ExchangeBase):
         timeframe: str = "1m",
         limit: int = 100,
         after: Optional[str] = None,
-        before: Optional[str] = None
+        before: Optional[str] = None,
     ) -> List[Dict]:
         """
         获取历史K线数据。
@@ -320,11 +328,7 @@ class OKXExchange(ExchangeBase):
         /market/history-candles。
         """
         endpoint = "/api/v5/market/history-candles"
-        params = {
-            "instId": symbol,
-            "bar": timeframe,
-            "limit": str(limit)
-        }
+        params = {"instId": symbol, "bar": timeframe, "limit": str(limit)}
 
         if after:
             params["after"] = after
@@ -332,10 +336,7 @@ class OKXExchange(ExchangeBase):
             params["before"] = before
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=False
+            method="GET", endpoint=endpoint, params=params, auth_required=False
         )
 
         if response.get("code") != "0":
@@ -343,17 +344,19 @@ class OKXExchange(ExchangeBase):
 
         result = []
         for candle in response.get("data", []):
-            result.append({
-                'ts': candle[0],
-                'o': candle[1],
-                'h': candle[2],
-                'l': candle[3],
-                'c': candle[4],
-                'vol': candle[5],
-                'volCcy': candle[6],
-                'volCcyQuote': candle[7],
-                'confirm': candle[8]
-            })
+            result.append(
+                {
+                    "ts": candle[0],
+                    "o": candle[1],
+                    "h": candle[2],
+                    "l": candle[3],
+                    "c": candle[4],
+                    "vol": candle[5],
+                    "volCcy": candle[6],
+                    "volCcyQuote": candle[7],
+                    "confirm": candle[8],
+                }
+            )
 
         return result
 
@@ -384,16 +387,10 @@ class OKXExchange(ExchangeBase):
             - 数据每50ms更新一次
         """
         endpoint = "/api/v5/market/books"
-        params = {
-            "instId": symbol,
-            "sz": str(min(depth, 400))  # 最大400档
-        }
+        params = {"instId": symbol, "sz": str(min(depth, 400))}  # 最大400档
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=False
+            method="GET", endpoint=endpoint, params=params, auth_required=False
         )
 
         if response.get("code") != "0":
@@ -409,7 +406,7 @@ class OKXExchange(ExchangeBase):
         self,
         inst_type: str = "SPOT",
         uly: Optional[str] = None,
-        inst_id: Optional[str] = None
+        inst_id: Optional[str] = None,
     ) -> List[Dict]:
         """
         获取交易产品基础信息(公共API,无需认证)
@@ -468,10 +465,7 @@ class OKXExchange(ExchangeBase):
             params["instId"] = inst_id
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=False
+            method="GET", endpoint=endpoint, params=params, auth_required=False
         )
 
         if response.get("code") != "0":
@@ -526,7 +520,7 @@ class OKXExchange(ExchangeBase):
             method="GET",
             endpoint=endpoint,
             params=params if params else None,
-            auth_required=True  # 账户接口需要认证
+            auth_required=True,  # 账户接口需要认证
         )
 
         if response.get("code") != "0":
@@ -577,16 +571,10 @@ class OKXExchange(ExchangeBase):
             }
         """
         endpoint = "/api/v5/account/leverage-info"
-        params = {
-            "instId": inst_id,
-            "mgnMode": mgn_mode
-        }
+        params = {"instId": inst_id, "mgnMode": mgn_mode}
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=True
+            method="GET", endpoint=endpoint, params=params, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -604,7 +592,7 @@ class OKXExchange(ExchangeBase):
         mgn_mode: str = "cross",
         inst_id: Optional[str] = None,
         ccy: Optional[str] = None,
-        pos_side: Optional[str] = None
+        pos_side: Optional[str] = None,
     ) -> Dict:
         """
         设置杠杆倍数
@@ -632,10 +620,7 @@ class OKXExchange(ExchangeBase):
         """
         endpoint = "/api/v5/account/set-leverage"
 
-        data = {
-            "lever": lever,
-            "mgnMode": mgn_mode
-        }
+        data = {"lever": lever, "mgnMode": mgn_mode}
 
         if inst_id:
             data["instId"] = inst_id
@@ -645,10 +630,7 @@ class OKXExchange(ExchangeBase):
             data["posSide"] = pos_side
 
         response = await self._request(
-            method="POST",
-            endpoint=endpoint,
-            data=data,
-            auth_required=True
+            method="POST", endpoint=endpoint, data=data, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -676,7 +658,7 @@ class OKXExchange(ExchangeBase):
             method="POST",
             endpoint="/api/v5/account/set-position-mode",
             data={"posMode": pos_mode},
-            auth_required=True
+            auth_required=True,
         )
 
         if response.get("code") != "0":
@@ -694,9 +676,7 @@ class OKXExchange(ExchangeBase):
             - net_mode: 买卖模式（单向净持仓）
         """
         response = await self._request(
-            method="GET",
-            endpoint="/api/v5/account/config",
-            auth_required=True
+            method="GET", endpoint="/api/v5/account/config", auth_required=True
         )
 
         if response.get("code") != "0":
@@ -785,7 +765,9 @@ class OKXExchange(ExchangeBase):
         self._validate_order_precision(instrument, amount, price, order_type)
 
         if is_derivative and td_mode == "cash":
-            raise ValueError(f"{symbol} 是 {inst_type} 产品，td_mode 不能为 cash，请使用 cross 或 isolated")
+            raise ValueError(
+                f"{symbol} 是 {inst_type} 产品，td_mode 不能为 cash，请使用 cross 或 isolated"
+            )
         if is_derivative:
             ct_val = instrument.get("ctVal")
             if not ct_val:
@@ -800,7 +782,9 @@ class OKXExchange(ExchangeBase):
                 f"ctValCcy={instrument.get('ctValCcy')}, sz={amount}, tgtCcy={tgt_ccy or 'contracts'}"
             )
             if symbol.upper().endswith("-USD-SWAP"):
-                logger.warning(f"{symbol} 是币本位反向合约，保证金和盈亏通常按币结算，不是 USDT")
+                logger.warning(
+                    f"{symbol} 是币本位反向合约，保证金和盈亏通常按币结算，不是 USDT"
+                )
         elif tgt_ccy and tgt_ccy not in {"base_ccy", "quote_ccy"}:
             raise ValueError("现货市价单 tgt_ccy 只能是 base_ccy 或 quote_ccy")
 
@@ -815,7 +799,7 @@ class OKXExchange(ExchangeBase):
             "tdMode": td_mode,
             "side": side,
             "ordType": order_type,
-            "sz": amount_str
+            "sz": amount_str,
         }
 
         # 限价单必须指定价格
@@ -838,10 +822,7 @@ class OKXExchange(ExchangeBase):
             data["attachAlgoOrds"] = attach_algo_ords
 
         response = await self._request(
-            method="POST",
-            endpoint=endpoint,
-            data=data,
-            auth_required=True
+            method="POST", endpoint=endpoint, data=data, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -878,7 +859,7 @@ class OKXExchange(ExchangeBase):
         self,
         symbol: str,
         order_id: Optional[str] = None,
-        cl_ord_id: Optional[str] = None
+        cl_ord_id: Optional[str] = None,
     ) -> Dict:
         """
         取消订单
@@ -916,10 +897,7 @@ class OKXExchange(ExchangeBase):
             data["clOrdId"] = cl_ord_id
 
         response = await self._request(
-            method="POST",
-            endpoint=endpoint,
-            data=data,
-            auth_required=True
+            method="POST", endpoint=endpoint, data=data, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -941,7 +919,7 @@ class OKXExchange(ExchangeBase):
         self,
         symbol: str,
         order_id: Optional[str] = None,
-        cl_ord_id: Optional[str] = None
+        cl_ord_id: Optional[str] = None,
     ) -> Dict:
         """
         获取订单详情
@@ -1001,10 +979,7 @@ class OKXExchange(ExchangeBase):
             params["clOrdId"] = cl_ord_id
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=True
+            method="GET", endpoint=endpoint, params=params, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -1020,7 +995,7 @@ class OKXExchange(ExchangeBase):
         self,
         inst_type: str = "SPOT",
         inst_id: Optional[str] = None,
-        state: Optional[str] = None
+        state: Optional[str] = None,
     ) -> List[Dict]:
         """
         获取未完成订单列表
@@ -1060,10 +1035,7 @@ class OKXExchange(ExchangeBase):
             params["state"] = state
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=True
+            method="GET", endpoint=endpoint, params=params, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -1076,7 +1048,7 @@ class OKXExchange(ExchangeBase):
         inst_type: str = "SPOT",
         inst_id: Optional[str] = None,
         state: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Dict]:
         """
         获取历史订单列表(近7天)
@@ -1092,10 +1064,7 @@ class OKXExchange(ExchangeBase):
         """
         endpoint = "/api/v5/trade/orders-history"
 
-        params = {
-            "instType": inst_type,
-            "limit": str(limit)
-        }
+        params = {"instType": inst_type, "limit": str(limit)}
 
         if inst_id:
             params["instId"] = inst_id
@@ -1103,10 +1072,7 @@ class OKXExchange(ExchangeBase):
             params["state"] = state
 
         response = await self._request(
-            method="GET",
-            endpoint=endpoint,
-            params=params,
-            auth_required=True
+            method="GET", endpoint=endpoint, params=params, auth_required=True
         )
 
         if response.get("code") != "0":
@@ -1118,7 +1084,7 @@ class OKXExchange(ExchangeBase):
         self,
         inst_type: Optional[str] = None,
         inst_id: Optional[str] = None,
-        pos_id: Optional[str] = None
+        pos_id: Optional[str] = None,
     ) -> List[Dict]:
         """
         获取持仓信息
@@ -1186,7 +1152,7 @@ class OKXExchange(ExchangeBase):
             method="GET",
             endpoint=endpoint,
             params=params if params else None,
-            auth_required=True
+            auth_required=True,
         )
 
         if response.get("code") != "0":
@@ -1201,9 +1167,11 @@ class OKXExchange(ExchangeBase):
         获取ISO格式的UTC时间戳
         格式：2020-12-08T09:08:57.715Z
         """
-        return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-    def _generate_signature(self, timestamp: str, method: str, request_path: str, body: str = "") -> str:
+    def _generate_signature(
+        self, timestamp: str, method: str, request_path: str, body: str = ""
+    ) -> str:
         """
         生成OKX API签名
 
@@ -1226,18 +1194,22 @@ class OKXExchange(ExchangeBase):
 
         # HMAC SHA256加密
         mac = hmac.new(
-            bytes(self.secret_key, encoding='utf-8'),
-            bytes(message, encoding='utf-8'),
-            digestmod=hashlib.sha256
+            bytes(self.secret_key, encoding="utf-8"),
+            bytes(message, encoding="utf-8"),
+            digestmod=hashlib.sha256,
         )
 
         # Base64编码
-        signature = base64.b64encode(mac.digest()).decode('utf-8')
+        signature = base64.b64encode(mac.digest()).decode("utf-8")
 
-        logger.debug(f"生成签名 - message: {message[:50]}..., signature: {signature[:20]}...")
+        logger.debug(
+            f"生成签名 - message: {message[:50]}..., signature: {signature[:20]}..."
+        )
         return signature
 
-    def _get_headers(self, timestamp: str, method: str, request_path: str, body: str = "") -> Dict:
+    def _get_headers(
+        self, timestamp: str, method: str, request_path: str, body: str = ""
+    ) -> Dict:
         """
         生成OKX API请求头
 
@@ -1253,16 +1225,16 @@ class OKXExchange(ExchangeBase):
         signature = self._generate_signature(timestamp, method, request_path, body)
 
         headers = {
-            'OK-ACCESS-KEY': self.api_key,
-            'OK-ACCESS-SIGN': signature,
-            'OK-ACCESS-TIMESTAMP': timestamp,
-            'OK-ACCESS-PASSPHRASE': self.passphrase,
-            'Content-Type': 'application/json'
+            "OK-ACCESS-KEY": self.api_key,
+            "OK-ACCESS-SIGN": signature,
+            "OK-ACCESS-TIMESTAMP": timestamp,
+            "OK-ACCESS-PASSPHRASE": self.passphrase,
+            "Content-Type": "application/json",
         }
 
         # 模拟盘需要添加特殊header
         if self.simulated:
-            headers['x-simulated-trading'] = '1'
+            headers["x-simulated-trading"] = "1"
 
         return headers
 
@@ -1277,7 +1249,7 @@ class OKXExchange(ExchangeBase):
                 ttl_dns_cache=300,  # DNS缓存时间(秒)
                 keepalive_timeout=60,  # keepalive超时时间
                 enable_cleanup_closed=True,  # 启用关闭连接清理
-                force_close=False  # 不强制关闭连接，允许复用
+                force_close=False,  # 不强制关闭连接，允许复用
             )
             self.session = aiohttp.ClientSession(connector=connector)
         return self.session
@@ -1288,7 +1260,7 @@ class OKXExchange(ExchangeBase):
         endpoint: str,
         params: Optional[Dict] = None,
         data: Optional[Dict] = None,
-        auth_required: bool = True
+        auth_required: bool = True,
     ) -> Dict:
         """
         发送HTTP请求
@@ -1312,13 +1284,14 @@ class OKXExchange(ExchangeBase):
         # 构建request_path（包含查询参数）
         request_path = endpoint
         if params:
-            query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+            query_string = "&".join([f"{k}={v}" for k, v in params.items()])
             request_path = f"{endpoint}?{query_string}"
 
         # 构建请求体
         body_str = ""
         if data:
             import json
+
             body_str = json.dumps(data)
 
         # 构建请求头
@@ -1327,9 +1300,11 @@ class OKXExchange(ExchangeBase):
             timestamp = self._get_timestamp()
             headers = self._get_headers(timestamp, method, request_path, body_str)
         else:
-            headers = {'Content-Type': 'application/json'}
+            headers = {"Content-Type": "application/json"}
 
-        logger.info(f"请求 {method} {url} - params: {params}, auth: {auth_required}, proxy: {self.proxy or '未设置'}")
+        logger.info(
+            f"请求 {method} {url} - params: {params}, auth: {auth_required}, proxy: {self.proxy or '未设置'}"
+        )
         if data:
             logger.debug(f"请求体: {data}")
 
@@ -1346,7 +1321,7 @@ class OKXExchange(ExchangeBase):
                     "headers": headers,
                     "params": params,
                     "json": data,
-                    "timeout": aiohttp.ClientTimeout(total=30)  # 增加超时时间到30秒
+                    "timeout": aiohttp.ClientTimeout(total=30),  # 增加超时时间到30秒
                 }
 
                 # 如果配置了代理，添加代理参数
@@ -1360,7 +1335,9 @@ class OKXExchange(ExchangeBase):
                     logger.debug(f"响应: {response.status} - {response_data}")
 
                     if response.status != 200:
-                        logger.error(f"API请求失败: {response.status} - {response_data}")
+                        logger.error(
+                            f"API请求失败: {response.status} - {response_data}"
+                        )
                         raise Exception(f"OKX API Error: {response_data}")
 
                     return response_data

@@ -15,6 +15,7 @@
   - 死叉（fast 下穿 slow）→ 平多
   - 实时 Ticker 价格触发止损/止盈（无需等 K 线关闭）
 """
+
 import time
 from typing import Dict, List, Optional
 from decimal import Decimal
@@ -27,13 +28,13 @@ from app.models.strategy import Strategy as DBStrategy
 
 
 # ── 最优超参数（不可随意修改，来自回测验证） ─────────────────────────
-_FAST_PERIOD    = 12
-_SLOW_PERIOD    = 40
-_RSI_PERIOD     = 14
-_RSI_THRESHOLD  = 65.0      # RSI 超过此值不开仓（超买过滤）
-_TIMEFRAME      = "15m"
-_KLINE_LIMIT    = 80        # 预热 K 线数（>= slow_period + warmup）
-_LOOP_SECONDS   = 15 * 60  # 15 分钟换一次 K 线周期
+_FAST_PERIOD = 12
+_SLOW_PERIOD = 40
+_RSI_PERIOD = 14
+_RSI_THRESHOLD = 65.0  # RSI 超过此值不开仓（超买过滤）
+_TIMEFRAME = "15m"
+_KLINE_LIMIT = 80  # 预热 K 线数（>= slow_period + warmup）
+_LOOP_SECONDS = 15 * 60  # 15 分钟换一次 K 线周期
 
 
 class TrendFollowStrategy(StrategyBase):
@@ -61,14 +62,14 @@ class TrendFollowStrategy(StrategyBase):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
 
         p = parameters or {}
-        self.fast_period:   int   = int(p.get("fast_period",   _FAST_PERIOD))
-        self.slow_period:   int   = int(p.get("slow_period",   _SLOW_PERIOD))
-        self.stop_loss:     float = float(p.get("stop_loss",    0.01))
-        self.take_profit:   float = float(p.get("take_profit",  0.08))
-        self.pos_ratio:     float = float(p.get("position_ratio", 0.4))
-        self.use_rsi:       bool  = bool(p.get("use_rsi_filter", True))
-        self.rsi_threshold: float = float(p.get("rsi_threshold",  _RSI_THRESHOLD))
-        self.leverage:      int   = int(p.get("leverage", 10))  # 默认 10x
+        self.fast_period: int = int(p.get("fast_period", _FAST_PERIOD))
+        self.slow_period: int = int(p.get("slow_period", _SLOW_PERIOD))
+        self.stop_loss: float = float(p.get("stop_loss", 0.01))
+        self.take_profit: float = float(p.get("take_profit", 0.08))
+        self.pos_ratio: float = float(p.get("position_ratio", 0.4))
+        self.use_rsi: bool = bool(p.get("use_rsi_filter", True))
+        self.rsi_threshold: float = float(p.get("rsi_threshold", _RSI_THRESHOLD))
+        self.leverage: int = int(p.get("leverage", 10))  # 默认 10x
 
         # EMA 状态（仅保留最近两个值用于交叉判断）
         self._fast_prev: Optional[float] = None
@@ -77,33 +78,35 @@ class TrendFollowStrategy(StrategyBase):
         self._slow_curr: Optional[float] = None
 
         # 合约规格（在 start() 时动态获取）
-        self._ct_val: float = 0.1    # 合约面值（默认 ETH-USDT-SWAP）
-        self._lot_sz: float = 1.0    # 下单数量精度（张）
-        self._min_sz: float = 1.0    # 最小下单量（张）
+        self._ct_val: float = 0.1  # 合约面值（默认 ETH-USDT-SWAP）
+        self._lot_sz: float = 1.0  # 下单数量精度（张）
+        self._min_sz: float = 1.0  # 最小下单量（张）
         self._is_swap: bool = symbol.endswith("-SWAP") or symbol.endswith("-FUTURES")
 
         # 移动止损参数
-        self.trailing_stop: float = float(p.get("trailing_stop", 0.0))  # 0 表示禁用，例如 0.02 = 2%
+        self.trailing_stop: float = float(
+            p.get("trailing_stop", 0.0)
+        )  # 0 表示禁用，例如 0.02 = 2%
 
         # 仓位状态
-        self._in_position:    bool  = False
-        self._entry_price:    float = 0.0
-        self._position_qty:   float = 0.0   # 持仓数量（合约张数 or 币数）
-        self._open_time:      float = 0.0   # 开仓时间（unix 秒），用于最短持仓保护
-        self._highest_price:  float = 0.0   # 持仓期间最高价（移动止损用）
-        self._trail_stop_px:  float = 0.0   # 当前移动止损触发价
+        self._in_position: bool = False
+        self._entry_price: float = 0.0
+        self._position_qty: float = 0.0  # 持仓数量（合约张数 or 币数）
+        self._open_time: float = 0.0  # 开仓时间（unix 秒），用于最短持仓保护
+        self._highest_price: float = 0.0  # 持仓期间最高价（移动止损用）
+        self._trail_stop_px: float = 0.0  # 当前移动止损触发价
 
         # K 线周期追踪（毫秒级时间戳，以 15min 对齐）
         self._last_kline_period: int = 0
 
         # 统计数据（供 manager 广播）
-        self.realized_pnl:   float = 0.0
-        self.total_trades:   int   = 0      # 完整开平仓轮次（用于胜率）
-        self._win_trades:    int   = 0
-        self.win_rate:       float = 0.0
-        self._buy_count:     int   = 0      # 买入订单次数
-        self._sell_count:    int   = 0      # 卖出订单次数
-        self._unrealized_pnl: float = 0.0   # 当前未实现盈亏缓存（每 tick 更新）
+        self.realized_pnl: float = 0.0
+        self.total_trades: int = 0  # 完整开平仓轮次（用于胜率）
+        self._win_trades: int = 0
+        self.win_rate: float = 0.0
+        self._buy_count: int = 0  # 买入订单次数
+        self._sell_count: int = 0  # 卖出订单次数
+        self._unrealized_pnl: float = 0.0  # 当前未实现盈亏缓存（每 tick 更新）
 
         logger.info(
             f"TrendFollowStrategy 初始化: {symbol} "
@@ -131,14 +134,20 @@ class TrendFollowStrategy(StrategyBase):
         try:
             _db = SessionLocal()
             try:
-                db_s = _db.query(DBStrategy).filter(DBStrategy.id == self.strategy_id).first()
+                db_s = (
+                    _db.query(DBStrategy)
+                    .filter(DBStrategy.id == self.strategy_id)
+                    .first()
+                )
                 if db_s and db_s.position_in_position:
-                    self._in_position     = True
-                    self._entry_price     = float(db_s.position_entry_price or 0)
-                    self._position_qty    = float(db_s.position_qty or 0)
-                    self._open_time       = float(db_s.position_open_time or 0)
-                    self._highest_price   = float(db_s.position_highest_price or self._entry_price)
-                    self._trail_stop_px   = float(db_s.position_trail_stop_px or 0)
+                    self._in_position = True
+                    self._entry_price = float(db_s.position_entry_price or 0)
+                    self._position_qty = float(db_s.position_qty or 0)
+                    self._open_time = float(db_s.position_open_time or 0)
+                    self._highest_price = float(
+                        db_s.position_highest_price or self._entry_price
+                    )
+                    self._trail_stop_px = float(db_s.position_trail_stop_px or 0)
                     logger.warning(
                         f"[{self.symbol}] 🔄 重启后恢复持仓: qty={self._position_qty} "
                         f"entry={self._entry_price:.2f} highest={self._highest_price:.2f}"
@@ -175,7 +184,9 @@ class TrendFollowStrategy(StrategyBase):
                     mgn_mode=margin_mode,
                     inst_id=self.symbol,
                 )
-                logger.info(f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({margin_mode})")
+                logger.info(
+                    f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({margin_mode})"
+                )
             except Exception as e:
                 logger.warning(f"[{self.symbol}] 设置杠杆失败: {e}")
 
@@ -185,19 +196,27 @@ class TrendFollowStrategy(StrategyBase):
         # 立即入场：如果 fast > slow（当前处于上升趋势），直接开多
         # 避免启动后要等下一次金叉才能入场，错过已有趋势
         # 注意：如果重启后已恢复持仓，跳过自动开仓
-        if (self._fast_curr is not None and
-                self._slow_curr is not None and
-                self._fast_curr > self._slow_curr and
-                not self._in_position):
+        if (
+            self._fast_curr is not None
+            and self._slow_curr is not None
+            and self._fast_curr > self._slow_curr
+            and not self._in_position
+        ):
             try:
                 ticker = await self.exchange.get_ticker(self.symbol)
                 price = float(ticker.get("last", 0))
                 if price > 0:
                     # 仍然检查 RSI 过滤
-                    klines = await self.exchange.get_kline(self.symbol, _TIMEFRAME, _KLINE_LIMIT)
+                    klines = await self.exchange.get_kline(
+                        self.symbol, _TIMEFRAME, _KLINE_LIMIT
+                    )
                     confirmed = [k for k in reversed(klines) if k.get("confirm") == "1"]
                     closes = [float(k["c"]) for k in confirmed]
-                    if self.use_rsi and closes and self._rsi(closes) >= self.rsi_threshold:
+                    if (
+                        self.use_rsi
+                        and closes
+                        and self._rsi(closes) >= self.rsi_threshold
+                    ):
                         logger.info(
                             f"[{self.symbol}] 启动时处于上升趋势但 RSI 超买({self._rsi(closes):.1f})，等待回落后金叉再入场"
                         )
@@ -220,7 +239,9 @@ class TrendFollowStrategy(StrategyBase):
         self.is_running = False
         if close_position and self._in_position:
             await self._close_position(reason="stop")
-        logger.info(f"策略 {self.strategy_id} [{self.symbol}] 已停止 (平仓={close_position})")
+        logger.info(
+            f"策略 {self.strategy_id} [{self.symbol}] 已停止 (平仓={close_position})"
+        )
 
     # ═══════════════════════════════════════════════════════════
     # 核心 Tick 回调（由 manager 每 5 秒调用）
@@ -242,7 +263,9 @@ class TrendFollowStrategy(StrategyBase):
         # ── 更新未实现盈亏缓存（每 tick，供 manager 广播）────────
         if self._in_position and self._entry_price > 0 and self._position_qty > 0:
             ct_val = self._ct_val if self._is_swap else 1.0
-            self._unrealized_pnl = (price - self._entry_price) * self._position_qty * ct_val
+            self._unrealized_pnl = (
+                (price - self._entry_price) * self._position_qty * ct_val
+            )
         else:
             self._unrealized_pnl = 0.0
 
@@ -300,21 +323,25 @@ class TrendFollowStrategy(StrategyBase):
                 current_price = float(ticker.get("last", 0))
                 if current_price > 0:
                     ct_val = self._ct_val if self._is_swap else 1.0
-                    unrealized = (current_price - self._entry_price) * self._position_qty * ct_val
+                    unrealized = (
+                        (current_price - self._entry_price)
+                        * self._position_qty
+                        * ct_val
+                    )
         except Exception as e:
             logger.warning(f"[{self.symbol}] 计算未实现盈亏失败，使用缓存值: {e}")
 
         return {
-            "total_pnl":      round(self.realized_pnl + unrealized, 4),
-            "realized_pnl":   round(self.realized_pnl, 4),
+            "total_pnl": round(self.realized_pnl + unrealized, 4),
+            "realized_pnl": round(self.realized_pnl, 4),
             "unrealized_pnl": round(unrealized, 4),
-            "total_fee":      0,
-            "pnl_rate":       0,
-            "buy_count":      self._buy_count,
-            "sell_count":     self._sell_count,
-            "win_rate":       round(self.win_rate, 1),
-            "in_position":    self._in_position,
-            "entry_price":    self._entry_price,
+            "total_fee": 0,
+            "pnl_rate": 0,
+            "buy_count": self._buy_count,
+            "sell_count": self._sell_count,
+            "win_rate": round(self.win_rate, 1),
+            "in_position": self._in_position,
+            "entry_price": self._entry_price,
         }
 
     async def on_kline(self, kline: Dict):
@@ -323,7 +350,9 @@ class TrendFollowStrategy(StrategyBase):
 
     async def on_order_update(self, order: Dict):
         """订单成交回调（当前策略使用市价单，无需额外处理）"""
-        logger.debug(f"[{self.symbol}] 订单更新: {order.get('order_id')} status={order.get('status')}")
+        logger.debug(
+            f"[{self.symbol}] 订单更新: {order.get('order_id')} status={order.get('status')}"
+        )
 
     # ═══════════════════════════════════════════════════════════
     # 信号逻辑
@@ -332,13 +361,17 @@ class TrendFollowStrategy(StrategyBase):
     async def _process_kline_signal(self):
         """获取已确认 K 线，更新 EMA，检测金叉/死叉并下单"""
         try:
-            klines = await self.exchange.get_kline(self.symbol, _TIMEFRAME, _KLINE_LIMIT)
+            klines = await self.exchange.get_kline(
+                self.symbol, _TIMEFRAME, _KLINE_LIMIT
+            )
         except Exception as e:
             logger.error(f"[{self.symbol}] 获取 K 线失败: {e}")
             return
 
         if not klines or len(klines) < self.slow_period + 2:
-            logger.warning(f"[{self.symbol}] K 线数据不足: {len(klines) if klines else 0}")
+            logger.warning(
+                f"[{self.symbol}] K 线数据不足: {len(klines) if klines else 0}"
+            )
             return
 
         # OKX 返回最新在前（降序），需反转为升序（最旧在前）供 EMA 使用
@@ -354,15 +387,19 @@ class TrendFollowStrategy(StrategyBase):
         if self._fast_curr is None or self._slow_curr is None:
             return
 
-        golden = (self._fast_prev is not None and
-                  self._slow_prev is not None and
-                  self._fast_prev <= self._slow_prev and
-                  self._fast_curr > self._slow_curr)
+        golden = (
+            self._fast_prev is not None
+            and self._slow_prev is not None
+            and self._fast_prev <= self._slow_prev
+            and self._fast_curr > self._slow_curr
+        )
 
-        death = (self._fast_prev is not None and
-                 self._slow_prev is not None and
-                 self._fast_prev >= self._slow_prev and
-                 self._fast_curr < self._slow_curr)
+        death = (
+            self._fast_prev is not None
+            and self._slow_prev is not None
+            and self._fast_prev >= self._slow_prev
+            and self._fast_curr < self._slow_curr
+        )
 
         # 用最新 K 线收盘价作为参考价（klines[0] 是最新那根）
         current_price = float(klines[0]["c"])
@@ -374,7 +411,9 @@ class TrendFollowStrategy(StrategyBase):
 
         if golden and not self._in_position:
             if self.use_rsi and self._rsi(closes) >= self.rsi_threshold:
-                logger.info(f"[{self.symbol}] 金叉但 RSI 超买({self._rsi(closes):.1f})，跳过开仓")
+                logger.info(
+                    f"[{self.symbol}] 金叉但 RSI 超买({self._rsi(closes):.1f})，跳过开仓"
+                )
                 return
             await self._open_position(current_price)
 
@@ -402,13 +441,13 @@ class TrendFollowStrategy(StrategyBase):
         slow_k = 2 / (self.slow_period + 1)
 
         # 用前 slow_period 根做 SMA 初始化
-        fast_ema = sum(closes[:self.fast_period]) / self.fast_period
-        slow_ema = sum(closes[:self.slow_period]) / self.slow_period
+        fast_ema = sum(closes[: self.fast_period]) / self.fast_period
+        slow_ema = sum(closes[: self.slow_period]) / self.slow_period
 
         prev_fast = fast_ema
         prev_slow = slow_ema
 
-        for price in closes[self.slow_period:]:
+        for price in closes[self.slow_period :]:
             prev_fast, fast_ema = fast_ema, (price - fast_ema) * fast_k + fast_ema
             prev_slow, slow_ema = slow_ema, (price - slow_ema) * slow_k + slow_ema
 
@@ -420,7 +459,9 @@ class TrendFollowStrategy(StrategyBase):
     async def _init_ema(self):
         """启动时用历史 K 线预热 EMA"""
         try:
-            klines = await self.exchange.get_kline(self.symbol, _TIMEFRAME, _KLINE_LIMIT)
+            klines = await self.exchange.get_kline(
+                self.symbol, _TIMEFRAME, _KLINE_LIMIT
+            )
             if klines and len(klines) >= self.slow_period + 2:
                 # OKX 返回降序，反转为升序；过滤已确认 K 线
                 confirmed = [k for k in reversed(klines) if k.get("confirm") == "1"]
@@ -465,7 +506,9 @@ class TrendFollowStrategy(StrategyBase):
                     break
 
             if available <= 10:
-                logger.warning(f"[{self.symbol}] 可用 USDT 余额不足({available:.2f})，跳过开仓")
+                logger.warning(
+                    f"[{self.symbol}] 可用 USDT 余额不足({available:.2f})，跳过开仓"
+                )
                 return
 
             # pos_ratio 表示用账户可用资金的 X% 作为保证金
@@ -481,7 +524,9 @@ class TrendFollowStrategy(StrategyBase):
                 qty = round(margin_budget / price, 6)
 
             if qty <= 0:
-                logger.warning(f"[{self.symbol}] 计算数量为 0（margin={margin_budget:.2f} price={price:.2f}），跳过")
+                logger.warning(
+                    f"[{self.symbol}] 计算数量为 0（margin={margin_budget:.2f} price={price:.2f}），跳过"
+                )
                 return
 
             logger.info(
@@ -499,7 +544,9 @@ class TrendFollowStrategy(StrategyBase):
                 self._open_time = time.time()
                 # 使用实际成交均价（place_order_with_retry 已查询订单详情）
                 avg_px = order.get("avgPx") or order.get("fillPx")
-                self._entry_price = float(avg_px) if avg_px and float(avg_px) > 0 else price
+                self._entry_price = (
+                    float(avg_px) if avg_px and float(avg_px) > 0 else price
+                )
                 self._position_qty = qty
                 self._buy_count += 1
                 # 初始化移动止损
@@ -541,9 +588,9 @@ class TrendFollowStrategy(StrategyBase):
         # Fix: 在第一个 await 之前立即清除持仓标志，彻底防止并发重复平仓
         # 若后续下单失败则在 except 里恢复
         saved_entry = self._entry_price
-        saved_qty   = self._position_qty
-        self._in_position  = False
-        self._entry_price  = 0.0
+        saved_qty = self._position_qty
+        self._in_position = False
+        self._entry_price = 0.0
         self._position_qty = 0.0
 
         try:
@@ -552,7 +599,10 @@ class TrendFollowStrategy(StrategyBase):
             try:
                 positions = await self.exchange.get_positions()
                 for pos in positions:
-                    if pos.get("symbol") == self.symbol and float(pos.get("size", 0)) > 0:
+                    if (
+                        pos.get("symbol") == self.symbol
+                        and float(pos.get("size", 0)) > 0
+                    ):
                         qty = float(pos["size"])
                         break
             except Exception:
@@ -564,7 +614,9 @@ class TrendFollowStrategy(StrategyBase):
                 order_type="market",
             )
             if order:
-                close_price = float(order.get("avgPx") or order.get("fillPx") or saved_entry)
+                close_price = float(
+                    order.get("avgPx") or order.get("fillPx") or saved_entry
+                )
                 ct_val = self._ct_val if self._is_swap else 1.0
                 pnl = (close_price - saved_entry) * qty * ct_val
                 self._sell_count += 1
@@ -584,14 +636,18 @@ class TrendFollowStrategy(StrategyBase):
                 )
                 # Telegram 平仓通知
                 reason_map = {
-                    "stop_loss":     "止损平仓",
+                    "stop_loss": "止损平仓",
                     "trailing_stop": "移动止损",
-                    "take_profit":   "止盈平仓",
-                    "death_cross":   "死叉平仓",
-                    "stop":          "手动停止",
+                    "take_profit": "止盈平仓",
+                    "death_cross": "死叉平仓",
+                    "stop": "手动停止",
                 }
                 reason_text = reason_map.get(reason, reason)
-                pnl_pct = (close_price - saved_entry) / saved_entry * 100 if saved_entry > 0 else 0
+                pnl_pct = (
+                    (close_price - saved_entry) / saved_entry * 100
+                    if saved_entry > 0
+                    else 0
+                )
                 try:
                     await notification_service.notify_position_closed(
                         user_id=self.user_id,
@@ -611,13 +667,13 @@ class TrendFollowStrategy(StrategyBase):
             else:
                 # 下单失败，恢复持仓状态
                 logger.error(f"[{self.symbol}] 平仓下单失败，恢复持仓状态")
-                self._in_position  = True
-                self._entry_price  = saved_entry
+                self._in_position = True
+                self._entry_price = saved_entry
                 self._position_qty = saved_qty
 
         except Exception as e:
             logger.error(f"[{self.symbol}] 平多失败: {e}")
             # 异常时恢复持仓状态，避免持仓丢失
-            self._in_position  = True
-            self._entry_price  = saved_entry
+            self._in_position = True
+            self._entry_price = saved_entry
             self._position_qty = saved_qty

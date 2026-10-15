@@ -2,6 +2,7 @@
 推送渠道基类
 定义所有推送渠道的统一接口
 """
+
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 from loguru import logger
@@ -23,11 +24,7 @@ class NotificationChannel(ABC):
 
     @abstractmethod
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """
         发送通知
@@ -47,7 +44,9 @@ class NotificationChannel(ABC):
         """检查渠道是否启用"""
         return self.enabled
 
-    def format_message(self, title: str, content: str, data: Optional[Dict] = None) -> str:
+    def format_message(
+        self, title: str, content: str, data: Optional[Dict] = None
+    ) -> str:
         """
         格式化消息内容(默认纯文本格式)
 
@@ -60,12 +59,7 @@ class NotificationChannel(ABC):
 
     def get_emoji(self, level: str) -> str:
         """根据级别获取对应emoji"""
-        emoji_map = {
-            "info": "ℹ️",
-            "success": "✅",
-            "warning": "⚠️",
-            "error": "❌"
-        }
+        emoji_map = {"info": "ℹ️", "success": "✅", "warning": "⚠️", "error": "❌"}
         return emoji_map.get(level, "📢")
 
     async def handle_error(self, error: Exception, context: str):

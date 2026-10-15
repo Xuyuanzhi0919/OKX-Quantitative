@@ -1,6 +1,7 @@
 """
 行情数据API
 """
+
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.services.exchange.okx import OKXExchange
@@ -12,10 +13,14 @@ router = APIRouter()
 
 def get_okx_exchange() -> OKXExchange:
     """获取OKX交易所实例(私有API使用)"""
-    if not settings.OKX_API_KEY or not settings.OKX_SECRET_KEY or not settings.OKX_PASSPHRASE:
+    if (
+        not settings.OKX_API_KEY
+        or not settings.OKX_SECRET_KEY
+        or not settings.OKX_PASSPHRASE
+    ):
         raise HTTPException(
             status_code=500,
-            detail="OKX API配置未设置,请在.env文件中配置OKX_API_KEY、OKX_SECRET_KEY、OKX_PASSPHRASE"
+            detail="OKX API配置未设置,请在.env文件中配置OKX_API_KEY、OKX_SECRET_KEY、OKX_PASSPHRASE",
         )
 
     return OKXExchange(
@@ -23,7 +28,7 @@ def get_okx_exchange() -> OKXExchange:
         secret_key=settings.OKX_SECRET_KEY,
         passphrase=settings.OKX_PASSPHRASE,
         simulated=settings.OKX_SIMULATED,
-        proxy=settings.OKX_PROXY
+        proxy=settings.OKX_PROXY,
     )
 
 
@@ -34,7 +39,7 @@ def get_public_okx_exchange() -> OKXExchange:
         secret_key="",
         passphrase="",
         simulated=False,
-        proxy=settings.OKX_PROXY
+        proxy=settings.OKX_PROXY,
     )
 
 
@@ -54,11 +59,7 @@ async def get_ticker(symbol: str):
         ticker = await exchange.get_ticker(symbol)
         await exchange.close()
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": ticker
-        }
+        return {"code": 0, "msg": "success", "data": ticker}
     except Exception as e:
         logger.error(f"获取ticker失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -70,7 +71,7 @@ async def get_kline(
     timeframe: str = Query("1m", description="时间粒度,如 1m/5m/1H/1D"),
     limit: int = Query(100, ge=1, le=300, description="返回数量,最大300"),
     after: Optional[str] = Query(None, description="请求此时间戳之前的数据"),
-    before: Optional[str] = Query(None, description="请求此时间戳之后的数据")
+    before: Optional[str] = Query(None, description="请求此时间戳之后的数据"),
 ):
     """
     获取K线数据
@@ -88,19 +89,11 @@ async def get_kline(
     try:
         exchange = get_public_okx_exchange()  # 使用公共API
         klines = await exchange.get_kline(
-            symbol=symbol,
-            timeframe=timeframe,
-            limit=limit,
-            after=after,
-            before=before
+            symbol=symbol, timeframe=timeframe, limit=limit, after=after, before=before
         )
         await exchange.close()
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": klines
-        }
+        return {"code": 0, "msg": "success", "data": klines}
     except Exception as e:
         logger.error(f"获取K线失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -108,8 +101,7 @@ async def get_kline(
 
 @router.get("/orderbook/{symbol}")
 async def get_orderbook(
-    symbol: str,
-    depth: int = Query(20, ge=1, le=400, description="深度档位,最大400")
+    symbol: str, depth: int = Query(20, ge=1, le=400, description="深度档位,最大400")
 ):
     """
     获取订单簿
@@ -126,11 +118,7 @@ async def get_orderbook(
         orderbook = await exchange.get_orderbook(symbol, depth)
         await exchange.close()
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": orderbook
-        }
+        return {"code": 0, "msg": "success", "data": orderbook}
     except Exception as e:
         logger.error(f"获取订单簿失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -138,10 +126,13 @@ async def get_orderbook(
 
 @router.get("/instruments")
 async def get_instruments(
-    inst_type: str = Query("SPOT", description="产品类型: SPOT(币币)/SWAP(永续合约)/FUTURES(交割合约)/OPTION(期权)"),
+    inst_type: str = Query(
+        "SPOT",
+        description="产品类型: SPOT(币币)/SWAP(永续合约)/FUTURES(交割合约)/OPTION(期权)",
+    ),
     uly: Optional[str] = Query(None, description="标的指数,如 BTC-USD (仅适用于合约)"),
     inst_id: Optional[str] = Query(None, description="产品ID,如 BTC-USDT"),
-    quote_ccy: Optional[str] = Query(None, description="计价货币筛选,如 USDT")
+    quote_ccy: Optional[str] = Query(None, description="计价货币筛选,如 USDT"),
 ):
     """
     获取交易产品列表(公共API,无需认证)
@@ -158,41 +149,30 @@ async def get_instruments(
     try:
         exchange = get_public_okx_exchange()
         instruments = await exchange.get_instruments(
-            inst_type=inst_type,
-            uly=uly,
-            inst_id=inst_id
+            inst_type=inst_type, uly=uly, inst_id=inst_id
         )
         await exchange.close()
 
         # 如果指定了计价货币,进行筛选
         # 注意: SWAP类型使用settleCcy字段, SPOT类型使用quoteCcy字段
         if quote_ccy:
-            if inst_type == 'SWAP':
+            if inst_type == "SWAP":
                 # 永续合约使用settleCcy字段
                 instruments = [
-                    inst for inst in instruments
-                    if inst.get('settleCcy') == quote_ccy
+                    inst for inst in instruments if inst.get("settleCcy") == quote_ccy
                 ]
             else:
                 # 现货等其他类型使用quoteCcy字段
                 instruments = [
-                    inst for inst in instruments
-                    if inst.get('quoteCcy') == quote_ccy
+                    inst for inst in instruments if inst.get("quoteCcy") == quote_ccy
                 ]
 
         # 只返回状态为live的产品
-        instruments = [
-            inst for inst in instruments
-            if inst.get('state') == 'live'
-        ]
+        instruments = [inst for inst in instruments if inst.get("state") == "live"]
 
         logger.info(f"获取交易产品成功: type={inst_type}, count={len(instruments)}")
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": instruments
-        }
+        return {"code": 0, "msg": "success", "data": instruments}
     except Exception as e:
         logger.error(f"获取交易产品失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))

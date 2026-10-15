@@ -1,6 +1,7 @@
 """
 OKX WebSocket客户端
 """
+
 import asyncio
 import json
 import websockets
@@ -11,13 +12,25 @@ import time
 from datetime import datetime, timezone
 from loguru import logger
 from typing import Dict, Callable, Set, Optional
-from .manager import broadcast_ticker, broadcast_orderbook, broadcast_trades, broadcast_kline, ws_manager
+from .manager import (
+    broadcast_ticker,
+    broadcast_orderbook,
+    broadcast_trades,
+    broadcast_kline,
+    ws_manager,
+)
 
 
 class OKXWebSocketClient:
     """OKX WebSocket客户端"""
 
-    def __init__(self, api_key: Optional[str] = None, secret_key: Optional[str] = None, passphrase: Optional[str] = None, simulated: bool = False):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        passphrase: Optional[str] = None,
+        simulated: bool = False,
+    ):
         """
         初始化OKX WebSocket客户端
 
@@ -65,13 +78,13 @@ class OKXWebSocketClient:
         Returns:
             Base64编码的签名字符串
         """
-        message = timestamp + 'GET' + '/users/self/verify'
+        message = timestamp + "GET" + "/users/self/verify"
         mac = hmac.new(
-            bytes(self.secret_key, encoding='utf-8'),
-            bytes(message, encoding='utf-8'),
-            digestmod=hashlib.sha256
+            bytes(self.secret_key, encoding="utf-8"),
+            bytes(message, encoding="utf-8"),
+            digestmod=hashlib.sha256,
         )
-        signature = base64.b64encode(mac.digest()).decode('utf-8')
+        signature = base64.b64encode(mac.digest()).decode("utf-8")
         return signature
 
     async def _login_private(self):
@@ -86,12 +99,14 @@ class OKXWebSocketClient:
             # 构造登录消息
             login_msg = {
                 "op": "login",
-                "args": [{
-                    "apiKey": self.api_key,
-                    "passphrase": self.passphrase,
-                    "timestamp": timestamp,
-                    "sign": signature
-                }]
+                "args": [
+                    {
+                        "apiKey": self.api_key,
+                        "passphrase": self.passphrase,
+                        "timestamp": timestamp,
+                        "sign": signature,
+                    }
+                ],
             }
 
             # 发送登录请求
@@ -102,7 +117,7 @@ class OKXWebSocketClient:
             response = await self.ws_private.recv()
             data = json.loads(response)
 
-            if data.get('event') == 'login' and data.get('code') == '0':
+            if data.get("event") == "login" and data.get("code") == "0":
                 self.private_authenticated = True
                 logger.info("Successfully authenticated to OKX Private WebSocket")
             else:
@@ -117,18 +132,14 @@ class OKXWebSocketClient:
             # 连接public端点（ticker, orderbook, trades）
             logger.info(f"Connecting to OKX Public WebSocket: {self.public_url}")
             self.ws_public = await websockets.connect(
-                self.public_url,
-                ping_interval=20,
-                ping_timeout=10
+                self.public_url, ping_interval=20, ping_timeout=10
             )
             logger.info("Connected to OKX Public WebSocket")
 
             # 连接business端点（K线数据）
             logger.info(f"Connecting to OKX Business WebSocket: {self.business_url}")
             self.ws_business = await websockets.connect(
-                self.business_url,
-                ping_interval=20,
-                ping_timeout=10
+                self.business_url, ping_interval=20, ping_timeout=10
             )
             logger.info("Connected to OKX Business WebSocket")
 
@@ -136,9 +147,7 @@ class OKXWebSocketClient:
             if self.api_key and self.secret_key and self.passphrase:
                 logger.info(f"Connecting to OKX Private WebSocket: {self.private_url}")
                 self.ws_private = await websockets.connect(
-                    self.private_url,
-                    ping_interval=20,
-                    ping_timeout=10
+                    self.private_url, ping_interval=20, ping_timeout=10
                 )
                 logger.info("Connected to OKX Private WebSocket")
 
@@ -174,10 +183,7 @@ class OKXWebSocketClient:
         try:
             subscribe_msg = {
                 "op": "subscribe",
-                "args": [{
-                    "channel": "tickers",
-                    "instId": symbol
-                }]
+                "args": [{"channel": "tickers", "instId": symbol}],
             }
             await self.ws_public.send(json.dumps(subscribe_msg))
             self.subscribed_channels.add(channel)
@@ -194,10 +200,7 @@ class OKXWebSocketClient:
         try:
             subscribe_msg = {
                 "op": "subscribe",
-                "args": [{
-                    "channel": depth,
-                    "instId": symbol
-                }]
+                "args": [{"channel": depth, "instId": symbol}],
             }
             await self.ws_public.send(json.dumps(subscribe_msg))
             self.subscribed_channels.add(channel)
@@ -214,10 +217,7 @@ class OKXWebSocketClient:
         try:
             subscribe_msg = {
                 "op": "subscribe",
-                "args": [{
-                    "channel": "trades",
-                    "instId": symbol
-                }]
+                "args": [{"channel": "trades", "instId": symbol}],
             }
             await self.ws_public.send(json.dumps(subscribe_msg))
             self.subscribed_channels.add(channel)
@@ -242,10 +242,7 @@ class OKXWebSocketClient:
             # 例如: candle1m, candle1H, candle1D
             subscribe_msg = {
                 "op": "subscribe",
-                "args": [{
-                    "channel": f"candle{bar}",
-                    "instId": symbol
-                }]
+                "args": [{"channel": f"candle{bar}", "instId": symbol}],
             }
             await self.ws_business.send(json.dumps(subscribe_msg))
             self.subscribed_channels.add(channel)
@@ -261,7 +258,9 @@ class OKXWebSocketClient:
             inst_type: 产品类型 SPOT/SWAP/FUTURES/OPTION
         """
         if not self.private_authenticated:
-            logger.warning("Private WebSocket not authenticated, cannot subscribe to orders")
+            logger.warning(
+                "Private WebSocket not authenticated, cannot subscribe to orders"
+            )
             return
 
         channel = f"orders:{inst_type}"
@@ -271,10 +270,7 @@ class OKXWebSocketClient:
         try:
             subscribe_msg = {
                 "op": "subscribe",
-                "args": [{
-                    "channel": "orders",
-                    "instType": inst_type
-                }]
+                "args": [{"channel": "orders", "instType": inst_type}],
             }
             await self.ws_private.send(json.dumps(subscribe_msg))
             self.subscribed_channels.add(channel)
@@ -291,10 +287,7 @@ class OKXWebSocketClient:
         try:
             unsubscribe_msg = {
                 "op": "unsubscribe",
-                "args": [{
-                    "channel": channel,
-                    "instId": symbol
-                }]
+                "args": [{"channel": channel, "instId": symbol}],
             }
             await self.ws.send(json.dumps(unsubscribe_msg))
             self.subscribed_channels.discard(channel_key)
@@ -306,35 +299,35 @@ class OKXWebSocketClient:
         """处理接收到的消息"""
         try:
             # 处理订阅响应
-            if 'event' in message:
-                if message['event'] == 'subscribe':
+            if "event" in message:
+                if message["event"] == "subscribe":
                     logger.info(f"Subscription confirmed: {message}")
-                elif message['event'] == 'error':
+                elif message["event"] == "error":
                     logger.error(f"Subscription error: {message}")
                 return
 
             # 处理数据推送
-            if 'data' in message and 'arg' in message:
-                arg = message['arg']
-                channel = arg.get('channel')
-                inst_id = arg.get('instId')
-                data = message['data']
+            if "data" in message and "arg" in message:
+                arg = message["arg"]
+                channel = arg.get("channel")
+                inst_id = arg.get("instId")
+                data = message["data"]
 
                 if not data:
                     return
 
                 # 根据channel类型分发数据
-                if channel == 'tickers':
+                if channel == "tickers":
                     await self.handle_ticker(inst_id, data[0])
-                elif channel in ['books5', 'books', 'books50-l2-tbt']:
+                elif channel in ["books5", "books", "books50-l2-tbt"]:
                     await self.handle_orderbook(inst_id, data[0])
-                elif channel == 'trades':
+                elif channel == "trades":
                     await self.handle_trades(inst_id, data)
-                elif channel.startswith('candle'):
+                elif channel.startswith("candle"):
                     # 提取K线周期，如 candle1m -> 1m
-                    bar = channel.replace('candle', '')
+                    bar = channel.replace("candle", "")
                     await self.handle_kline(inst_id, bar, data[0])
-                elif channel == 'orders':
+                elif channel == "orders":
                     # 处理订单更新，data可能包含多个订单
                     for order in data:
                         await self.handle_order(order)
@@ -346,19 +339,19 @@ class OKXWebSocketClient:
         """处理Ticker数据"""
         try:
             ticker_data = {
-                'symbol': symbol,
-                'last': float(data['last']),
-                'lastSz': float(data['lastSz']),
-                'askPx': float(data['askPx']) if data['askPx'] else 0,
-                'askSz': float(data['askSz']) if data['askSz'] else 0,
-                'bidPx': float(data['bidPx']) if data['bidPx'] else 0,
-                'bidSz': float(data['bidSz']) if data['bidSz'] else 0,
-                'open24h': float(data['open24h']),
-                'high24h': float(data['high24h']),
-                'low24h': float(data['low24h']),
-                'vol24h': float(data['vol24h']) if data['vol24h'] else 0,
-                'volCcy24h': float(data['volCcy24h']) if data['volCcy24h'] else 0,
-                'ts': int(data['ts']),
+                "symbol": symbol,
+                "last": float(data["last"]),
+                "lastSz": float(data["lastSz"]),
+                "askPx": float(data["askPx"]) if data["askPx"] else 0,
+                "askSz": float(data["askSz"]) if data["askSz"] else 0,
+                "bidPx": float(data["bidPx"]) if data["bidPx"] else 0,
+                "bidSz": float(data["bidSz"]) if data["bidSz"] else 0,
+                "open24h": float(data["open24h"]),
+                "high24h": float(data["high24h"]),
+                "low24h": float(data["low24h"]),
+                "vol24h": float(data["vol24h"]) if data["vol24h"] else 0,
+                "volCcy24h": float(data["volCcy24h"]) if data["volCcy24h"] else 0,
+                "ts": int(data["ts"]),
             }
             await broadcast_ticker(symbol, ticker_data)
         except Exception as e:
@@ -368,10 +361,14 @@ class OKXWebSocketClient:
         """处理订单簿数据"""
         try:
             orderbook_data = {
-                'symbol': symbol,
-                'asks': [[float(ask[0]), float(ask[1])] for ask in data.get('asks', [])],
-                'bids': [[float(bid[0]), float(bid[1])] for bid in data.get('bids', [])],
-                'ts': int(data['ts']),
+                "symbol": symbol,
+                "asks": [
+                    [float(ask[0]), float(ask[1])] for ask in data.get("asks", [])
+                ],
+                "bids": [
+                    [float(bid[0]), float(bid[1])] for bid in data.get("bids", [])
+                ],
+                "ts": int(data["ts"]),
             }
             await broadcast_orderbook(symbol, orderbook_data)
         except Exception as e:
@@ -381,14 +378,17 @@ class OKXWebSocketClient:
         """处理成交记录"""
         try:
             trades_data = {
-                'symbol': symbol,
-                'trades': [{
-                    'tradeId': trade['tradeId'],
-                    'price': float(trade['px']),
-                    'size': float(trade['sz']),
-                    'side': trade['side'],  # buy or sell
-                    'ts': int(trade['ts']),
-                } for trade in data]
+                "symbol": symbol,
+                "trades": [
+                    {
+                        "tradeId": trade["tradeId"],
+                        "price": float(trade["px"]),
+                        "size": float(trade["sz"]),
+                        "side": trade["side"],  # buy or sell
+                        "ts": int(trade["ts"]),
+                    }
+                    for trade in data
+                ],
             }
             await broadcast_trades(symbol, trades_data)
         except Exception as e:
@@ -412,16 +412,16 @@ class OKXWebSocketClient:
         """
         try:
             kline_data = {
-                'symbol': symbol,
-                'bar': bar,
-                'ts': data[0],
-                'o': data[1],
-                'h': data[2],
-                'l': data[3],
-                'c': data[4],
-                'vol': data[5],
-                'volCcy': data[6],
-                'confirm': data[7],
+                "symbol": symbol,
+                "bar": bar,
+                "ts": data[0],
+                "o": data[1],
+                "h": data[2],
+                "l": data[3],
+                "c": data[4],
+                "vol": data[5],
+                "volCcy": data[6],
+                "confirm": data[7],
             }
             await broadcast_kline(symbol, kline_data)
         except Exception as e:
@@ -443,8 +443,10 @@ class OKXWebSocketClient:
         - fee: 手续费
         """
         try:
-            logger.info(f"📦 收到订单更新: {data.get('ordId')} - 状态={data.get('state')}, "
-                       f"交易对={data.get('instId')}, 已成交={data.get('accFillSz')}/{data.get('sz')}")
+            logger.info(
+                f"📦 收到订单更新: {data.get('ordId')} - 状态={data.get('state')}, "
+                f"交易对={data.get('instId')}, 已成交={data.get('accFillSz')}/{data.get('sz')}"
+            )
 
             # 映射OKX字段到策略期望的字段格式
             order_data = {
@@ -466,9 +468,9 @@ class OKXWebSocketClient:
             from app.services.strategy.manager import strategy_manager
 
             # 遍历所有运行中的策略,找到匹配交易对的策略
-            inst_id = data.get('instId')
+            inst_id = data.get("instId")
             for strategy_id, strategy in strategy_manager.strategies.items():
-                if hasattr(strategy, 'symbol') and strategy.symbol == inst_id:
+                if hasattr(strategy, "symbol") and strategy.symbol == inst_id:
                     # 调用策略的订单更新回调,传递映射后的数据
                     await strategy.on_order_update(order_data)
                     logger.info(f"✅ 订单更新已推送到策略 {strategy_id}")
@@ -529,20 +531,20 @@ class OKXWebSocketClient:
                 data = json.loads(message)
 
                 # 处理登录响应
-                if data.get('event') == 'login':
-                    if data.get('code') == '0':
+                if data.get("event") == "login":
+                    if data.get("code") == "0":
                         logger.info("✅ Private WebSocket login success")
                     else:
                         logger.error(f"❌ Private WebSocket login failed: {data}")
                     continue
 
                 # 处理订阅确认
-                if data.get('event') == 'subscribe':
+                if data.get("event") == "subscribe":
                     logger.info(f"✅ Private channel subscription confirmed: {data}")
                     continue
 
                 # 处理错误
-                if data.get('event') == 'error':
+                if data.get("event") == "error":
                     logger.error(f"❌ Private WebSocket error: {data}")
                     continue
 
@@ -567,18 +569,18 @@ class OKXWebSocketClient:
             self.subscribed_channels.clear()
 
             for channel_key in old_channels:
-                parts = channel_key.split(':')
+                parts = channel_key.split(":")
                 if len(parts) == 2:
                     channel, symbol = parts
-                    if channel == 'tickers':
+                    if channel == "tickers":
                         await self.subscribe_ticker(symbol)
-                    elif channel.startswith('books'):
+                    elif channel.startswith("books"):
                         await self.subscribe_orderbook(symbol, channel)
-                    elif channel == 'trades':
+                    elif channel == "trades":
                         await self.subscribe_trades(symbol)
-                    elif channel.startswith('candle'):
+                    elif channel.startswith("candle"):
                         # 提取K线周期，如 candle1m -> 1m
-                        bar = channel.replace('candle', '')
+                        bar = channel.replace("candle", "")
                         await self.subscribe_kline(symbol, bar)
 
     async def start(self):

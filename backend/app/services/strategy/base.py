@@ -1,6 +1,7 @@
 """
 策略基类
 """
+
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 from decimal import Decimal
@@ -12,6 +13,7 @@ from datetime import date, datetime
 
 class InsufficientBalanceError(Exception):
     """余额不足异常"""
+
     pass
 
 
@@ -24,7 +26,7 @@ class StrategyBase(ABC):
         exchange: ExchangeBase,
         symbol: str,
         parameters: Dict,
-        user_id: int = 1  # 默认用户ID,后续从策略记录中获取
+        user_id: int = 1,  # 默认用户ID,后续从策略记录中获取
     ):
         """
         初始化策略
@@ -44,13 +46,13 @@ class StrategyBase(ABC):
         self.is_running = False
 
         # 运行期交易质量追踪
-        self.consecutive_losses: int = 0         # 当前连续亏损次数
-        self.max_consecutive_losses: int = 0     # 历史最大连续亏损次数
-        self.trade_pnl_history: list = []        # 最近平仓交易盈亏（最新在末尾）
-        self.runtime_realized_pnl: float = 0.0    # 本次运行累计已实现盈亏
-        self.runtime_equity_peak: float = 0.0     # 本次运行已实现盈亏曲线峰值
-        self.max_runtime_drawdown: float = 0.0    # 本次运行最大回撤（绝对金额）
-        self.daily_realized_pnl: float = 0.0      # 当日已实现盈亏
+        self.consecutive_losses: int = 0  # 当前连续亏损次数
+        self.max_consecutive_losses: int = 0  # 历史最大连续亏损次数
+        self.trade_pnl_history: list = []  # 最近平仓交易盈亏（最新在末尾）
+        self.runtime_realized_pnl: float = 0.0  # 本次运行累计已实现盈亏
+        self.runtime_equity_peak: float = 0.0  # 本次运行已实现盈亏曲线峰值
+        self.max_runtime_drawdown: float = 0.0  # 本次运行最大回撤（绝对金额）
+        self.daily_realized_pnl: float = 0.0  # 当日已实现盈亏
         self._daily_pnl_date: date = datetime.now().date()
         self.last_ticker_at: Optional[float] = None
         self.last_tick_ok_at: Optional[float] = None
@@ -72,10 +74,12 @@ class StrategyBase(ABC):
 
         self.runtime_realized_pnl += pnl
         self.daily_realized_pnl += pnl
-        self.runtime_equity_peak = max(self.runtime_equity_peak, self.runtime_realized_pnl)
+        self.runtime_equity_peak = max(
+            self.runtime_equity_peak, self.runtime_realized_pnl
+        )
         self.max_runtime_drawdown = max(
             self.max_runtime_drawdown,
-            self.runtime_equity_peak - self.runtime_realized_pnl
+            self.runtime_equity_peak - self.runtime_realized_pnl,
         )
 
         self.trade_pnl_history.append(round(pnl, 4))
@@ -98,7 +102,9 @@ class StrategyBase(ABC):
 
     def runtime_profit_factor(self, window: int = 10) -> Optional[float]:
         """计算最近若干笔平仓交易的盈亏比。"""
-        recent_trades = self.trade_pnl_history[-window:] if window > 0 else self.trade_pnl_history
+        recent_trades = (
+            self.trade_pnl_history[-window:] if window > 0 else self.trade_pnl_history
+        )
         if not recent_trades:
             return None
 
@@ -148,7 +154,14 @@ class StrategyBase(ABC):
         """停止策略"""
         self.is_running = False
 
-    async def _save_order_to_db(self, order_data: Dict, side: str, order_type: str, price: Optional[Decimal], amount: Decimal):
+    async def _save_order_to_db(
+        self,
+        order_data: Dict,
+        side: str,
+        order_type: str,
+        price: Optional[Decimal],
+        amount: Decimal,
+    ):
         """
         保存订单到数据库
 
@@ -164,7 +177,9 @@ class StrategyBase(ABC):
 
         db = SessionLocal()
         try:
-            logger.debug(f"开始保存订单: order_id={order_data.get('ordId')}, symbol={self.symbol}")
+            logger.debug(
+                f"开始保存订单: order_id={order_data.get('ordId')}, symbol={self.symbol}"
+            )
 
             # 映射订单状态
             status_map = {
@@ -179,7 +194,9 @@ class StrategyBase(ABC):
             # 标准格式: order_id, status, filled_amount, avg_price, fee_currency
             order_id = order_data.get("ordId") or order_data.get("order_id")
             okx_state = order_data.get("state") or order_data.get("status")
-            filled_amount = order_data.get("accFillSz") or order_data.get("filled_amount", 0)
+            filled_amount = order_data.get("accFillSz") or order_data.get(
+                "filled_amount", 0
+            )
             avg_price = order_data.get("avgPx") or order_data.get("avg_price")
             fee_currency = order_data.get("feeCcy") or order_data.get("fee_currency")
 
@@ -190,13 +207,29 @@ class StrategyBase(ABC):
                 symbol=self.symbol,
                 side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
                 order_type=(
-                    OrderType.LIMIT if order_type == "limit" else
-                    OrderType.MARKET if order_type == "market" else
-                    OrderType.IOC if order_type == "ioc" else
-                    OrderType.POST_ONLY if order_type == "post_only" else
-                    OrderType.STOP_LIMIT if order_type == "stop_limit" else
-                    OrderType.STOP_MARKET if order_type == "stop_market" else
-                    OrderType.MARKET # Default to market if unknown
+                    OrderType.LIMIT
+                    if order_type == "limit"
+                    else (
+                        OrderType.MARKET
+                        if order_type == "market"
+                        else (
+                            OrderType.IOC
+                            if order_type == "ioc"
+                            else (
+                                OrderType.POST_ONLY
+                                if order_type == "post_only"
+                                else (
+                                    OrderType.STOP_LIMIT
+                                    if order_type == "stop_limit"
+                                    else (
+                                        OrderType.STOP_MARKET
+                                        if order_type == "stop_market"
+                                        else OrderType.MARKET
+                                    )
+                                )
+                            )
+                        )
+                    )  # Default to market if unknown
                 ),
                 status=status_map.get(okx_state, OrderStatus.SUBMITTED),
                 price=float(price) if price else None,
@@ -216,7 +249,9 @@ class StrategyBase(ABC):
             db.refresh(db_order)
             logger.debug("Refresh成功")
 
-            logger.info(f"✅ 订单已成功保存到数据库: ID={db_order.id}, OrderID={db_order.order_id}, Symbol={db_order.symbol}")
+            logger.info(
+                f"✅ 订单已成功保存到数据库: ID={db_order.id}, OrderID={db_order.order_id}, Symbol={db_order.symbol}"
+            )
             return db_order
 
         except Exception as e:
@@ -224,6 +259,7 @@ class StrategyBase(ABC):
             logger.error(f"Exception type: {type(e).__name__}")
             logger.error(f"订单数据: {order_data}")
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
             db.rollback()
             return None
@@ -235,7 +271,7 @@ class StrategyBase(ABC):
         self,
         amount: Decimal,
         price: Optional[Decimal] = None,
-        order_type: str = "limit"
+        order_type: str = "limit",
     ) -> Dict:
         """
         买入
@@ -253,14 +289,14 @@ class StrategyBase(ABC):
             side="buy",
             order_type=order_type,
             amount=amount,
-            price=price
+            price=price,
         )
 
     async def sell(
         self,
         amount: Decimal,
         price: Optional[Decimal] = None,
-        order_type: str = "limit"
+        order_type: str = "limit",
     ) -> Dict:
         """
         卖出
@@ -278,7 +314,7 @@ class StrategyBase(ABC):
             side="sell",
             order_type=order_type,
             amount=amount,
-            price=price
+            price=price,
         )
 
     async def place_order_with_retry(
@@ -327,9 +363,11 @@ class StrategyBase(ABC):
                     td_mode = margin_mode  # isolated(逐仓) 或 cross(全仓)
                     # 若调用方明确传入 pos_side("long"/"short")，使用双向持仓模式
                     # 否则默认 "net"（买卖模式）保持向后兼容
-                    effective_pos_side = pos_side if pos_side in ("long", "short") else "net"
+                    effective_pos_side = (
+                        pos_side if pos_side in ("long", "short") else "net"
+                    )
                 else:
-                    td_mode = "cash"   # 非保证金(现货)
+                    td_mode = "cash"  # 非保证金(现货)
                     effective_pos_side = None  # 现货无 posSide
 
                 order = await self.exchange.create_order(
@@ -339,7 +377,7 @@ class StrategyBase(ABC):
                     amount=amount,
                     price=price,
                     td_mode=td_mode,
-                    pos_side=effective_pos_side
+                    pos_side=effective_pos_side,
                 )
 
                 order_id = order.get("ordId")
@@ -351,8 +389,7 @@ class StrategyBase(ABC):
                     try:
                         await asyncio.sleep(0.8)
                         order_detail = await self.exchange.get_order(
-                            symbol=self.symbol,
-                            order_id=order_id
+                            symbol=self.symbol, order_id=order_id
                         )
                         logger.info(
                             f"订单详情: state={order_detail.get('state')} "
@@ -363,7 +400,9 @@ class StrategyBase(ABC):
                         logger.warning(f"查询订单详情失败，使用原始数据: {e}")
 
                 # 保存订单到数据库
-                await self._save_order_to_db(order_detail, side, order_type, price, amount)
+                await self._save_order_to_db(
+                    order_detail, side, order_type, price, amount
+                )
 
                 return order_detail
 
@@ -376,11 +415,20 @@ class StrategyBase(ABC):
                     logger.error(f"订单参数错误（数量过小或格式错误）: {error_msg}")
                     # 参数错误不需要重试
                     return None
-                elif "51008" in error_msg or "Insufficient balance" in error_msg or "insufficient" in error_msg.lower():
+                elif (
+                    "51008" in error_msg
+                    or "Insufficient balance" in error_msg
+                    or "insufficient" in error_msg.lower()
+                ):
                     logger.error(f"余额不足，停止策略: {error_msg}")
                     # 抛出余额不足异常，让上层处理
-                    raise InsufficientBalanceError(f"账户余额不足，无法继续下单: {error_msg}")
-                elif "51001" in error_msg or "Order would trigger immediately" in error_msg:
+                    raise InsufficientBalanceError(
+                        f"账户余额不足，无法继续下单: {error_msg}"
+                    )
+                elif (
+                    "51001" in error_msg
+                    or "Order would trigger immediately" in error_msg
+                ):
                     logger.warning(f"订单会立即成交（价格不合适）: {error_msg}")
                     # 价格问题不需要重试
                     return None

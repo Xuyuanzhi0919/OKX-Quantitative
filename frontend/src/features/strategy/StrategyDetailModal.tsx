@@ -1,10 +1,29 @@
-import { Modal, Descriptions, Statistic, Row, Col, Card, Tag, Space, Spin, Tabs, Progress, Timeline, Empty } from 'antd'
+import {
+  Modal,
+  Descriptions,
+  Statistic,
+  Row,
+  Col,
+  Card,
+  Tag,
+  Space,
+  Spin,
+  Tabs,
+  Progress,
+  Timeline,
+  Empty,
+} from 'antd'
 import { TrendingUp, TrendingDown, List, BarChart3, ScrollText } from 'lucide-react'
 import { Strategy, StrategyEvent } from '@/types'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect } from 'react'
 import { strategyApi } from '@/services/api'
-import { wsService, StrategyStatsData, StrategyUpdateData, OrderUpdateData } from '@/services/websocket'
+import {
+  wsService,
+  StrategyStatsData,
+  StrategyUpdateData,
+  OrderUpdateData,
+} from '@/services/websocket'
 import { formatAmount, formatPrice, formatQuantityDisplay, formatPercent } from '@/utils/format'
 import StrategyOrderHistory from './StrategyOrderHistory'
 
@@ -14,7 +33,11 @@ interface StrategyDetailModalProps {
   onCancel: () => void
 }
 
-export default function StrategyDetailModal({ open, strategy, onCancel }: StrategyDetailModalProps) {
+export default function StrategyDetailModal({
+  open,
+  strategy,
+  onCancel,
+}: StrategyDetailModalProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [strategyDetail, setStrategyDetail] = useState<any>(null)
@@ -82,7 +105,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
         strategy.id,
         (data: StrategyUpdateData) => {
           // 可以在这里更新策略的基本信息
-        }
+        },
       )
 
       // 监听策略实时统计（每5秒一次）
@@ -91,7 +114,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
         (data: StrategyStatsData) => {
           // 实时更新策略统计数据
           setStrategyDetail(data)
-        }
+        },
       )
 
       // 监听订单更新
@@ -101,7 +124,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
           // 订单状态变化，立即刷新盈亏数据
           fetchPnlData()
           fetchEvents()
-        }
+        },
       )
 
       // 定时刷新盈亏数据（每30秒一次）
@@ -137,7 +160,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
   // 计算显示数据 - 优先使用PNL API返回的数据
   const realized_pnl = pnlData?.realized_pnl ?? displayData.realized_pnl ?? 0
   const unrealized_pnl = pnlData?.unrealized_pnl ?? displayData.unrealized_pnl ?? 0
-  const total_pnl = pnlData?.total_pnl ?? (realized_pnl + unrealized_pnl)
+  const total_pnl = pnlData?.total_pnl ?? realized_pnl + unrealized_pnl
   const pnl_rate = pnlData?.pnl_rate ?? 0
   const total_fee = pnlData?.total_fee ?? 0
 
@@ -146,14 +169,13 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
   const position_value = pnlData?.position_value ?? displayData.position_cost ?? 0
   const avg_buy_price = pnlData?.avg_buy_price ?? 0
   const avg_sell_price = pnlData?.avg_sell_price ?? 0
-  const avg_cost = current_position > 0 && position_value > 0
-    ? position_value / current_position
-    : avg_buy_price
+  const avg_cost =
+    current_position > 0 && position_value > 0 ? position_value / current_position : avg_buy_price
 
   // 交易统计 - 优先使用PNL API返回的数据
   const buy_count = pnlData?.buy_count ?? displayData.buy_count ?? 0
   const sell_count = pnlData?.sell_count ?? displayData.sell_count ?? 0
-  const total_trades = pnlData?.total_trades ?? displayData.total_trades ?? (buy_count + sell_count)
+  const total_trades = pnlData?.total_trades ?? displayData.total_trades ?? buy_count + sell_count
   const total_buy_amount = pnlData?.total_buy_amount ?? displayData.total_buy_volume ?? 0
   const total_sell_amount = pnlData?.total_sell_amount ?? displayData.total_sell_volume ?? 0
   const signalStatus = displayData.signal_status
@@ -181,9 +203,8 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
     tick: '等行情',
   }
 
-  const pctText = (value?: number | null) => (
+  const pctText = (value?: number | null) =>
     value == null || Number.isNaN(Number(value)) ? '-' : `${Number(value).toFixed(2)}%`
-  )
 
   const inferPositionSide = (pos: any) => {
     if (pos?.side) return pos.side
@@ -199,8 +220,8 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
     const current = Number(pos?.current_price || 0)
     const stop = Number(pos?.stop_px || 0)
     if (!current || !stop) return null
-    if (side === 'long') return (current - stop) / current * 100
-    if (side === 'short') return (stop - current) / current * 100
+    if (side === 'long') return ((current - stop) / current) * 100
+    if (side === 'short') return ((stop - current) / current) * 100
     return null
   }
 
@@ -210,8 +231,8 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
     const current = Number(pos?.current_price || 0)
     const takeProfit = Number(pos?.take_profit_px || 0)
     if (!current || !takeProfit) return null
-    if (side === 'long') return (takeProfit - current) / current * 100
-    if (side === 'short') return (current - takeProfit) / current * 100
+    if (side === 'long') return ((takeProfit - current) / current) * 100
+    if (side === 'short') return ((current - takeProfit) / current) * 100
     return null
   }
 
@@ -221,9 +242,8 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
     return '-'
   }
 
-  const moneyText = (value?: number | null) => (
+  const moneyText = (value?: number | null) =>
     value == null || Number.isNaN(Number(value)) ? '-' : `${formatAmount(value)} USDT`
-  )
 
   const eventTypeLabel: Record<string, string> = {
     start: '启动',
@@ -320,7 +340,9 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                     color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444',
                     fontSize: 18,
                   }}
-                  prefix={unrealized_pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  prefix={
+                    unrealized_pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />
+                  }
                   suffix="USDT"
                 />
               </Col>
@@ -384,54 +406,99 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                     </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="策略方向">
-                    <Tag color={signalStatus.direction === 'short' ? 'red' : signalStatus.direction === 'long' ? 'green' : 'blue'}>
+                    <Tag
+                      color={
+                        signalStatus.direction === 'short'
+                          ? 'red'
+                          : signalStatus.direction === 'long'
+                            ? 'green'
+                            : 'blue'
+                      }
+                    >
                       {signalStatus.direction || signalStatus.side || '-'}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="最近信号">{signalStatus.status || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="最近信号">
+                    {signalStatus.status || '-'}
+                  </Descriptions.Item>
                   <Descriptions.Item label="动作">{signalStatus.action || '-'}</Descriptions.Item>
                   <Descriptions.Item label="信号方向">
-                    <Tag color={signalStatus.side === 'short' ? 'red' : signalStatus.side === 'long' ? 'green' : 'default'}>
+                    <Tag
+                      color={
+                        signalStatus.side === 'short'
+                          ? 'red'
+                          : signalStatus.side === 'long'
+                            ? 'green'
+                            : 'default'
+                      }
+                    >
                       {signalStatus.side || '-'}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="价格">{signalStatus.last != null ? formatPrice(signalStatus.last) : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="RSI">{signalStatus.rsi != null ? Number(signalStatus.rsi).toFixed(2) : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="ATR占比">{pctText(signalStatus.atr_pct)}</Descriptions.Item>
-                  <Descriptions.Item label="首轮观察">
-                    {signalStatus.observe_first_scan == null ? '-' : signalStatus.observe_first_scan ? '开启' : '关闭'}
+                  <Descriptions.Item label="价格">
+                    {signalStatus.last != null ? formatPrice(signalStatus.last) : '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="说明" span={3}>{signalStatus.message || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="RSI">
+                    {signalStatus.rsi != null ? Number(signalStatus.rsi).toFixed(2) : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="ATR占比">
+                    {pctText(signalStatus.atr_pct)}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="首轮观察">
+                    {signalStatus.observe_first_scan == null
+                      ? '-'
+                      : signalStatus.observe_first_scan
+                        ? '开启'
+                        : '关闭'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="说明" span={3}>
+                    {signalStatus.message || '-'}
+                  </Descriptions.Item>
                 </Descriptions>
               ) : (
                 <Descriptions column={3} size="small">
                   <Descriptions.Item label="趋势">
-                    <Tag color={
-                      signalStatus.trend === 'bull' ? 'green'
-                        : signalStatus.trend === 'bear' ? 'red'
-                          : signalStatus.trend === 'position' ? 'blue'
-                            : 'default'
-                    }>
+                    <Tag
+                      color={
+                        signalStatus.trend === 'bull'
+                          ? 'green'
+                          : signalStatus.trend === 'bear'
+                            ? 'red'
+                            : signalStatus.trend === 'position'
+                              ? 'blue'
+                              : 'default'
+                      }
+                    >
                       {trendLabel[signalStatus.trend] || signalStatus.trend || '-'}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="等待方向">
-                    <Tag color={
-                      signalStatus.waiting_for === 'long' ? 'green'
-                        : signalStatus.waiting_for === 'short' ? 'red'
-                          : 'default'
-                    }>
+                    <Tag
+                      color={
+                        signalStatus.waiting_for === 'long'
+                          ? 'green'
+                          : signalStatus.waiting_for === 'short'
+                            ? 'red'
+                            : 'default'
+                      }
+                    >
                       {waitingLabel[signalStatus.waiting_for] || signalStatus.waiting_for || '-'}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="距离触发">
-                    {signalStatus.distance_pct != null ? `${Number(signalStatus.distance_pct).toFixed(2)}%` : '-'}
+                    {signalStatus.distance_pct != null
+                      ? `${Number(signalStatus.distance_pct).toFixed(2)}%`
+                      : '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="当前价">
-                    {signalStatus.current_price != null ? formatPrice(signalStatus.current_price) : '-'}
+                    {signalStatus.current_price != null
+                      ? formatPrice(signalStatus.current_price)
+                      : '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="触发价">
-                    {signalStatus.trigger_price != null ? formatPrice(signalStatus.trigger_price) : '-'}
+                    {signalStatus.trigger_price != null
+                      ? formatPrice(signalStatus.trigger_price)
+                      : '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="ATR">
                     {signalStatus.atr != null ? formatPrice(signalStatus.atr) : '-'}
@@ -451,20 +518,34 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
           )}
 
           {positionStatus && (
-            <Card title="持仓止盈止损" variant="borderless" size="small" style={{ marginBottom: 16 }}>
+            <Card
+              title="持仓止盈止损"
+              variant="borderless"
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
               {positionStatus.dynamic ? (
                 <>
                   <Descriptions column={3} size="small" style={{ marginBottom: 12 }}>
                     <Descriptions.Item label="状态">
                       <Tag color={positionStatus.in_position ? 'blue' : 'default'}>
-                        {positionStatus.in_position ? `${positionStatus.open_positions} 个持仓` : '空仓'}
+                        {positionStatus.in_position
+                          ? `${positionStatus.open_positions} 个持仓`
+                          : '空仓'}
                       </Tag>
                     </Descriptions.Item>
                     <Descriptions.Item label="当前名义价值">
-                      {positionStatus.current_notional_usd == null ? '-' : moneyText(positionStatus.current_notional_usd)}
+                      {positionStatus.current_notional_usd == null
+                        ? '-'
+                        : moneyText(positionStatus.current_notional_usd)}
                     </Descriptions.Item>
                     <Descriptions.Item label="浮动盈亏">
-                      <span style={{ color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444',
+                          fontWeight: 600,
+                        }}
+                      >
                         {moneyText(unrealized_pnl)}
                       </span>
                     </Descriptions.Item>
@@ -474,34 +555,60 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                       {positionStatus.positions.map((pos: any) => {
                         const inferredSide = inferPositionSide(pos)
                         return (
-                        <Card key={pos.symbol} size="small" variant="borderless" style={{ background: '#fafafa' }}>
-                          <Descriptions column={3} size="small">
-                            <Descriptions.Item label="交易对">{pos.symbol}</Descriptions.Item>
-                            <Descriptions.Item label="方向">
-                              <Tag color={inferredSide === 'long' ? 'green' : inferredSide === 'short' ? 'red' : 'default'}>
-                                {sideText(inferredSide)}
-                              </Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="数量">{pos.qty ? formatQuantityDisplay(pos.qty) : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="开仓价">{pos.entry_price ? formatPrice(pos.entry_price) : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="当前价">{pos.current_price ? formatPrice(pos.current_price) : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="止损价">
-                              <span style={{ color: '#ef4444', fontWeight: 600 }}>
-                                {pos.stop_px ? formatPrice(pos.stop_px) : '-'}
-                              </span>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="距离止损">{pctText(distanceToStopPct(pos))}</Descriptions.Item>
-                            <Descriptions.Item label="止盈价">
-                              <span style={{ color: '#22c55e', fontWeight: 600 }}>
-                                {pos.take_profit_px ? formatPrice(pos.take_profit_px) : '-'}
-                              </span>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="距离止盈">{pctText(distanceToTakeProfitPct(pos))}</Descriptions.Item>
-                          </Descriptions>
-                        </Card>
-                      )})}
+                          <Card
+                            key={pos.symbol}
+                            size="small"
+                            variant="borderless"
+                            style={{ background: '#fafafa' }}
+                          >
+                            <Descriptions column={3} size="small">
+                              <Descriptions.Item label="交易对">{pos.symbol}</Descriptions.Item>
+                              <Descriptions.Item label="方向">
+                                <Tag
+                                  color={
+                                    inferredSide === 'long'
+                                      ? 'green'
+                                      : inferredSide === 'short'
+                                        ? 'red'
+                                        : 'default'
+                                  }
+                                >
+                                  {sideText(inferredSide)}
+                                </Tag>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="数量">
+                                {pos.qty ? formatQuantityDisplay(pos.qty) : '-'}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="开仓价">
+                                {pos.entry_price ? formatPrice(pos.entry_price) : '-'}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="当前价">
+                                {pos.current_price ? formatPrice(pos.current_price) : '-'}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="止损价">
+                                <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                                  {pos.stop_px ? formatPrice(pos.stop_px) : '-'}
+                                </span>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="距离止损">
+                                {pctText(distanceToStopPct(pos))}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="止盈价">
+                                <span style={{ color: '#22c55e', fontWeight: 600 }}>
+                                  {pos.take_profit_px ? formatPrice(pos.take_profit_px) : '-'}
+                                </span>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="距离止盈">
+                                {pctText(distanceToTakeProfitPct(pos))}
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        )
+                      })}
                     </Space>
-                  ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无动态持仓" />}
+                  ) : (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无动态持仓" />
+                  )}
                 </>
               ) : (
                 <Descriptions column={3} size="small">
@@ -511,11 +618,15 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="方向">
-                    <Tag color={
-                      positionStatus.side === 'long' ? 'green'
-                        : positionStatus.side === 'short' ? 'red'
-                          : 'default'
-                    }>
+                    <Tag
+                      color={
+                        positionStatus.side === 'long'
+                          ? 'green'
+                          : positionStatus.side === 'short'
+                            ? 'red'
+                            : 'default'
+                      }
+                    >
                       {sideText(positionStatus.side)}
                     </Tag>
                   </Descriptions.Item>
@@ -529,7 +640,12 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                     {positionStatus.current_price ? formatPrice(positionStatus.current_price) : '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="浮动盈亏">
-                    <span style={{ color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                    <span
+                      style={{
+                        color: unrealized_pnl >= 0 ? '#22c55e' : '#ef4444',
+                        fontWeight: 600,
+                      }}
+                    >
                       {moneyText(unrealized_pnl)}
                     </span>
                   </Descriptions.Item>
@@ -543,7 +659,9 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                   </Descriptions.Item>
                   <Descriptions.Item label="止盈价">
                     <span style={{ color: '#22c55e', fontWeight: 600 }}>
-                      {positionStatus.take_profit_px ? formatPrice(positionStatus.take_profit_px) : '-'}
+                      {positionStatus.take_profit_px
+                        ? formatPrice(positionStatus.take_profit_px)
+                        : '-'}
                     </span>
                   </Descriptions.Item>
                   <Descriptions.Item label="距离止盈">
@@ -570,11 +688,19 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                 </Descriptions.Item>
                 <Descriptions.Item label="连续亏损">
                   <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <span>{riskStatus.consecutive_losses ?? 0} / {riskStatus.max_consecutive_losses ?? '-'}</span>
+                    <span>
+                      {riskStatus.consecutive_losses ?? 0} /{' '}
+                      {riskStatus.max_consecutive_losses ?? '-'}
+                    </span>
                     <Progress
                       percent={
                         riskStatus.max_consecutive_losses
-                          ? Math.min(100, (Number(riskStatus.consecutive_losses || 0) / Number(riskStatus.max_consecutive_losses)) * 100)
+                          ? Math.min(
+                              100,
+                              (Number(riskStatus.consecutive_losses || 0) /
+                                Number(riskStatus.max_consecutive_losses)) *
+                                100,
+                            )
                           : 0
                       }
                       size="small"
@@ -586,12 +712,18 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                 <Descriptions.Item label="今日亏损">
                   <Space direction="vertical" size={4} style={{ width: '100%' }}>
                     <span>
-                      {moneyText(Math.min(0, Number(riskStatus.daily_realized_pnl || 0)))} / -{moneyText(riskStatus.daily_loss_limit_usd)}
+                      {moneyText(Math.min(0, Number(riskStatus.daily_realized_pnl || 0)))} / -
+                      {moneyText(riskStatus.daily_loss_limit_usd)}
                     </span>
                     <Progress
                       percent={
                         riskStatus.daily_loss_limit_usd
-                          ? Math.min(100, Math.abs(Math.min(0, Number(riskStatus.daily_realized_pnl || 0))) / Number(riskStatus.daily_loss_limit_usd) * 100)
+                          ? Math.min(
+                              100,
+                              (Math.abs(Math.min(0, Number(riskStatus.daily_realized_pnl || 0))) /
+                                Number(riskStatus.daily_loss_limit_usd)) *
+                                100,
+                            )
                           : 0
                       }
                       size="small"
@@ -602,11 +734,19 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                 </Descriptions.Item>
                 <Descriptions.Item label="运行回撤">
                   <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <span>{moneyText(riskStatus.max_runtime_drawdown)} / {moneyText(riskStatus.max_drawdown_limit_usd)}</span>
+                    <span>
+                      {moneyText(riskStatus.max_runtime_drawdown)} /{' '}
+                      {moneyText(riskStatus.max_drawdown_limit_usd)}
+                    </span>
                     <Progress
                       percent={
                         riskStatus.max_drawdown_limit_usd
-                          ? Math.min(100, Number(riskStatus.max_runtime_drawdown || 0) / Number(riskStatus.max_drawdown_limit_usd) * 100)
+                          ? Math.min(
+                              100,
+                              (Number(riskStatus.max_runtime_drawdown || 0) /
+                                Number(riskStatus.max_drawdown_limit_usd)) *
+                                100,
+                            )
                           : 0
                       }
                       size="small"
@@ -616,8 +756,12 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                   </Space>
                 </Descriptions.Item>
                 <Descriptions.Item label="利润因子">
-                  {riskStatus.runtime_profit_factor == null ? '-' : Number(riskStatus.runtime_profit_factor).toFixed(2)}
-                  {riskStatus.min_profit_factor != null ? ` / ${Number(riskStatus.min_profit_factor).toFixed(2)}` : ''}
+                  {riskStatus.runtime_profit_factor == null
+                    ? '-'
+                    : Number(riskStatus.runtime_profit_factor).toFixed(2)}
+                  {riskStatus.min_profit_factor != null
+                    ? ` / ${Number(riskStatus.min_profit_factor).toFixed(2)}`
+                    : ''}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
@@ -648,7 +792,12 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
           )}
 
           {/* 持仓信息 */}
-          <Card title={t('strategy.positionInfo')} variant="borderless" size="small" style={{ marginBottom: 16 }}>
+          <Card
+            title={t('strategy.positionInfo')}
+            variant="borderless"
+            size="small"
+            style={{ marginBottom: 16 }}
+          >
             <Descriptions column={2} size="small">
               <Descriptions.Item label={t('strategy.positionSize')}>
                 <span className="font-mono" style={{ fontWeight: 600 }}>
@@ -666,10 +815,12 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                 </span>
               </Descriptions.Item>
               <Descriptions.Item label={t('strategy.winRate')}>
-                <span style={{
-                  fontWeight: 600,
-                  color: (strategy.win_rate ?? 0) >= 50 ? '#22c55e' : '#ef4444'
-                }}>
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color: (strategy.win_rate ?? 0) >= 50 ? '#22c55e' : '#ef4444',
+                  }}
+                >
                   {formatPercent(strategy.win_rate ?? 0, 1)}%
                 </span>
               </Descriptions.Item>
@@ -677,7 +828,12 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
           </Card>
 
           {/* 交易统计 */}
-          <Card title={t('strategy.tradingStats')} variant="borderless" size="small" style={{ marginBottom: 16 }}>
+          <Card
+            title={t('strategy.tradingStats')}
+            variant="borderless"
+            size="small"
+            style={{ marginBottom: 16 }}
+          >
             <Row gutter={16}>
               <Col span={6}>
                 <Statistic title={t('strategy.totalTrades')} value={total_trades || 0} />
@@ -714,7 +870,6 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
               </Col>
             </Row>
           </Card>
-
         </div>
       ),
     },
@@ -746,7 +901,7 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
           ) : (
             <Timeline
               mode="left"
-              items={events.map(event => ({
+              items={events.map((event) => ({
                 color: eventColor(event),
                 label: (
                   <span style={{ color: '#737373', fontSize: 12 }}>
@@ -762,32 +917,40 @@ export default function StrategyDetailModal({ open, strategy, onCancel }: Strate
                       <span style={{ fontWeight: 600 }}>{event.title}</span>
                     </Space>
                     {event.message && (
-                      <div style={{ marginTop: 6, color: '#a3a3a3' }}>
-                        {event.message}
-                      </div>
+                      <div style={{ marginTop: 6, color: '#a3a3a3' }}>{event.message}</div>
                     )}
-                    {event.parameter_snapshot && Object.keys(event.parameter_snapshot).length > 0 && event.event_type === 'start' && (
-                      <Descriptions column={3} size="small" style={{ marginTop: 8 }}>
-                        <Descriptions.Item label="周期">
-                          {event.parameter_snapshot.trend_timeframe || event.parameter_snapshot.timeframe || '-'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="杠杆">
-                          {event.parameter_snapshot.leverage ? `${event.parameter_snapshot.leverage}x` : '-'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="方向">
-                          {event.parameter_snapshot.direction || '-'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="EMA">
-                          {event.parameter_snapshot.fast_period || '-'} / {event.parameter_snapshot.slow_period || '-'}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="止损/止盈">
-                          {event.parameter_snapshot.stop_atr_multiple || '-'} / {event.parameter_snapshot.take_profit_atr_multiple || '-'} ATR
-                        </Descriptions.Item>
-                        <Descriptions.Item label="最大仓位">
-                          {event.parameter_snapshot.max_position_usd ? `${formatAmount(event.parameter_snapshot.max_position_usd)} USDT` : '-'}
-                        </Descriptions.Item>
-                      </Descriptions>
-                    )}
+                    {event.parameter_snapshot &&
+                      Object.keys(event.parameter_snapshot).length > 0 &&
+                      event.event_type === 'start' && (
+                        <Descriptions column={3} size="small" style={{ marginTop: 8 }}>
+                          <Descriptions.Item label="周期">
+                            {event.parameter_snapshot.trend_timeframe ||
+                              event.parameter_snapshot.timeframe ||
+                              '-'}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="杠杆">
+                            {event.parameter_snapshot.leverage
+                              ? `${event.parameter_snapshot.leverage}x`
+                              : '-'}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="方向">
+                            {event.parameter_snapshot.direction || '-'}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="EMA">
+                            {event.parameter_snapshot.fast_period || '-'} /{' '}
+                            {event.parameter_snapshot.slow_period || '-'}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="止损/止盈">
+                            {event.parameter_snapshot.stop_atr_multiple || '-'} /{' '}
+                            {event.parameter_snapshot.take_profit_atr_multiple || '-'} ATR
+                          </Descriptions.Item>
+                          <Descriptions.Item label="最大仓位">
+                            {event.parameter_snapshot.max_position_usd
+                              ? `${formatAmount(event.parameter_snapshot.max_position_usd)} USDT`
+                              : '-'}
+                          </Descriptions.Item>
+                        </Descriptions>
+                      )}
                   </div>
                 ),
               }))}

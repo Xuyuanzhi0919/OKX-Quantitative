@@ -69,6 +69,10 @@ rsync -a --delete \
   --exclude='.env' \
   --exclude='.env.local' \
   --exclude='.env.prod' \
+  --exclude='backend/.env' \
+  --exclude='backend/notification_config.json' \
+  --exclude='tradekit/.env' \
+  --exclude='tradekit/data/' \
   --exclude='backups/' \
   --exclude='backend/logs/' \
   --exclude='nginx/logs/' \

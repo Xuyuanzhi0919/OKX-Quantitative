@@ -14,4 +14,3 @@ async def review_proposal(
 ) -> TradeProposalReview:
     guard = PolicyGuard.from_file(settings.policy_file)
     return guard.review(intent)
-

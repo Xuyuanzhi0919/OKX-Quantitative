@@ -1,2 +1,1 @@
 """OKK TradeKit Gateway."""
-

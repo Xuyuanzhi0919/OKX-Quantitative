@@ -9,6 +9,7 @@ It uses synchronized K-line close prices for both legs, so results are only a
 research approximation. Live execution still depends on order book depth,
 latency, fees, funding, and partial-fill handling.
 """
+
 from __future__ import annotations
 
 from typing import Callable, Dict, List, Optional
@@ -78,19 +79,27 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
         return f"{value}-SWAP"
 
     @classmethod
-    def from_params(cls, symbol: str, initial_capital: float, params: Dict) -> "SpotPerpArbitrageBacktestEngine":
+    def from_params(
+        cls, symbol: str, initial_capital: float, params: Dict
+    ) -> "SpotPerpArbitrageBacktestEngine":
         return cls(
             symbol=symbol,
             initial_capital=initial_capital,
             spot_symbol=params.get("spot_symbol"),
             perp_symbol=params.get("perp_symbol"),
             target_notional_usd=float(params.get("target_notional_usd", 100)),
-            max_notional_usd=float(params.get("max_notional_usd", params.get("target_notional_usd", 100))),
+            max_notional_usd=float(
+                params.get("max_notional_usd", params.get("target_notional_usd", 100))
+            ),
             open_edge_threshold=float(params.get("open_edge_threshold", 0.003)),
             close_edge_threshold=float(params.get("close_edge_threshold", 0.0008)),
             min_net_edge=float(params.get("min_net_edge", 0.0015)),
-            fee_rate=float(params.get("fee_rate", params.get("taker_fee_rate", 0.0005))),
-            slippage_rate=float(params.get("slippage_rate", params.get("slippage_buffer", 0.0005))),
+            fee_rate=float(
+                params.get("fee_rate", params.get("taker_fee_rate", 0.0005))
+            ),
+            slippage_rate=float(
+                params.get("slippage_rate", params.get("slippage_buffer", 0.0005))
+            ),
             leverage=int(params.get("leverage", 1)),
             max_holding_bars=int(params.get("max_holding_bars", 0)),
         )
@@ -114,11 +123,15 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
     def on_kline(self, kline: Dict):
         return None
 
-    def run(self, klines: List[Dict], progress_callback: Optional[Callable] = None) -> Dict:
+    def run(
+        self, klines: List[Dict], progress_callback: Optional[Callable] = None
+    ) -> Dict:
         spot_map, perp_map = self._build_aligned_maps(klines)
         timestamps = sorted(set(spot_map.keys()) & set(perp_map.keys()))
         if not timestamps:
-            raise ValueError(f"现货 {self.spot_symbol} 和永续 {self.perp_symbol} 没有可对齐的K线数据")
+            raise ValueError(
+                f"现货 {self.spot_symbol} 和永续 {self.perp_symbol} 没有可对齐的K线数据"
+            )
 
         logger.info(
             f"开始现货-永续套利回测: spot={self.spot_symbol}, perp={self.perp_symbol}, "
@@ -155,19 +168,33 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
 
         if self._in_position():
             final_ts = timestamps[-1]
-            self._close_pair(final_ts, float(spot_map[final_ts]["close"]), float(perp_map[final_ts]["close"]))
+            self._close_pair(
+                final_ts,
+                float(spot_map[final_ts]["close"]),
+                float(perp_map[final_ts]["close"]),
+            )
             self._update_pair_equity(
                 final_ts,
                 float(spot_map[final_ts]["close"]),
                 float(perp_map[final_ts]["close"]),
-                (float(perp_map[final_ts]["close"]) - float(spot_map[final_ts]["close"])) / float(spot_map[final_ts]["close"]),
+                (
+                    float(perp_map[final_ts]["close"])
+                    - float(spot_map[final_ts]["close"])
+                )
+                / float(spot_map[final_ts]["close"]),
             )
 
         if progress_callback:
             progress_callback(total, total)
 
-        final_equity = self.equity_curve[-1]["equity"] if self.equity_curve else self.initial_capital
-        logger.info(f"现货-永续套利回测完成: final_equity={final_equity:.2f}, trades={len(self.trades)}")
+        final_equity = (
+            self.equity_curve[-1]["equity"]
+            if self.equity_curve
+            else self.initial_capital
+        )
+        logger.info(
+            f"现货-永续套利回测完成: final_equity={final_equity:.2f}, trades={len(self.trades)}"
+        )
         return {
             "final_equity": final_equity,
             "total_trades": len(self.trades),
@@ -176,7 +203,9 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
             "leverage": self.leverage,
         }
 
-    def _build_aligned_maps(self, primary_klines: List[Dict]) -> tuple[Dict[int, Dict], Dict[int, Dict]]:
+    def _build_aligned_maps(
+        self, primary_klines: List[Dict]
+    ) -> tuple[Dict[int, Dict], Dict[int, Dict]]:
         pair_klines = dict(self._pair_klines)
         pair_klines.setdefault(self.symbol.upper(), primary_klines)
         if self.spot_symbol not in pair_klines:
@@ -194,7 +223,14 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
     def _round_notional(self) -> float:
         return max(0.0, min(self.target_notional_usd, self.max_notional_usd))
 
-    def _open_pair(self, timestamp: int, spot_price: float, perp_price: float, edge: float, bar_index: int) -> None:
+    def _open_pair(
+        self,
+        timestamp: int,
+        spot_price: float,
+        perp_price: float,
+        edge: float,
+        bar_index: int,
+    ) -> None:
         notional = self._round_notional()
         spot_qty = notional / spot_price
         perp_qty = spot_qty
@@ -216,22 +252,24 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
         self._perp_margin = perp_margin
         self._open_bar_index = bar_index
 
-        self.trades.append(Trade(
-            timestamp=timestamp,
-            side="buy",
-            price=spot_price,
-            amount=spot_qty,
-            fee=fee + slippage,
-            position_before=0,
-            position_after=spot_qty,
-            capital_before=capital_before,
-            capital_after=self.capital,
-            pnl=0.0,
-            pnl_percent=0.0,
-            direction="spot_long_perp_short",
-            leverage=self.leverage,
-            margin_used=perp_margin,
-        ))
+        self.trades.append(
+            Trade(
+                timestamp=timestamp,
+                side="buy",
+                price=spot_price,
+                amount=spot_qty,
+                fee=fee + slippage,
+                position_before=0,
+                position_after=spot_qty,
+                capital_before=capital_before,
+                capital_after=self.capital,
+                pnl=0.0,
+                pnl_percent=0.0,
+                direction="spot_long_perp_short",
+                leverage=self.leverage,
+                margin_used=perp_margin,
+            )
+        )
 
     def _close_pair(self, timestamp: int, spot_price: float, perp_price: float) -> None:
         if not self._in_position():
@@ -247,24 +285,28 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
         capital_before = self.capital
 
         self.capital += spot_value + self._perp_margin + perp_pnl - fee - slippage
-        pnl_percent = net_pnl / (self._entry_spot * self._spot_qty + self._perp_margin) * 100
+        pnl_percent = (
+            net_pnl / (self._entry_spot * self._spot_qty + self._perp_margin) * 100
+        )
 
-        self.trades.append(Trade(
-            timestamp=timestamp,
-            side="sell",
-            price=spot_price,
-            amount=self._spot_qty,
-            fee=fee + slippage,
-            position_before=self._spot_qty,
-            position_after=0,
-            capital_before=capital_before,
-            capital_after=self.capital,
-            pnl=net_pnl,
-            pnl_percent=pnl_percent,
-            direction="spot_long_perp_short",
-            leverage=self.leverage,
-            margin_used=self._perp_margin,
-        ))
+        self.trades.append(
+            Trade(
+                timestamp=timestamp,
+                side="sell",
+                price=spot_price,
+                amount=self._spot_qty,
+                fee=fee + slippage,
+                position_before=self._spot_qty,
+                position_after=0,
+                capital_before=capital_before,
+                capital_after=self.capital,
+                pnl=net_pnl,
+                pnl_percent=pnl_percent,
+                direction="spot_long_perp_short",
+                leverage=self.leverage,
+                margin_used=self._perp_margin,
+            )
+        )
 
         self._spot_qty = 0.0
         self._perp_qty = 0.0
@@ -273,26 +315,34 @@ class SpotPerpArbitrageBacktestEngine(BacktestEngine):
         self._entry_edge = 0.0
         self._perp_margin = 0.0
 
-    def _update_pair_equity(self, timestamp: int, spot_price: float, perp_price: float, edge: float) -> None:
+    def _update_pair_equity(
+        self, timestamp: int, spot_price: float, perp_price: float, edge: float
+    ) -> None:
         if self._in_position():
             spot_value = self._spot_qty * spot_price
             perp_unrealized = self._perp_qty * (self._entry_perp - perp_price)
             equity = self.capital + spot_value + self._perp_margin + perp_unrealized
-            unrealized = self._spot_qty * (spot_price - self._entry_spot) + perp_unrealized
+            unrealized = (
+                self._spot_qty * (spot_price - self._entry_spot) + perp_unrealized
+            )
             position_value = spot_value + self._perp_qty * perp_price
         else:
             equity = self.capital
             unrealized = 0.0
             position_value = 0.0
 
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "equity": equity,
-            "capital": self.capital,
-            "position_value": position_value,
-            "unrealized_pnl": unrealized,
-            "position_direction": "spot_long_perp_short" if self._in_position() else "flat",
-            "leverage": self.leverage,
-            "edge": edge,
-            "entry_edge": self._entry_edge,
-        })
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "equity": equity,
+                "capital": self.capital,
+                "position_value": position_value,
+                "unrealized_pnl": unrealized,
+                "position_direction": (
+                    "spot_long_perp_short" if self._in_position() else "flat"
+                ),
+                "leverage": self.leverage,
+                "edge": edge,
+                "entry_edge": self._entry_edge,
+            }
+        )

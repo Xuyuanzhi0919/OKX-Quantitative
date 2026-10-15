@@ -3,6 +3,7 @@
 
 默认用于验证 5x 杠杆、上涨 1% 止盈、下跌 0.5% 止损的短线策略。
 """
+
 from typing import Dict, List
 
 from .backtest_engine import BacktestEngine
@@ -62,7 +63,9 @@ class FixedTpSlTrendBacktestEngine(BacktestEngine):
         self.entry_price = 0.0
 
     @staticmethod
-    def _next_ema(previous: float | None, price: float, period: int, prices: List[float]) -> float:
+    def _next_ema(
+        previous: float | None, price: float, period: int, prices: List[float]
+    ) -> float:
         if previous is None:
             window = prices[-period:] if len(prices) >= period else prices
             return sum(window) / len(window)
@@ -76,7 +79,9 @@ class FixedTpSlTrendBacktestEngine(BacktestEngine):
     def _account_equity(self, current_price: float) -> float:
         if self.position.amount <= 0:
             return self.capital
-        unrealized_pnl = (current_price - self.position.avg_price) * self.position.amount
+        unrealized_pnl = (
+            current_price - self.position.avg_price
+        ) * self.position.amount
         return self.capital + self.position.margin_used + unrealized_pnl
 
     def update_equity(self, current_price: float, timestamp: int):
@@ -89,20 +94,24 @@ class FixedTpSlTrendBacktestEngine(BacktestEngine):
             self.position.unrealized_pnl = 0.0
             position_value = 0.0
 
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "equity": self._account_equity(current_price),
-            "capital": self.capital,
-            "position_value": position_value,
-            "unrealized_pnl": self.position.unrealized_pnl,
-            "position_direction": self.position.direction,
-            "leverage": self.leverage,
-        })
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "equity": self._account_equity(current_price),
+                "capital": self.capital,
+                "position_value": position_value,
+                "unrealized_pnl": self.position.unrealized_pnl,
+                "position_direction": self.position.direction,
+                "leverage": self.leverage,
+            }
+        )
 
     def get_total_equity(self, current_price: float) -> float:
         return self._account_equity(current_price)
 
-    def _close_if_exit_hit(self, low_price: float, high_price: float, timestamp: int) -> bool:
+    def _close_if_exit_hit(
+        self, low_price: float, high_price: float, timestamp: int
+    ) -> bool:
         if self.position.amount <= 0 or self.entry_price <= 0:
             return False
 

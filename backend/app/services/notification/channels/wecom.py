@@ -2,6 +2,7 @@
 企业微信机器人推送渠道
 官方文档: https://developer.work.weixin.qq.com/document/path/91770
 """
+
 from typing import Dict, Optional
 import httpx
 from loguru import logger
@@ -34,7 +35,9 @@ class WeComChannel(NotificationChannel):
             logger.warning("⚠️ 企业微信配置不完整,已禁用")
             self.enabled = False
 
-    def format_message(self, title: str, content: str, data: Optional[Dict] = None) -> str:
+    def format_message(
+        self, title: str, content: str, data: Optional[Dict] = None
+    ) -> str:
         """格式化为Markdown消息"""
         emoji = self.get_emoji(data.get("level", "info") if data else "info")
 
@@ -45,16 +48,12 @@ class WeComChannel(NotificationChannel):
             message += "\n---\n\n**详细信息:**\n"
             for key, value in data.items():
                 if key not in ["level", "timestamp"]:
-                    message += f"\n- <font color=\"comment\">{key}:</font> `{value}`"
+                    message += f'\n- <font color="comment">{key}:</font> `{value}`'
 
         return message
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送企业微信消息"""
         if not self.is_enabled():
@@ -69,15 +68,15 @@ class WeComChannel(NotificationChannel):
             # 构建请求体
             payload = {
                 "msgtype": "markdown",
-                "markdown": {
-                    "content": formatted_content
-                }
+                "markdown": {"content": formatted_content},
             }
 
             # 添加@功能
             if self.mentioned_list or self.mentioned_mobile_list:
                 payload["markdown"]["mentioned_list"] = self.mentioned_list
-                payload["markdown"]["mentioned_mobile_list"] = self.mentioned_mobile_list
+                payload["markdown"][
+                    "mentioned_mobile_list"
+                ] = self.mentioned_mobile_list
 
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(self.webhook_url, json=payload)
@@ -107,7 +106,7 @@ class WeComChannel(NotificationChannel):
                 "msgtype": "markdown",
                 "markdown": {
                     "content": f"# ✅ OKK量化交易系统 - 推送测试\n\n企业微信推送配置成功!\n\n测试时间: `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`"
-                }
+                },
             }
 
             async with httpx.AsyncClient(timeout=10.0) as client:

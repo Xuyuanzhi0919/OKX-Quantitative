@@ -4,6 +4,7 @@
 实时获取 OKX USDT 永续涨幅榜前三，并用多周期 EMA 动量规则做近 24 小时
 快速回测和当前信号评估。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -83,13 +84,17 @@ class TopGainersMomentumAnalyzer:
             candles = raw_by_symbol[symbol]
             backtest = self._simulate(candles, timeframe, initial_capital, start_ts)
             signal = self._signal(candles, timeframe)
-            results.append({
-                **item,
-                "backtest": backtest,
-                "signal": signal,
-            })
+            results.append(
+                {
+                    **item,
+                    "backtest": backtest,
+                    "signal": signal,
+                }
+            )
 
-        average_final = sum(r["backtest"]["final_equity"] for r in results) / len(results)
+        average_final = sum(r["backtest"]["final_equity"] for r in results) / len(
+            results
+        )
 
         return {
             "timeframe": timeframe,
@@ -99,8 +104,12 @@ class TopGainersMomentumAnalyzer:
             "window": {
                 "start": start_ts,
                 "end": last_ts,
-                "start_str": datetime.fromtimestamp(start_ts / 1000).strftime("%Y-%m-%d %H:%M"),
-                "end_str": datetime.fromtimestamp(last_ts / 1000).strftime("%Y-%m-%d %H:%M"),
+                "start_str": datetime.fromtimestamp(start_ts / 1000).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "end_str": datetime.fromtimestamp(last_ts / 1000).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
             },
             "strategy": {
                 "name": "top_gainers_ema_momentum",
@@ -125,12 +134,16 @@ class TopGainersMomentumAnalyzer:
             if last <= 0 or open_24h <= 0:
                 continue
             change_pct = (last - open_24h) / open_24h * 100
-            gainers.append({
-                "symbol": symbol,
-                "last": last,
-                "change_24h_pct": change_pct,
-                "volume_24h": self._safe_float(ticker.get("volCcy24h") or ticker.get("vol24h")),
-            })
+            gainers.append(
+                {
+                    "symbol": symbol,
+                    "last": last,
+                    "change_24h_pct": change_pct,
+                    "volume_24h": self._safe_float(
+                        ticker.get("volCcy24h") or ticker.get("vol24h")
+                    ),
+                }
+            )
         gainers.sort(key=lambda item: item["change_24h_pct"], reverse=True)
         return gainers[:top_n]
 
@@ -272,14 +285,20 @@ class TopGainersMomentumAnalyzer:
                     exit_price = price
                     reason = "time"
                 if exit_price is not None:
-                    pnl = (exit_price - entry) * position_qty - exit_price * position_qty * 0.0005
+                    pnl = (
+                        exit_price - entry
+                    ) * position_qty - exit_price * position_qty * 0.0005
                     capital += entry * position_qty / params["max_leverage"] + pnl
-                    trades.append(self._trade(ts[i], "exit", reason, exit_price, pnl, capital))
+                    trades.append(
+                        self._trade(ts[i], "exit", reason, exit_price, pnl, capital)
+                    )
                     position_qty = 0.0
 
             equity = capital
             if position_qty > 0:
-                equity += (price - entry) * position_qty + entry * position_qty / params["max_leverage"]
+                equity += (
+                    price - entry
+                ) * position_qty + entry * position_qty / params["max_leverage"]
             equity_curve.append(equity)
 
             if position_qty > 0:
@@ -308,13 +327,19 @@ class TopGainersMomentumAnalyzer:
                     position_qty = qty
                     take = entry + params["take_profit_r"] * risk
                     entry_index = i
-                    trades.append(self._trade(ts[i], "entry", "signal", entry, 0.0, capital))
+                    trades.append(
+                        self._trade(ts[i], "entry", "signal", entry, 0.0, capital)
+                    )
 
         if active and position_qty > 0:
             exit_price = close[-1]
-            pnl = (exit_price - entry) * position_qty - exit_price * position_qty * 0.0005
+            pnl = (
+                exit_price - entry
+            ) * position_qty - exit_price * position_qty * 0.0005
             capital += entry * position_qty / params["max_leverage"] + pnl
-            trades.append(self._trade(ts[-1], "exit", "final", exit_price, pnl, capital))
+            trades.append(
+                self._trade(ts[-1], "exit", "final", exit_price, pnl, capital)
+            )
             equity_curve.append(capital)
 
         final_equity = equity_curve[-1] if equity_curve else initial_capital
@@ -385,7 +410,9 @@ class TopGainersMomentumAnalyzer:
         }
 
     @staticmethod
-    def _trade(ts: int, side: str, reason: str, price: float, pnl: float, equity: float) -> Dict:
+    def _trade(
+        ts: int, side: str, reason: str, price: float, pnl: float, equity: float
+    ) -> Dict:
         return {
             "timestamp": ts,
             "time": datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d %H:%M"),
@@ -402,22 +429,34 @@ class TopGainersMomentumAnalyzer:
         multiplier = 2 / (period + 1)
         previous = None
         for value in values:
-            previous = value if previous is None else previous + (value - previous) * multiplier
+            previous = (
+                value
+                if previous is None
+                else previous + (value - previous) * multiplier
+            )
             output.append(previous)
         return output
 
     @classmethod
-    def _atr(cls, highs: List[float], lows: List[float], closes: List[float], period: int = 14) -> List[float]:
+    def _atr(
+        cls,
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 14,
+    ) -> List[float]:
         true_ranges = []
         for i, close in enumerate(closes):
             if i == 0:
                 true_ranges.append(highs[i] - lows[i])
             else:
-                true_ranges.append(max(
-                    highs[i] - lows[i],
-                    abs(highs[i] - closes[i - 1]),
-                    abs(lows[i] - closes[i - 1]),
-                ))
+                true_ranges.append(
+                    max(
+                        highs[i] - lows[i],
+                        abs(highs[i] - closes[i - 1]),
+                        abs(lows[i] - closes[i - 1]),
+                    )
+                )
         return cls._ema(true_ranges, period)
 
     @staticmethod
@@ -437,7 +476,9 @@ class TopGainersMomentumAnalyzer:
                 losses.pop(0)
             avg_gain = sum(gains) / len(gains)
             avg_loss = sum(losses) / len(losses)
-            output.append(100.0 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss))
+            output.append(
+                100.0 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss)
+            )
         return output
 
     @staticmethod

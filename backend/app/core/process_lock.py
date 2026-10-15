@@ -3,6 +3,7 @@
 
 使用文件锁确保同一时间只有一个后端实例在运行
 """
+
 import os
 import sys
 from pathlib import Path
@@ -10,7 +11,7 @@ from loguru import logger
 
 
 # Windows平台检查
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import msvcrt
 else:
     import fcntl
@@ -40,10 +41,10 @@ class ProcessLock:
         """
         try:
             # 打开或创建锁文件
-            self.lock_fd = open(self.lock_file, 'w')
+            self.lock_fd = open(self.lock_file, "w")
 
             # 根据平台使用不同的锁定机制
-            if sys.platform == 'win32':
+            if sys.platform == "win32":
                 # Windows: 使用msvcrt
                 msvcrt.locking(self.lock_fd.fileno(), msvcrt.LK_NBLCK, 1)
             else:
@@ -64,7 +65,7 @@ class ProcessLock:
 
             # 读取锁文件中的进程ID
             try:
-                with open(self.lock_file, 'r') as f:
+                with open(self.lock_file, "r") as f:
                     existing_pid = f.read().strip()
                 logger.error(f"❌ 无法获取进程锁: 已有实例在运行 (PID: {existing_pid})")
             except:
@@ -77,7 +78,7 @@ class ProcessLock:
         if self.lock_fd:
             try:
                 # 根据平台使用不同的解锁机制
-                if sys.platform == 'win32':
+                if sys.platform == "win32":
                     # Windows: 使用msvcrt
                     msvcrt.locking(self.lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
                 else:

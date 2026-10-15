@@ -22,17 +22,9 @@ import {
   Row,
   Col,
   Statistic,
-  App
+  App,
 } from 'antd'
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Power,
-  AlertTriangle,
-  Info,
-  CheckCircle
-} from 'lucide-react'
+import { Plus, Pencil, Trash2, Power, AlertTriangle, Info, CheckCircle } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import {
   getRiskRules,
@@ -40,7 +32,7 @@ import {
   updateRiskRule,
   deleteRiskRule,
   emergencyStop,
-  type RiskRule
+  type RiskRule,
 } from '@/services/riskControl'
 import { strategyApi } from '@/services/api'
 import type { Strategy } from '@/types'
@@ -97,7 +89,7 @@ const RiskControlPage = () => {
         level: 'global',
         action_on_trigger: 'warn',
         warning_threshold: 0.8,
-        is_enabled: true
+        is_enabled: true,
       })
     }
     setModalOpen(true)
@@ -170,7 +162,7 @@ const RiskControlPage = () => {
         } catch (error) {
           message.error('操作失败: ' + (error as Error).message)
         }
-      }
+      },
     })
   }
 
@@ -181,7 +173,7 @@ const RiskControlPage = () => {
       position: 'cyan',
       loss: 'red',
       drawdown: 'orange',
-      frequency: 'purple'
+      frequency: 'purple',
     }
     return colors[type] || 'default'
   }
@@ -193,7 +185,7 @@ const RiskControlPage = () => {
       position: '持仓',
       loss: '亏损',
       drawdown: '回撤',
-      frequency: '频率'
+      frequency: '频率',
     }
     return labels[type] || type
   }
@@ -204,7 +196,7 @@ const RiskControlPage = () => {
       warn: { label: '警告', color: 'default' },
       limit: { label: '限制', color: 'orange' },
       pause: { label: '暂停', color: 'red' },
-      close: { label: '平仓', color: 'volcano' }
+      close: { label: '平仓', color: 'volcano' },
     }
     return info[action] || { label: action, color: 'default' }
   }
@@ -212,7 +204,7 @@ const RiskControlPage = () => {
   // 获取策略名称
   const getStrategyName = (strategyId?: number) => {
     if (!strategyId) return '-'
-    const strategy = strategies.find(s => s.id === strategyId)
+    const strategy = strategies.find((s) => s.id === strategyId)
     return strategy ? strategy.name : `策略 #${strategyId}`
   }
 
@@ -225,13 +217,15 @@ const RiskControlPage = () => {
       if (rule.max_position_value) configs.push(`最大持仓: ${rule.max_position_value} USDT`)
     } else if (rule.risk_type === 'position') {
       if (rule.max_position_per_symbol) configs.push(`单币种上限: ${rule.max_position_per_symbol}`)
-      if (rule.max_concentration_ratio) configs.push(`集中度: ${(rule.max_concentration_ratio * 100).toFixed(1)}%`)
+      if (rule.max_concentration_ratio)
+        configs.push(`集中度: ${(rule.max_concentration_ratio * 100).toFixed(1)}%`)
     } else if (rule.risk_type === 'loss') {
       if (rule.daily_loss_limit) configs.push(`日亏损: ${rule.daily_loss_limit} USDT`)
       if (rule.total_loss_limit) configs.push(`总亏损: ${rule.total_loss_limit} USDT`)
       if (rule.max_consecutive_losses) configs.push(`连亏: ${rule.max_consecutive_losses} 次`)
     } else if (rule.risk_type === 'drawdown') {
-      if (rule.max_drawdown_percent) configs.push(`回撤: ${(rule.max_drawdown_percent * 100).toFixed(1)}%`)
+      if (rule.max_drawdown_percent)
+        configs.push(`回撤: ${(rule.max_drawdown_percent * 100).toFixed(1)}%`)
     } else if (rule.risk_type === 'frequency') {
       if (rule.max_trades_per_period) configs.push(`周期内: ${rule.max_trades_per_period} 单`)
       if (rule.period_seconds) configs.push(`周期: ${rule.period_seconds} 秒`)
@@ -259,26 +253,22 @@ const RiskControlPage = () => {
             </Tag>
           </Space>
         </Space>
-      )
+      ),
     },
     {
       title: '风控类型',
       dataIndex: 'risk_type',
       key: 'risk_type',
       width: 100,
-      render: (type) => (
-        <Tag color={getRiskTypeColor(type)}>{getRiskTypeLabel(type)}</Tag>
-      )
+      render: (type) => <Tag color={getRiskTypeColor(type)}>{getRiskTypeLabel(type)}</Tag>,
     },
     {
       title: '配置详情',
       key: 'config',
       width: 250,
       render: (_, record) => (
-        <span style={{ fontSize: 12, color: '#a3a3a3' }}>
-          {formatRuleConfig(record)}
-        </span>
-      )
+        <span style={{ fontSize: 12, color: '#a3a3a3' }}>{formatRuleConfig(record)}</span>
+      ),
     },
     {
       title: '触发动作',
@@ -288,7 +278,7 @@ const RiskControlPage = () => {
       render: (action) => {
         const actionInfo = getActionInfo(action)
         return <Tag color={actionInfo.color}>{actionInfo.label}</Tag>
-      }
+      },
     },
     {
       title: '状态',
@@ -318,7 +308,7 @@ const RiskControlPage = () => {
             </Space>
           )}
         </Space>
-      )
+      ),
     },
     {
       title: '操作',
@@ -354,15 +344,15 @@ const RiskControlPage = () => {
             </Button>
           </Popconfirm>
         </Space>
-      )
-    }
+      ),
+    },
   ]
 
   // 统计数据
   const stats = {
     total: rules.length,
-    enabled: rules.filter(r => r.is_enabled).length,
-    triggered: rules.filter(r => r.is_triggered).length
+    enabled: rules.filter((r) => r.is_enabled).length,
+    triggered: rules.filter((r) => r.is_triggered).length,
   }
 
   return (
@@ -371,11 +361,7 @@ const RiskControlPage = () => {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
           <Card>
-            <Statistic
-              title="总规则数"
-              value={stats.total}
-              prefix={<Info size={16} />}
-            />
+            <Statistic title="总规则数" value={stats.total} prefix={<Info size={16} />} />
           </Card>
         </Col>
         <Col span={8}>
@@ -418,18 +404,10 @@ const RiskControlPage = () => {
         }
         extra={
           <Space>
-            <Button
-              danger
-              icon={<Power size={14} />}
-              onClick={handleEmergencyStop}
-            >
+            <Button danger icon={<Power size={14} />} onClick={handleEmergencyStop}>
               紧急停止
             </Button>
-            <Button
-              type="primary"
-              icon={<Plus size={14} />}
-              onClick={() => handleOpenModal()}
-            >
+            <Button type="primary" icon={<Plus size={14} />} onClick={() => handleOpenModal()}>
               创建规则
             </Button>
           </Space>
@@ -443,7 +421,7 @@ const RiskControlPage = () => {
           scroll={{ x: 1100 }}
           pagination={{
             pageSize: 10,
-            showTotal: (total) => `共 ${total} 条规则`
+            showTotal: (total) => `共 ${total} 条规则`,
           }}
         />
       </Card>
@@ -467,7 +445,7 @@ const RiskControlPage = () => {
             label="规则名称"
             rules={[
               { required: true, message: '请输入规则名称' },
-              { max: 100, message: '名称最多100个字符' }
+              { max: 100, message: '名称最多100个字符' },
             ]}
           >
             <Input placeholder="例如：日亏损限额 500 USDT" />
@@ -508,7 +486,7 @@ const RiskControlPage = () => {
                     showSearch
                     optionFilterProp="children"
                   >
-                    {strategies.map(strategy => (
+                    {strategies.map((strategy) => (
                       <Select.Option key={strategy.id} value={strategy.id}>
                         {strategy.name} ({strategy.symbol})
                       </Select.Option>
@@ -582,7 +560,7 @@ const RiskControlPage = () => {
                           tooltip="可用余额低于此值时触发风控"
                           rules={[
                             { required: true, message: '请输入最小可用资金' },
-                            { type: 'number', min: 0, message: '必须大于等于0' }
+                            { type: 'number', min: 0, message: '必须大于等于0' },
                           ]}
                         >
                           <InputNumber min={0} style={{ width: '100%' }} placeholder="例如: 1000" />
@@ -594,7 +572,11 @@ const RiskControlPage = () => {
                           label="最大持仓价值 (USDT)"
                           tooltip="持仓总价值超过此值时触发风控"
                         >
-                          <InputNumber min={0} style={{ width: '100%' }} placeholder="例如: 10000" />
+                          <InputNumber
+                            min={0}
+                            style={{ width: '100%' }}
+                            placeholder="例如: 10000"
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
@@ -613,7 +595,7 @@ const RiskControlPage = () => {
                           tooltip="持仓数量超过此值时触发风控"
                           rules={[
                             { required: true, message: '请输入最大持仓数量' },
-                            { type: 'number', min: 0, message: '必须大于0' }
+                            { type: 'number', min: 0, message: '必须大于0' },
                           ]}
                         >
                           <InputNumber min={0} style={{ width: '100%' }} placeholder="例如: 100" />
@@ -675,7 +657,7 @@ const RiskControlPage = () => {
                     tooltip="回撤百分比超过此值时触发风控 (0.15 = 15%)"
                     rules={[
                       { required: true, message: '请输入最大回撤百分比' },
-                      { type: 'number', min: 0, max: 1, message: '必须在 0-1 之间' }
+                      { type: 'number', min: 0, max: 1, message: '必须在 0-1 之间' },
                     ]}
                   >
                     <InputNumber
@@ -684,8 +666,8 @@ const RiskControlPage = () => {
                       step={0.01}
                       style={{ width: '100%' }}
                       placeholder="例如: 0.15 (15%)"
-                      formatter={value => `${(Number(value || 0) * 100).toFixed(0)}%`}
-                      parser={value => (Number(value?.replace('%', '')) / 100) as any}
+                      formatter={(value) => `${(Number(value || 0) * 100).toFixed(0)}%`}
+                      parser={(value) => (Number(value?.replace('%', '')) / 100) as any}
                     />
                   </Form.Item>
                 )
@@ -775,7 +757,7 @@ const RiskControlPage = () => {
                 tooltip="达到限额的此百分比时提前预警 (0.8 = 80%)"
                 rules={[
                   { required: true, message: '请输入警告阈值' },
-                  { type: 'number', min: 0, max: 1, message: '必须在 0-1 之间' }
+                  { type: 'number', min: 0, max: 1, message: '必须在 0-1 之间' },
                 ]}
               >
                 <InputNumber
@@ -783,8 +765,8 @@ const RiskControlPage = () => {
                   max={1}
                   step={0.1}
                   style={{ width: '100%' }}
-                  formatter={value => `${(Number(value || 0) * 100).toFixed(0)}%`}
-                  parser={value => (Number(value?.replace('%', '')) / 100) as any}
+                  formatter={(value) => `${(Number(value || 0) * 100).toFixed(0)}%`}
+                  parser={(value) => (Number(value?.replace('%', '')) / 100) as any}
                 />
               </Form.Item>
             </Col>

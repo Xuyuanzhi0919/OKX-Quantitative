@@ -1,6 +1,7 @@
 """
 回测系统API端点
 """
+
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -34,8 +35,10 @@ async def _run_backtest_bg(backtest_id: int):
 
 # ==================== Pydantic 模型 ====================
 
+
 class FetchKlineRequest(BaseModel):
     """获取K线数据请求"""
+
     symbol: str = Field(..., description="交易对，如 BTC-USDT")
     interval: str = Field(..., description="K线周期：1m/5m/15m/30m/1H/4H/1D")
     start_time: int = Field(..., description="开始时间戳(毫秒)")
@@ -44,6 +47,7 @@ class FetchKlineRequest(BaseModel):
 
 class FetchKlineResponse(BaseModel):
     """获取K线数据响应"""
+
     total: int = Field(..., description="总条数")
     new: int = Field(..., description="新增条数")
     updated: int = Field(..., description="更新条数")
@@ -52,6 +56,7 @@ class FetchKlineResponse(BaseModel):
 
 class KlineData(BaseModel):
     """K线数据"""
+
     timestamp: int = Field(..., description="时间戳(毫秒)")
     open: float = Field(..., description="开盘价")
     high: float = Field(..., description="最高价")
@@ -63,6 +68,7 @@ class KlineData(BaseModel):
 
 class DataRangeResponse(BaseModel):
     """数据范围响应"""
+
     start_time: int = Field(..., description="最早时间戳(毫秒)")
     end_time: int = Field(..., description="最晚时间戳(毫秒)")
     count: int = Field(..., description="数据条数")
@@ -72,6 +78,7 @@ class DataRangeResponse(BaseModel):
 
 # ==================== 辅助函数 ====================
 
+
 def get_exchange() -> OKXExchange:
     """获取交易所实例"""
     return OKXExchange(
@@ -79,7 +86,7 @@ def get_exchange() -> OKXExchange:
         secret_key=settings.OKX_SECRET_KEY,
         passphrase=settings.OKX_PASSPHRASE,
         simulated=settings.OKX_SIMULATED,
-        proxy=settings.OKX_PROXY
+        proxy=settings.OKX_PROXY,
     )
 
 
@@ -91,10 +98,12 @@ def get_kline_service(db: Session = Depends(get_db)) -> KlineService:
 
 # ==================== API端点 ====================
 
-@router.post("/klines/fetch", response_model=FetchKlineResponse, summary="获取历史K线数据")
+
+@router.post(
+    "/klines/fetch", response_model=FetchKlineResponse, summary="获取历史K线数据"
+)
 async def fetch_klines(
-    request: FetchKlineRequest,
-    kline_service: KlineService = Depends(get_kline_service)
+    request: FetchKlineRequest, kline_service: KlineService = Depends(get_kline_service)
 ):
     """
     从OKX获取历史K线数据并保存到数据库
@@ -116,7 +125,7 @@ async def fetch_klines(
             symbol=request.symbol,
             interval=request.interval,
             start_time=request.start_time,
-            end_time=request.end_time
+            end_time=request.end_time,
         )
         return result
     except Exception as e:
@@ -130,7 +139,7 @@ async def query_klines(
     start_time: int = Query(..., description="开始时间戳(毫秒)"),
     end_time: int = Query(..., description="结束时间戳(毫秒)"),
     limit: Optional[int] = Query(None, description="限制返回数量"),
-    kline_service: KlineService = Depends(get_kline_service)
+    kline_service: KlineService = Depends(get_kline_service),
 ):
     """
     从数据库查询K线数据
@@ -150,7 +159,7 @@ async def query_klines(
             interval=interval,
             start_time=start_time,
             end_time=end_time,
-            limit=limit
+            limit=limit,
         )
 
         return [
@@ -161,7 +170,7 @@ async def query_klines(
                 low=float(k.low),
                 close=float(k.close),
                 volume=float(k.volume),
-                volume_currency=float(k.volume_currency)
+                volume_currency=float(k.volume_currency),
             )
             for k in klines
         ]
@@ -173,26 +182,23 @@ async def query_klines(
 async def get_strategy_types():
     """
     获取所有可用的回测策略类型
-    
+
     **返回:** 策略类型列表，包含类型标识和名称
     """
     from app.services.backtest.backtest_service import get_available_strategy_types
-    
+
     types = get_available_strategy_types()
     strategy_names = {
-        'grid': '网格策略',
-        'grid_mm': '网格做市',
-        'ma_cross': '均线交叉',
-        'dual_ma_cross': '双均线(多空)',
-        'adaptive_grid_trend': '自适应趋势网格',
-        'arbitrage': '现货-永续套利',
-        'fixed_tp_sl': '固定止盈止损',
+        "grid": "网格策略",
+        "grid_mm": "网格做市",
+        "ma_cross": "均线交叉",
+        "dual_ma_cross": "双均线(多空)",
+        "adaptive_grid_trend": "自适应趋势网格",
+        "arbitrage": "现货-永续套利",
+        "fixed_tp_sl": "固定止盈止损",
     }
-    
-    return [
-        {"value": t, "label": strategy_names.get(t, t)}
-        for t in types
-    ]
+
+    return [{"value": t, "label": strategy_names.get(t, t)} for t in types]
 
 
 @router.get("/top-gainers-momentum/analyze", summary="分析涨幅榜前三多周期动量策略")
@@ -222,11 +228,11 @@ async def analyze_top_gainers_momentum(
 
 @router.get("/symbols", summary="获取有K线数据的交易对")
 async def get_available_symbols(
-    kline_service: KlineService = Depends(get_kline_service)
+    kline_service: KlineService = Depends(get_kline_service),
 ):
     """
     获取数据库中有K线数据的交易对列表
-    
+
     **返回:** 交易对列表
     """
     symbols = kline_service.get_symbols()
@@ -234,12 +240,10 @@ async def get_available_symbols(
 
 
 @router.get("/symbols/detail", summary="获取交易对详细信息")
-async def get_symbols_detail(
-    kline_service: KlineService = Depends(get_kline_service)
-):
+async def get_symbols_detail(kline_service: KlineService = Depends(get_kline_service)):
     """
     获取所有有K线数据的交易对详细信息
-    
+
     **返回:** 交易对列表，包含每个交易对各周期的数据量
     """
     details = kline_service.get_available_symbols()
@@ -250,7 +254,7 @@ async def get_symbols_detail(
 async def get_data_range(
     symbol: str = Query(..., description="交易对"),
     interval: str = Query(..., description="K线周期"),
-    kline_service: KlineService = Depends(get_kline_service)
+    kline_service: KlineService = Depends(get_kline_service),
 ):
     """
     获取数据库中K线数据的时间范围
@@ -286,7 +290,7 @@ async def validate_data_range(
     interval: str = Query(..., description="K线周期"),
     start_time: int = Query(..., description="开始时间戳(毫秒)"),
     end_time: int = Query(..., description="结束时间戳(毫秒)"),
-    kline_service: KlineService = Depends(get_kline_service)
+    kline_service: KlineService = Depends(get_kline_service),
 ):
     """
     验证指定时间范围是否有足够的K线数据用于回测
@@ -314,7 +318,7 @@ async def validate_data_range(
             return {
                 "has_data": False,
                 "is_sufficient": False,
-                "message": f"数据库中没有 {symbol} {interval} 的K线数据，请先获取历史数据"
+                "message": f"数据库中没有 {symbol} {interval} 的K线数据，请先获取历史数据",
             }
 
         data_start = range_info["start_time"]
@@ -324,19 +328,31 @@ async def validate_data_range(
         is_sufficient = data_start <= start_time and data_end >= end_time
 
         # 格式化时间字符串
-        data_start_str = datetime.fromtimestamp(data_start / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        data_end_str = datetime.fromtimestamp(data_end / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        requested_start_str = datetime.fromtimestamp(start_time / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        requested_end_str = datetime.fromtimestamp(end_time / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        data_start_str = datetime.fromtimestamp(data_start / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        data_end_str = datetime.fromtimestamp(data_end / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        requested_start_str = datetime.fromtimestamp(start_time / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        requested_end_str = datetime.fromtimestamp(end_time / 1000).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         if is_sufficient:
             message = f"数据充足，可以进行回测"
         else:
             missing_parts = []
             if data_start > start_time:
-                missing_parts.append(f"缺少 {requested_start_str} 至 {data_start_str} 的数据")
+                missing_parts.append(
+                    f"缺少 {requested_start_str} 至 {data_start_str} 的数据"
+                )
             if data_end < end_time:
-                missing_parts.append(f"缺少 {data_end_str} 至 {requested_end_str} 的数据")
+                missing_parts.append(
+                    f"缺少 {data_end_str} 至 {requested_end_str} 的数据"
+                )
             message = "数据不足: " + "; ".join(missing_parts)
 
         return {
@@ -350,7 +366,7 @@ async def validate_data_range(
             "requested_start_str": requested_start_str,
             "requested_end_str": requested_end_str,
             "is_sufficient": is_sufficient,
-            "message": message
+            "message": message,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"验证数据范围失败: {str(e)}")
@@ -362,7 +378,7 @@ async def delete_klines(
     interval: str = Query(..., description="K线周期"),
     start_time: Optional[int] = Query(None, description="开始时间戳(毫秒)"),
     end_time: Optional[int] = Query(None, description="结束时间戳(毫秒)"),
-    kline_service: KlineService = Depends(get_kline_service)
+    kline_service: KlineService = Depends(get_kline_service),
 ):
     """
     删除K线数据
@@ -377,10 +393,7 @@ async def delete_klines(
     """
     try:
         count = kline_service.delete_klines(
-            symbol=symbol,
-            interval=interval,
-            start_time=start_time,
-            end_time=end_time
+            symbol=symbol, interval=interval, start_time=start_time, end_time=end_time
         )
         return {"deleted": count}
     except Exception as e:
@@ -389,8 +402,10 @@ async def delete_klines(
 
 # ==================== 回测执行API ====================
 
+
 class CreateBacktestRequest(BaseModel):
     """创建回测请求"""
+
     name: str = Field(..., description="回测名称")
     strategy_type: str = Field(..., description="策略类型：grid/grid_mm")
     symbol: str = Field(..., description="交易对")
@@ -404,6 +419,7 @@ class CreateBacktestRequest(BaseModel):
 
 class BacktestResponse(BaseModel):
     """回测响应"""
+
     id: int
     name: str
     description: Optional[str] = None
@@ -425,6 +441,7 @@ class BacktestResponse(BaseModel):
 
 class BacktestResultResponse(BaseModel):
     """回测结果响应"""
+
     id: int
     name: str
     description: Optional[str] = None
@@ -496,7 +513,7 @@ async def create_and_run_backtest(
             end_time=request.end_time,
             initial_capital=request.initial_capital,
             parameters=request.parameters,
-            description=request.description
+            description=request.description,
         )
 
         # 在后台执行回测（使用独立会话，避免请求会话提前关闭）
@@ -524,18 +541,22 @@ async def list_backtests(
 
     **返回:** 回测列表
     """
-    backtests = db.query(Backtest).filter(
-        Backtest.user_id == user_id
-    ).order_by(Backtest.created_at.desc()).offset(skip).limit(limit).all()
+    backtests = (
+        db.query(Backtest)
+        .filter(Backtest.user_id == user_id)
+        .order_by(Backtest.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
     return backtests
 
 
-@router.get("/{backtest_id}", response_model=BacktestResultResponse, summary="获取回测详情")
-async def get_backtest(
-    backtest_id: int,
-    db: Session = Depends(get_db)
-):
+@router.get(
+    "/{backtest_id}", response_model=BacktestResultResponse, summary="获取回测详情"
+)
+async def get_backtest(backtest_id: int, db: Session = Depends(get_db)):
     """
     获取回测详情
 
@@ -553,10 +574,7 @@ async def get_backtest(
 
 
 @router.get("/{backtest_id}/trades", summary="获取回测交易记录")
-async def get_backtest_trades(
-    backtest_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_backtest_trades(backtest_id: int, db: Session = Depends(get_db)):
     """
     获取回测的交易记录
 
@@ -571,9 +589,12 @@ async def get_backtest_trades(
     if not backtest:
         raise HTTPException(status_code=404, detail="回测记录不存在")
 
-    trades = db.query(BacktestTrade).filter(
-        BacktestTrade.backtest_id == backtest_id
-    ).order_by(BacktestTrade.timestamp.asc()).all()
+    trades = (
+        db.query(BacktestTrade)
+        .filter(BacktestTrade.backtest_id == backtest_id)
+        .order_by(BacktestTrade.timestamp.asc())
+        .all()
+    )
 
     return [
         {
@@ -583,17 +604,14 @@ async def get_backtest_trades(
             "amount": float(t.amount),
             "fee": float(t.fee),
             "pnl": float(t.pnl) if t.pnl else 0.0,
-            "pnl_percent": float(t.pnl_percent) if t.pnl_percent else 0.0
+            "pnl_percent": float(t.pnl_percent) if t.pnl_percent else 0.0,
         }
         for t in trades
     ]
 
 
 @router.get("/{backtest_id}/equity-curve", summary="获取资金曲线")
-async def get_equity_curve(
-    backtest_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_equity_curve(backtest_id: int, db: Session = Depends(get_db)):
     """
     获取回测的资金曲线
 
@@ -614,7 +632,7 @@ async def get_equity_curve(
 async def update_backtest_description(
     backtest_id: int,
     description: str = Query(..., description="回测描述"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     更新回测描述信息
@@ -639,10 +657,7 @@ async def update_backtest_description(
 
 
 @router.delete("/{backtest_id}", summary="删除回测记录")
-async def delete_backtest(
-    backtest_id: int,
-    db: Session = Depends(get_db)
-):
+async def delete_backtest(backtest_id: int, db: Session = Depends(get_db)):
     """
     删除回测记录
 

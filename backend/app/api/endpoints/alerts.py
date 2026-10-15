@@ -1,6 +1,7 @@
 """
 告警管理API端点
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -52,7 +53,7 @@ async def get_alerts(
     severity: Optional[str] = None,
     is_read: Optional[bool] = None,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     获取告警列表
@@ -98,28 +99,31 @@ async def get_alerts(
         # 转换为字典列表
         alerts_list = []
         for alert in alerts:
-            alerts_list.append({
-                "id": alert.id,
-                "user_id": alert.user_id,
-                "strategy_id": alert.strategy_id,
-                "alert_type": alert.alert_type,
-                "severity": alert.severity,
-                "title": alert.title,
-                "message": alert.message,
-                "data": alert.data,
-                "is_read": alert.is_read,
-                "is_handled": alert.is_handled,
-                "created_at": alert.created_at.isoformat() if alert.created_at else None,
-                "handled_at": alert.handled_at.isoformat() if alert.handled_at else None,
-            })
+            alerts_list.append(
+                {
+                    "id": alert.id,
+                    "user_id": alert.user_id,
+                    "strategy_id": alert.strategy_id,
+                    "alert_type": alert.alert_type,
+                    "severity": alert.severity,
+                    "title": alert.title,
+                    "message": alert.message,
+                    "data": alert.data,
+                    "is_read": alert.is_read,
+                    "is_handled": alert.is_handled,
+                    "created_at": (
+                        alert.created_at.isoformat() if alert.created_at else None
+                    ),
+                    "handled_at": (
+                        alert.handled_at.isoformat() if alert.handled_at else None
+                    ),
+                }
+            )
 
         return {
             "code": 0,
             "msg": "success",
-            "data": {
-                "total": total,
-                "alerts": alerts_list
-            }
+            "data": {"total": total, "alerts": alerts_list},
         }
 
     except Exception as e:
@@ -128,8 +132,7 @@ async def get_alerts(
 
 @router.get("/unread-count")
 async def get_unread_count(
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ):
     """
     获取未读告警数量
@@ -144,18 +147,13 @@ async def get_unread_count(
         }
     """
     try:
-        count = db.query(Alert).filter(
-            Alert.user_id == user_id,
-            Alert.is_read == False
-        ).count()
+        count = (
+            db.query(Alert)
+            .filter(Alert.user_id == user_id, Alert.is_read == False)
+            .count()
+        )
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "count": count
-            }
-        }
+        return {"code": 0, "msg": "success", "data": {"count": count}}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取未读告警数量失败: {str(e)}")
@@ -165,7 +163,7 @@ async def get_unread_count(
 async def mark_alert_read(
     alert_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     标记告警为已读
@@ -180,10 +178,11 @@ async def mark_alert_read(
         }
     """
     try:
-        alert = db.query(Alert).filter(
-            Alert.id == alert_id,
-            Alert.user_id == user_id
-        ).first()
+        alert = (
+            db.query(Alert)
+            .filter(Alert.id == alert_id, Alert.user_id == user_id)
+            .first()
+        )
 
         if not alert:
             raise HTTPException(status_code=404, detail="告警不存在")
@@ -191,10 +190,7 @@ async def mark_alert_read(
         alert.is_read = True
         db.commit()
 
-        return {
-            "code": 0,
-            "msg": "success"
-        }
+        return {"code": 0, "msg": "success"}
 
     except HTTPException:
         raise
@@ -205,8 +201,7 @@ async def mark_alert_read(
 
 @router.post("/mark-all-read")
 async def mark_all_read(
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
 ):
     """
     标记所有告警为已读
@@ -221,20 +216,15 @@ async def mark_all_read(
         }
     """
     try:
-        result = db.query(Alert).filter(
-            Alert.user_id == user_id,
-            Alert.is_read == False
-        ).update({"is_read": True})
+        result = (
+            db.query(Alert)
+            .filter(Alert.user_id == user_id, Alert.is_read == False)
+            .update({"is_read": True})
+        )
 
         db.commit()
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "count": result
-            }
-        }
+        return {"code": 0, "msg": "success", "data": {"count": result}}
 
     except Exception as e:
         db.rollback()
@@ -245,7 +235,7 @@ async def mark_all_read(
 async def handle_alert(
     alert_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     标记告警为已处理
@@ -260,10 +250,11 @@ async def handle_alert(
         }
     """
     try:
-        alert = db.query(Alert).filter(
-            Alert.id == alert_id,
-            Alert.user_id == user_id
-        ).first()
+        alert = (
+            db.query(Alert)
+            .filter(Alert.id == alert_id, Alert.user_id == user_id)
+            .first()
+        )
 
         if not alert:
             raise HTTPException(status_code=404, detail="告警不存在")
@@ -272,10 +263,7 @@ async def handle_alert(
         alert.handled_at = datetime.now()
         db.commit()
 
-        return {
-            "code": 0,
-            "msg": "success"
-        }
+        return {"code": 0, "msg": "success"}
 
     except HTTPException:
         raise
@@ -288,7 +276,7 @@ async def handle_alert(
 async def delete_alert(
     alert_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     删除告警
@@ -303,10 +291,11 @@ async def delete_alert(
         }
     """
     try:
-        alert = db.query(Alert).filter(
-            Alert.id == alert_id,
-            Alert.user_id == user_id
-        ).first()
+        alert = (
+            db.query(Alert)
+            .filter(Alert.id == alert_id, Alert.user_id == user_id)
+            .first()
+        )
 
         if not alert:
             raise HTTPException(status_code=404, detail="告警不存在")
@@ -314,10 +303,7 @@ async def delete_alert(
         db.delete(alert)
         db.commit()
 
-        return {
-            "code": 0,
-            "msg": "success"
-        }
+        return {"code": 0, "msg": "success"}
 
     except HTTPException:
         raise

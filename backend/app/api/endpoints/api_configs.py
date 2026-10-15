@@ -1,6 +1,7 @@
 """
 API配置管理端点
 """
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -18,6 +19,7 @@ router = APIRouter()
 
 class APIConfigCreate(BaseModel):
     """创建API配置请求"""
+
     name: str = Field(..., description="配置名称")
     exchange: str = Field(default="OKX", description="交易所名称")
     api_key: str = Field(..., description="API Key")
@@ -29,6 +31,7 @@ class APIConfigCreate(BaseModel):
 
 class APIConfigUpdate(BaseModel):
     """更新API配置请求"""
+
     name: Optional[str] = None
     api_key: Optional[str] = None
     secret_key: Optional[str] = None
@@ -39,6 +42,7 @@ class APIConfigUpdate(BaseModel):
 
 class APIConfigResponse(BaseModel):
     """API配置响应"""
+
     id: int
     name: str
     exchange: str
@@ -63,19 +67,18 @@ def get_management_user_id(db: Session = Depends(get_db)) -> int:
 
 @router.get("/list", response_model=List[APIConfigResponse])
 async def list_configs(
-    user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    user_id: int = Depends(get_management_user_id), db: Session = Depends(get_db)
 ):
     """
     获取用户的所有API配置列表
     """
     try:
-        configs = db.query(APIConfig).filter(
-            APIConfig.user_id == user_id
-        ).order_by(
-            APIConfig.is_active.desc(),
-            APIConfig.created_at.desc()
-        ).all()
+        configs = (
+            db.query(APIConfig)
+            .filter(APIConfig.user_id == user_id)
+            .order_by(APIConfig.is_active.desc(), APIConfig.created_at.desc())
+            .all()
+        )
 
         # 隐藏敏感信息
         result = []
@@ -84,7 +87,11 @@ async def list_configs(
                 "id": config.id,
                 "name": config.name,
                 "exchange": config.exchange,
-                "api_key": config.api_key[:8] + "..." if len(config.api_key) > 8 else config.api_key,
+                "api_key": (
+                    config.api_key[:8] + "..."
+                    if len(config.api_key) > 8
+                    else config.api_key
+                ),
                 "is_simulated": config.is_simulated,
                 "is_active": config.is_active,
                 "is_valid": config.is_valid,
@@ -92,7 +99,7 @@ async def list_configs(
                 "last_verified_at": config.last_verified_at,
                 "error_message": config.error_message,
                 "created_at": config.created_at,
-                "updated_at": config.updated_at
+                "updated_at": config.updated_at,
             }
             result.append(config_dict)
 
@@ -108,7 +115,7 @@ async def list_configs(
 async def create_config(
     request: APIConfigCreate,
     user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     创建新的API配置
@@ -120,7 +127,7 @@ async def create_config(
             secret_key=request.secret_key,
             passphrase=request.passphrase,
             is_simulated=request.is_simulated,
-            proxy=request.proxy
+            proxy=request.proxy,
         )
 
         # 创建配置
@@ -135,7 +142,7 @@ async def create_config(
             proxy=request.proxy,
             is_valid=is_valid,
             error_message=error_msg,
-            last_verified_at=datetime.utcnow() if is_valid else None
+            last_verified_at=datetime.utcnow() if is_valid else None,
         )
 
         db.add(config)
@@ -156,7 +163,7 @@ async def create_config(
             last_verified_at=config.last_verified_at,
             error_message=config.error_message,
             created_at=config.created_at,
-            updated_at=config.updated_at
+            updated_at=config.updated_at,
         )
 
     except Exception as e:
@@ -169,28 +176,30 @@ async def create_config(
 async def activate_config(
     config_id: int,
     user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     激活指定的API配置 (切换到该配置)
     """
     try:
         # 查找配置
-        config = db.query(APIConfig).filter(
-            APIConfig.id == config_id,
-            APIConfig.user_id == user_id
-        ).first()
+        config = (
+            db.query(APIConfig)
+            .filter(APIConfig.id == config_id, APIConfig.user_id == user_id)
+            .first()
+        )
 
         if not config:
             raise HTTPException(status_code=404, detail="配置不存在")
 
         if not config.is_valid:
-            raise HTTPException(status_code=400, detail=f"配置无效: {config.error_message}")
+            raise HTTPException(
+                status_code=400, detail=f"配置无效: {config.error_message}"
+            )
 
         # 取消其他配置的激活状态
         db.query(APIConfig).filter(
-            APIConfig.user_id == user_id,
-            APIConfig.is_active == True
+            APIConfig.user_id == user_id, APIConfig.is_active == True
         ).update({"is_active": False})
 
         # 激活当前配置
@@ -205,8 +214,8 @@ async def activate_config(
             "data": {
                 "id": config.id,
                 "name": config.name,
-                "is_simulated": config.is_simulated
-            }
+                "is_simulated": config.is_simulated,
+            },
         }
 
     except HTTPException:
@@ -219,24 +228,20 @@ async def activate_config(
 
 @router.get("/active")
 async def get_active_config(
-    user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    user_id: int = Depends(get_management_user_id), db: Session = Depends(get_db)
 ):
     """
     获取当前激活的API配置
     """
     try:
-        config = db.query(APIConfig).filter(
-            APIConfig.user_id == user_id,
-            APIConfig.is_active == True
-        ).first()
+        config = (
+            db.query(APIConfig)
+            .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+            .first()
+        )
 
         if not config:
-            return {
-                "code": 0,
-                "msg": "未设置API配置",
-                "data": None
-            }
+            return {"code": 0, "msg": "未设置API配置", "data": None}
 
         return {
             "code": 0,
@@ -247,8 +252,8 @@ async def get_active_config(
                 "exchange": config.exchange,
                 "is_simulated": config.is_simulated,
                 "is_valid": config.is_valid,
-                "proxy": config.proxy
-            }
+                "proxy": config.proxy,
+            },
         }
 
     except Exception as e:
@@ -260,16 +265,17 @@ async def get_active_config(
 async def delete_config(
     config_id: int,
     user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     删除API配置
     """
     try:
-        config = db.query(APIConfig).filter(
-            APIConfig.id == config_id,
-            APIConfig.user_id == user_id
-        ).first()
+        config = (
+            db.query(APIConfig)
+            .filter(APIConfig.id == config_id, APIConfig.user_id == user_id)
+            .first()
+        )
 
         if not config:
             raise HTTPException(status_code=404, detail="配置不存在")
@@ -282,11 +288,7 @@ async def delete_config(
 
         logger.info(f"用户 {user_id} 删除API配置: {config.name} (ID: {config_id})")
 
-        return {
-            "code": 0,
-            "msg": "删除成功",
-            "data": None
-        }
+        return {"code": 0, "msg": "删除成功", "data": None}
 
     except HTTPException:
         raise
@@ -300,16 +302,17 @@ async def delete_config(
 async def verify_config(
     config_id: int,
     user_id: int = Depends(get_management_user_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     验证API配置是否有效
     """
     try:
-        config = db.query(APIConfig).filter(
-            APIConfig.id == config_id,
-            APIConfig.user_id == user_id
-        ).first()
+        config = (
+            db.query(APIConfig)
+            .filter(APIConfig.id == config_id, APIConfig.user_id == user_id)
+            .first()
+        )
 
         if not config:
             raise HTTPException(status_code=404, detail="配置不存在")
@@ -320,7 +323,7 @@ async def verify_config(
             secret_key=config.secret_key,
             passphrase=config.passphrase,
             is_simulated=config.is_simulated,
-            proxy=config.proxy
+            proxy=config.proxy,
         )
 
         # 更新验证结果
@@ -334,10 +337,7 @@ async def verify_config(
         return {
             "code": 0,
             "msg": "验证完成",
-            "data": {
-                "is_valid": is_valid,
-                "error_message": error_msg
-            }
+            "data": {"is_valid": is_valid, "error_message": error_msg},
         }
 
     except HTTPException:
@@ -353,7 +353,7 @@ async def verify_api_config(
     secret_key: str,
     passphrase: str,
     is_simulated: bool,
-    proxy: Optional[str]
+    proxy: Optional[str],
 ) -> tuple[bool, Optional[str]]:
     """
     验证API配置是否有效
@@ -366,7 +366,7 @@ async def verify_api_config(
         secret_key=secret_key,
         passphrase=passphrase,
         simulated=is_simulated,
-        proxy=proxy
+        proxy=proxy,
     )
 
     try:

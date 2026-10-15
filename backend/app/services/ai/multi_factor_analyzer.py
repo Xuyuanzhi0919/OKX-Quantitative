@@ -2,6 +2,7 @@
 多因子市场分析器
 结合技术指标、市场情绪、AI分析进行综合决策
 """
+
 from typing import Dict, Optional, Tuple
 from decimal import Decimal
 from loguru import logger
@@ -67,10 +68,7 @@ class MultiFactorAnalyzer:
             ai_task = self._analyze_ai(symbol)
 
             technical, sentiment, ai = await asyncio.gather(
-                technical_task,
-                sentiment_task,
-                ai_task,
-                return_exceptions=True
+                technical_task, sentiment_task, ai_task, return_exceptions=True
             )
 
             # 处理异常
@@ -86,15 +84,15 @@ class MultiFactorAnalyzer:
 
             # 计算综合得分
             long_score = (
-                technical["long_score"] * technical["weight"] +
-                sentiment["long_score"] * sentiment["weight"] +
-                ai["long_score"] * ai["weight"]
+                technical["long_score"] * technical["weight"]
+                + sentiment["long_score"] * sentiment["weight"]
+                + ai["long_score"] * ai["weight"]
             )
 
             short_score = (
-                technical["short_score"] * technical["weight"] +
-                sentiment["short_score"] * sentiment["weight"] +
-                ai["short_score"] * ai["weight"]
+                technical["short_score"] * technical["weight"]
+                + sentiment["short_score"] * sentiment["weight"]
+                + ai["short_score"] * ai["weight"]
             )
 
             wait_score = max(0, 1 - long_score - short_score)
@@ -146,16 +144,12 @@ class MultiFactorAnalyzer:
                 "scores": {
                     "long_score": round(long_score, 3),
                     "short_score": round(short_score, 3),
-                    "wait_score": round(wait_score, 3)
+                    "wait_score": round(wait_score, 3),
                 },
-                "factors": {
-                    "technical": technical,
-                    "sentiment": sentiment,
-                    "ai": ai
-                },
+                "factors": {"technical": technical, "sentiment": sentiment, "ai": ai},
                 "risk_level": risk_level,
                 "suggested_strategy": suggested_strategy,
-                "reasoning": reasoning
+                "reasoning": reasoning,
             }
 
         except Exception as e:
@@ -182,7 +176,7 @@ class MultiFactorAnalyzer:
                 "weight": 0.4,
                 "long_score": result.get("long_score", 0.5),
                 "short_score": result.get("short_score", 0.5),
-                "details": result.get("details", {})
+                "details": result.get("details", {}),
             }
         except Exception as e:
             logger.error(f"技术分析失败: {e}")
@@ -208,7 +202,7 @@ class MultiFactorAnalyzer:
                 "weight": 0.3,
                 "long_score": result.get("long_score", 0.5),
                 "short_score": result.get("short_score", 0.5),
-                "details": result.get("details", {})
+                "details": result.get("details", {}),
             }
         except Exception as e:
             logger.error(f"情绪分析失败: {e}")
@@ -233,10 +227,12 @@ class MultiFactorAnalyzer:
                     "long_score": 0.5,
                     "short_score": 0.5,
                     "analysis": "未配置AI服务",
-                    "details": {}
+                    "details": {},
                 }
 
-            logger.info(f"开始AI分析: {symbol}, API key length: {len(self.api_key) if self.api_key else 0}")
+            logger.info(
+                f"开始AI分析: {symbol}, API key length: {len(self.api_key) if self.api_key else 0}"
+            )
 
             from app.services.ai.llm_client import DeepSeekLLM
 
@@ -268,24 +264,33 @@ class MultiFactorAnalyzer:
                 # 调用LLM
                 logger.info("调用DeepSeek API...")
                 messages = [
-                    {"role": "system", "content": "你是一位专业的加密货币市场分析师。请以JSON格式返回分析结果。"},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "你是一位专业的加密货币市场分析师。请以JSON格式返回分析结果。",
+                    },
+                    {"role": "user", "content": prompt},
                 ]
-                response = await llm_client.chat_completion(messages, temperature=0.7, max_tokens=500)
+                response = await llm_client.chat_completion(
+                    messages, temperature=0.7, max_tokens=500
+                )
                 logger.info(f"DeepSeek API响应长度: {len(response) if response else 0}")
 
                 # 解析响应
                 import json
+
                 # 尝试提取JSON（如果响应包含其他文字）
                 import re
-                json_match = re.search(r'\{[^}]*\}', response)
+
+                json_match = re.search(r"\{[^}]*\}", response)
                 if json_match:
                     json_str = json_match.group(0)
                     result = json.loads(json_str)
                 else:
                     result = json.loads(response)
 
-                logger.info(f"AI分析结果: trend={result.get('trend')}, confidence={result.get('confidence')}")
+                logger.info(
+                    f"AI分析结果: trend={result.get('trend')}, confidence={result.get('confidence')}"
+                )
 
                 return {
                     "score": result.get("confidence", 0.5),
@@ -293,7 +298,7 @@ class MultiFactorAnalyzer:
                     "long_score": result.get("long_probability", 0.5),
                     "short_score": result.get("short_probability", 0.5),
                     "analysis": result.get("analysis", ""),
-                    "details": result
+                    "details": result,
                 }
             except Exception as e:
                 logger.error(f"AI分析调用失败: {e}", exc_info=True)
@@ -303,7 +308,7 @@ class MultiFactorAnalyzer:
                     "long_score": 0.5,
                     "short_score": 0.5,
                     "analysis": f"AI分析失败: {str(e)}",
-                    "details": {}
+                    "details": {},
                 }
 
         except Exception as e:
@@ -311,8 +316,12 @@ class MultiFactorAnalyzer:
             return self._get_default_ai()
 
     def _generate_reasoning(
-        self, decision: str, confidence: float,
-        technical: Dict, sentiment: Dict, ai: Dict
+        self,
+        decision: str,
+        confidence: float,
+        technical: Dict,
+        sentiment: Dict,
+        ai: Dict,
     ) -> str:
         """生成决策说明"""
         reasons = []
@@ -320,7 +329,9 @@ class MultiFactorAnalyzer:
         # 技术面
         tech_score = technical.get("score", 0.5)
         if tech_score > 0.6:
-            reasons.append(f"技术指标{'看涨' if technical.get('long_score', 0) > technical.get('short_score', 0) else '看跌'} (得分: {tech_score:.2f})")
+            reasons.append(
+                f"技术指标{'看涨' if technical.get('long_score', 0) > technical.get('short_score', 0) else '看跌'} (得分: {tech_score:.2f})"
+            )
 
         # 情绪面
         sent_score = sentiment.get("score", 0.5)
@@ -356,7 +367,7 @@ class MultiFactorAnalyzer:
             "weight": 0.4,
             "long_score": 0.5,
             "short_score": 0.5,
-            "details": {}
+            "details": {},
         }
 
     def _get_default_sentiment(self) -> Dict:
@@ -365,7 +376,7 @@ class MultiFactorAnalyzer:
             "weight": 0.3,
             "long_score": 0.5,
             "short_score": 0.5,
-            "details": {}
+            "details": {},
         }
 
     def _get_default_ai(self) -> Dict:
@@ -375,7 +386,7 @@ class MultiFactorAnalyzer:
             "long_score": 0.5,
             "short_score": 0.5,
             "analysis": "AI分析暂不可用",
-            "details": {}
+            "details": {},
         }
 
     def _get_default_analysis(self, symbol: str) -> Dict:
@@ -384,17 +395,13 @@ class MultiFactorAnalyzer:
             "timestamp": datetime.now().isoformat(),
             "decision": "wait",
             "confidence": 0.0,
-            "scores": {
-                "long_score": 0.33,
-                "short_score": 0.33,
-                "wait_score": 0.34
-            },
+            "scores": {"long_score": 0.33, "short_score": 0.33, "wait_score": 0.34},
             "factors": {
                 "technical": self._get_default_technical(),
                 "sentiment": self._get_default_sentiment(),
-                "ai": self._get_default_ai()
+                "ai": self._get_default_ai(),
             },
             "risk_level": "high",
             "suggested_strategy": None,
-            "reasoning": "分析失败，建议人工判断"
+            "reasoning": "分析失败，建议人工判断",
         }

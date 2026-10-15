@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Card, Button, Table, Form, Select, DatePicker, Space, Modal, Tag, Spin, App, Alert, Divider } from 'antd'
+import {
+  Card,
+  Button,
+  Table,
+  Form,
+  Select,
+  DatePicker,
+  Space,
+  Modal,
+  Tag,
+  Spin,
+  App,
+  Alert,
+  Divider,
+} from 'antd'
 import { RefreshCw, Trash2, CloudDownload, Database, Download, Info } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import dayjs, { Dayjs } from 'dayjs'
@@ -41,18 +55,53 @@ interface FetchKlineResponse {
 // 默认交易对：合约（SWAP）优先，后接现货（SPOT）
 const DEFAULT_SYMBOLS = [
   // ── 合约（USDT 本位永续）──
-  'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
-  'XRP-USDT-SWAP', 'DOGE-USDT-SWAP', 'ADA-USDT-SWAP', 'AVAX-USDT-SWAP',
-  'LINK-USDT-SWAP', 'DOT-USDT-SWAP', 'LTC-USDT-SWAP', 'ATOM-USDT-SWAP',
-  'ETC-USDT-SWAP', 'ARB-USDT-SWAP', 'OP-USDT-SWAP', 'APT-USDT-SWAP',
-  'NEAR-USDT-SWAP', 'SUI-USDT-SWAP', 'TRX-USDT-SWAP', 'KSM-USDT-SWAP',
-  'INJ-USDT-SWAP', 'SEI-USDT-SWAP', 'ORDI-USDT-SWAP', 'WLD-USDT-SWAP',
-  'PEPE-USDT-SWAP', 'SHIB-USDT-SWAP',
+  'BTC-USDT-SWAP',
+  'ETH-USDT-SWAP',
+  'SOL-USDT-SWAP',
+  'BNB-USDT-SWAP',
+  'XRP-USDT-SWAP',
+  'DOGE-USDT-SWAP',
+  'ADA-USDT-SWAP',
+  'AVAX-USDT-SWAP',
+  'LINK-USDT-SWAP',
+  'DOT-USDT-SWAP',
+  'LTC-USDT-SWAP',
+  'ATOM-USDT-SWAP',
+  'ETC-USDT-SWAP',
+  'ARB-USDT-SWAP',
+  'OP-USDT-SWAP',
+  'APT-USDT-SWAP',
+  'NEAR-USDT-SWAP',
+  'SUI-USDT-SWAP',
+  'TRX-USDT-SWAP',
+  'KSM-USDT-SWAP',
+  'INJ-USDT-SWAP',
+  'SEI-USDT-SWAP',
+  'ORDI-USDT-SWAP',
+  'WLD-USDT-SWAP',
+  'PEPE-USDT-SWAP',
+  'SHIB-USDT-SWAP',
   // ── 现货（SPOT）──
-  'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'BNB-USDT', 'XRP-USDT',
-  'DOGE-USDT', 'ADA-USDT', 'AVAX-USDT', 'LINK-USDT', 'DOT-USDT',
-  'LTC-USDT', 'ATOM-USDT', 'ETC-USDT', 'ARB-USDT', 'OP-USDT',
-  'APT-USDT', 'NEAR-USDT', 'KSM-USDT', 'INJ-USDT', 'PEPE-USDT',
+  'BTC-USDT',
+  'ETH-USDT',
+  'SOL-USDT',
+  'BNB-USDT',
+  'XRP-USDT',
+  'DOGE-USDT',
+  'ADA-USDT',
+  'AVAX-USDT',
+  'LINK-USDT',
+  'DOT-USDT',
+  'LTC-USDT',
+  'ATOM-USDT',
+  'ETC-USDT',
+  'ARB-USDT',
+  'OP-USDT',
+  'APT-USDT',
+  'NEAR-USDT',
+  'KSM-USDT',
+  'INJ-USDT',
+  'PEPE-USDT',
 ]
 
 const KlineManager = () => {
@@ -133,7 +182,7 @@ const KlineManager = () => {
     },
     onSuccess: (data: FetchKlineResponse) => {
       messageApi.success(
-        `获取完成！总计: ${data.total}, 新增: ${data.new}, 更新: ${data.updated}, 跳过: ${data.skipped}`
+        `获取完成！总计: ${data.total}, 新增: ${data.new}, 更新: ${data.updated}, 跳过: ${data.skipped}`,
       )
       setFetchModalOpen(false)
       form.resetFields()
@@ -227,7 +276,8 @@ const KlineManager = () => {
             modal.confirm({
               title: '确认删除',
               content: `确定要删除 ${record.symbol} ${record.interval} 的所有K线数据吗？`,
-              onOk: () => deleteMutation.mutate({ symbol: record.symbol, interval: record.interval }),
+              onOk: () =>
+                deleteMutation.mutate({ symbol: record.symbol, interval: record.interval }),
             })
           }}
         >
@@ -280,11 +330,7 @@ const KlineManager = () => {
           </Space>
         }
         extra={
-          <Button
-            icon={<RefreshCw size={14} />}
-            onClick={loadDataRanges}
-            loading={loadingRanges}
-          >
+          <Button icon={<RefreshCw size={14} />} onClick={loadDataRanges} loading={loadingRanges}>
             刷新
           </Button>
         }
@@ -311,7 +357,7 @@ const KlineManager = () => {
             showTotal: (total) => `共 ${total} 组数据`,
           }}
           locale={{
-            emptyText: '暂无数据,请点击下方"获取新数据"按钮从OKX下载历史K线'
+            emptyText: '暂无数据,请点击下方"获取新数据"按钮从OKX下载历史K线',
           }}
         />
       </Card>
@@ -340,7 +386,9 @@ const KlineManager = () => {
           <div style={{ marginBottom: 16, fontSize: 14, color: '#e5e5e5' }}>
             <strong>提示:</strong>
           </div>
-          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#a3a3a3', lineHeight: 1.8 }}>
+          <ul
+            style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#a3a3a3', lineHeight: 1.8 }}
+          >
             <li>获取数据前请确保已配置代理并能正常访问OKX API</li>
             <li>OKX API有请求频率限制,大范围数据获取需要时间,请耐心等待</li>
             <li>1分钟周期数据量很大,建议选择较短时间范围(如7-30天)</li>
@@ -400,18 +448,28 @@ const KlineManager = () => {
                 showSearch
                 allowClear
                 filterOption={(input, option) =>
-                  String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                  String(option?.value ?? '')
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
                 }
               >
                 <Select.OptGroup label="合约（SWAP）">
-                  {selectSymbols.filter(s => s.endsWith('-SWAP')).map(s => (
-                    <Select.Option key={s} value={s}>{s}</Select.Option>
-                  ))}
+                  {selectSymbols
+                    .filter((s) => s.endsWith('-SWAP'))
+                    .map((s) => (
+                      <Select.Option key={s} value={s}>
+                        {s}
+                      </Select.Option>
+                    ))}
                 </Select.OptGroup>
                 <Select.OptGroup label="现货（SPOT）">
-                  {selectSymbols.filter(s => !s.endsWith('-SWAP')).map(s => (
-                    <Select.Option key={s} value={s}>{s}</Select.Option>
-                  ))}
+                  {selectSymbols
+                    .filter((s) => !s.endsWith('-SWAP'))
+                    .map((s) => (
+                      <Select.Option key={s} value={s}>
+                        {s}
+                      </Select.Option>
+                    ))}
                 </Select.OptGroup>
               </Select>
             </Form.Item>

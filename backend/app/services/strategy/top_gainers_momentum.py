@@ -4,6 +4,7 @@
 策略动态跟踪 OKX USDT 永续 24h 涨幅榜前 N 名，用 15m/5m EMA 动量信号做多。
 这是高风险策略，默认使用逐仓、单仓位、小名义金额和运行期熔断。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -17,7 +18,10 @@ from loguru import logger
 
 from app.core.database import SessionLocal
 from app.models.strategy import StrategyEvent
-from app.services.backtest.top_gainers_momentum import EXCLUDED_SYMBOLS, TopGainersMomentumAnalyzer
+from app.services.backtest.top_gainers_momentum import (
+    EXCLUDED_SYMBOLS,
+    TopGainersMomentumAnalyzer,
+)
 from app.services.strategy.base import StrategyBase
 
 
@@ -39,7 +43,14 @@ class MomentumPosition:
 class TopGainersMomentumStrategy(StrategyBase):
     """动态涨幅榜 + EMA 动量 + ATR 风控的多币种实盘执行器。"""
 
-    def __init__(self, strategy_id: int, exchange, symbol: str, parameters: Dict, user_id: int = 1):
+    def __init__(
+        self,
+        strategy_id: int,
+        exchange,
+        symbol: str,
+        parameters: Dict,
+        user_id: int = 1,
+    ):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
         p = parameters or {}
 
@@ -64,7 +75,9 @@ class TopGainersMomentumStrategy(StrategyBase):
         self.max_hold_bars = int(p.get("max_hold_bars", defaults["max_hold_bars"]))
 
         self.max_position_usd = float(p.get("max_position_usd", 300))
-        self.max_total_position_usd = float(p.get("max_total_position_usd", self.max_position_usd))
+        self.max_total_position_usd = float(
+            p.get("max_total_position_usd", self.max_position_usd)
+        )
         self.max_open_positions = max(1, min(int(p.get("max_open_positions", 1)), 3))
         self.cooldown_seconds = max(0, int(p.get("cooldown_seconds", 15 * 60)))
         self.min_24h_change_pct = float(p.get("min_24h_change_pct", 0))
@@ -74,8 +87,8 @@ class TopGainersMomentumStrategy(StrategyBase):
 
         # 固定百分比止盈止损模式（与 ATR 动态止损二选一）
         self.use_fixed_pct = bool(p.get("use_fixed_pct", False))
-        self.fixed_sl_pct = float(p.get("fixed_sl_pct", 1.0))   # 止损百分比，默认1%
-        self.fixed_tp_pct = float(p.get("fixed_tp_pct", 1.0))   # 止盈百分比，默认1%
+        self.fixed_sl_pct = float(p.get("fixed_sl_pct", 1.0))  # 止损百分比，默认1%
+        self.fixed_tp_pct = float(p.get("fixed_tp_pct", 1.0))  # 止盈百分比，默认1%
 
         self.positions: Dict[str, MomentumPosition] = {}
         self._self_driven = True
@@ -145,10 +158,14 @@ class TopGainersMomentumStrategy(StrategyBase):
         tickers = await self.exchange.get_tickers("SWAP")
         top_gainers = self._top_usdt_swap_gainers(tickers)
         top_symbols = {item["symbol"] for item in top_gainers}
-        latest_signal = self._signal_status if isinstance(self._signal_status, dict) else {}
+        latest_signal = (
+            self._signal_status if isinstance(self._signal_status, dict) else {}
+        )
 
         for symbol in list(self.positions.keys()):
-            ticker = next((item for item in top_gainers if item["symbol"] == symbol), None)
+            ticker = next(
+                (item for item in top_gainers if item["symbol"] == symbol), None
+            )
             if ticker is None:
                 try:
                     raw_ticker = await self.exchange.get_ticker(symbol)
@@ -167,7 +184,10 @@ class TopGainersMomentumStrategy(StrategyBase):
                 continue
             if item["change_24h_pct"] < self.min_24h_change_pct:
                 continue
-            if time.time() - self._last_trade_at.get(symbol, 0.0) < self.cooldown_seconds:
+            if (
+                time.time() - self._last_trade_at.get(symbol, 0.0)
+                < self.cooldown_seconds
+            ):
                 continue
 
             candles = await self._load_candles(symbol)
@@ -220,14 +240,18 @@ class TopGainersMomentumStrategy(StrategyBase):
             open_24h = self._safe_float(ticker.get("open24h"))
             if last <= 0 or open_24h <= 0:
                 continue
-            gainers.append({
-                "symbol": symbol,
-                "last": last,
-                "change_24h_pct": (last - open_24h) / open_24h * 100,
-                "volume_24h": self._safe_float(ticker.get("volCcy24h") or ticker.get("vol24h")),
-            })
+            gainers.append(
+                {
+                    "symbol": symbol,
+                    "last": last,
+                    "change_24h_pct": (last - open_24h) / open_24h * 100,
+                    "volume_24h": self._safe_float(
+                        ticker.get("volCcy24h") or ticker.get("vol24h")
+                    ),
+                }
+            )
         gainers.sort(key=lambda item: item["change_24h_pct"], reverse=True)
-        return gainers[:self.top_n]
+        return gainers[: self.top_n]
 
     async def _load_candles(self, symbol: str) -> List[Dict]:
         raw = await self.exchange.get_kline(symbol, self.timeframe, limit=220)
@@ -277,24 +301,51 @@ class TopGainersMomentumStrategy(StrategyBase):
         atr_ok = 0.2 <= atr_pct <= 8
 
         side = "none"
-        short_reversal = overheat and close[i] < e9[i] and e5[i] < e9[i] and rsi[i] >= 55
+        short_reversal = (
+            overheat and close[i] < e9[i] and e5[i] < e9[i] and rsi[i] >= 55
+        )
 
-        if self.direction in {"short", "both"} and atr_ok and (
-            (short_trend and short_major and short_cross and 28 <= rsi[i] <= 60)
-            or short_reversal
+        if (
+            self.direction in {"short", "both"}
+            and atr_ok
+            and (
+                (short_trend and short_major and short_cross and 28 <= rsi[i] <= 60)
+                or short_reversal
+            )
         ):
             side = "short"
             action = "small_entry"
             status = "空头触发"
-        elif self.direction in {"short", "both"} and atr_ok and short_trend and short_major and recent_short_cross and 28 <= rsi[i] <= 64:
+        elif (
+            self.direction in {"short", "both"}
+            and atr_ok
+            and short_trend
+            and short_major
+            and recent_short_cross
+            and 28 <= rsi[i] <= 64
+        ):
             side = "short"
             action = "watch_or_small_entry"
             status = "空头刚触发"
-        elif self.direction in {"long", "both"} and long_trend and major and cross and 45 <= rsi[i] <= 74 and atr_ok:
+        elif (
+            self.direction in {"long", "both"}
+            and long_trend
+            and major
+            and cross
+            and 45 <= rsi[i] <= 74
+            and atr_ok
+        ):
             side = "long"
             action = "small_entry"
             status = "多头触发"
-        elif self.direction in {"long", "both"} and long_trend and major and recent_cross and 45 <= rsi[i] <= 74 and atr_ok:
+        elif (
+            self.direction in {"long", "both"}
+            and long_trend
+            and major
+            and recent_cross
+            and 45 <= rsi[i] <= 74
+            and atr_ok
+        ):
             side = "long"
             action = "watch_or_small_entry"
             status = "多头刚触发"
@@ -358,7 +409,11 @@ class TopGainersMomentumStrategy(StrategyBase):
             amount=Decimal(str(qty)),
             td_mode=self.margin_mode,
             pos_side=await self._pos_side(side),
-            attach_algo_ords=self._attached_tp_sl(take_profit_px, stop_px) if self.use_attached_tp_sl else None,
+            attach_algo_ords=(
+                self._attached_tp_sl(take_profit_px, stop_px)
+                if self.use_attached_tp_sl
+                else None
+            ),
         )
         detail = await self._load_order_detail(symbol, order)
         fill_price = self._safe_float(detail.get("avgPx")) or price
@@ -377,13 +432,22 @@ class TopGainersMomentumStrategy(StrategyBase):
             lowest_price=fill_price,
         )
         self._last_trade_at[symbol] = time.time()
-        await self._save_symbol_order_to_db(symbol, detail, order_side, "market", None, Decimal(str(qty)))
+        await self._save_symbol_order_to_db(
+            symbol, detail, order_side, "market", None, Decimal(str(qty))
+        )
         self._log_event(
             event_type="open_position",
             title=f"涨幅榜动量开{side}",
             message=f"{symbol} 开{side} {qty} 张，入场 {fill_price:.8f}",
             level="success",
-            data={"symbol": symbol, "side": side, "qty": qty, "entry": fill_price, "stop": stop_px, "take_profit": take_profit_px},
+            data={
+                "symbol": symbol,
+                "side": side,
+                "qty": qty,
+                "entry": fill_price,
+                "stop": stop_px,
+                "take_profit": take_profit_px,
+            },
         )
 
     async def _manage_position(self, symbol: str, price: float, out_of_top: bool):
@@ -403,8 +467,7 @@ class TopGainersMomentumStrategy(StrategyBase):
                 pos.stop_px = min(pos.stop_px, price + self.trailing_atr * atr)
 
         self._unrealized_pnl = sum(
-            self._position_pnl(p)
-            for p in self.positions.values()
+            self._position_pnl(p) for p in self.positions.values()
         )
 
         elapsed_bars = (time.time() - pos.open_time) / self._timeframe_seconds()
@@ -445,7 +508,9 @@ class TopGainersMomentumStrategy(StrategyBase):
         except Exception as exc:
             error_msg = str(exc)
             if "51169" in error_msg or "don't have any positions" in error_msg:
-                logger.warning(f"[{symbol}] 持仓已被外部平仓（止盈止损单触发），清理本地记录: {error_msg}")
+                logger.warning(
+                    f"[{symbol}] 持仓已被外部平仓（止盈止损单触发），清理本地记录: {error_msg}"
+                )
                 self.positions.pop(symbol, None)
                 self._last_trade_at[symbol] = time.time()
                 self._log_event(
@@ -453,7 +518,12 @@ class TopGainersMomentumStrategy(StrategyBase):
                     title="涨幅榜动量平仓(外部触发)",
                     message=f"{symbol} 持仓已被止盈止损单平仓，清理本地记录",
                     level="warning",
-                    data={"symbol": symbol, "side": pos.side, "reason": "external_close", "error": error_msg},
+                    data={
+                        "symbol": symbol,
+                        "side": pos.side,
+                        "reason": "external_close",
+                        "error": error_msg,
+                    },
                 )
                 return
             raise
@@ -461,13 +531,17 @@ class TopGainersMomentumStrategy(StrategyBase):
         exit_price = self._safe_float(detail.get("avgPx")) or pos.stop_px
         pos.current_price = exit_price
         pnl = self._position_pnl(pos)
-        await self._save_symbol_order_to_db(symbol, detail, order_side, "market", None, Decimal(str(pos.qty)))
+        await self._save_symbol_order_to_db(
+            symbol, detail, order_side, "market", None, Decimal(str(pos.qty))
+        )
 
         self.realized_pnl += pnl
         self.total_trades += 1
         if pnl > 0:
             self._win_trades += 1
-        self.win_rate = self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        self.win_rate = (
+            self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        )
         self.record_trade_result(pnl)
         self._last_trade_at[symbol] = time.time()
         self.positions.pop(symbol, None)
@@ -477,10 +551,18 @@ class TopGainersMomentumStrategy(StrategyBase):
             title="涨幅榜动量平仓",
             message=f"{symbol} {reason} 平仓，盈亏 {pnl:.4f} USDT",
             level="success" if pnl >= 0 else "warning",
-            data={"symbol": symbol, "side": pos.side, "reason": reason, "exit": exit_price, "pnl": pnl},
+            data={
+                "symbol": symbol,
+                "side": pos.side,
+                "reason": reason,
+                "exit": exit_price,
+                "pnl": pnl,
+            },
         )
 
-    async def _calc_contract_qty(self, symbol: str, price: float, atr: float, info: Dict[str, float]) -> float:
+    async def _calc_contract_qty(
+        self, symbol: str, price: float, atr: float, info: Dict[str, float]
+    ) -> float:
         if price <= 0 or atr <= 0:
             return 0.0
         balance = await self.exchange.get_balance()
@@ -492,14 +574,24 @@ class TopGainersMomentumStrategy(StrategyBase):
         if equity <= 0 or available <= 0:
             return 0.0
 
-        stop_distance = price * self.fixed_sl_pct / 100 if self.use_fixed_pct else max(self.stop_atr * atr, price * 0.002)
+        stop_distance = (
+            price * self.fixed_sl_pct / 100
+            if self.use_fixed_pct
+            else max(self.stop_atr * atr, price * 0.002)
+        )
         risk_capital = min(equity * self.risk_per_trade, self.max_position_usd * 0.08)
         qty_by_risk = risk_capital / (stop_distance * info["ct_val"])
-        remaining_total_usd = max(0.0, self.max_total_position_usd - self._current_notional_usd())
+        remaining_total_usd = max(
+            0.0, self.max_total_position_usd - self._current_notional_usd()
+        )
         if remaining_total_usd <= 0:
             return 0.0
-        qty_by_cap = min(self.max_position_usd, remaining_total_usd) / (price * info["ct_val"])
-        qty_by_margin = available * 0.75 * max(self.max_leverage, 1) / (price * info["ct_val"])
+        qty_by_cap = min(self.max_position_usd, remaining_total_usd) / (
+            price * info["ct_val"]
+        )
+        qty_by_margin = (
+            available * 0.75 * max(self.max_leverage, 1) / (price * info["ct_val"])
+        )
         return self._round_qty(min(qty_by_risk, qty_by_cap, qty_by_margin), info)
 
     def _current_notional_usd(self) -> float:
@@ -513,7 +605,9 @@ class TopGainersMomentumStrategy(StrategyBase):
             return (pos.entry_price - pos.current_price) * pos.qty * pos.ct_val
         return (pos.current_price - pos.entry_price) * pos.qty * pos.ct_val
 
-    def _risk_prices(self, entry_price: float, atr: float, side: str) -> tuple[float, float]:
+    def _risk_prices(
+        self, entry_price: float, atr: float, side: str
+    ) -> tuple[float, float]:
         if self.use_fixed_pct:
             if side == "short":
                 stop_px = entry_price * (1 + self.fixed_sl_pct / 100)
@@ -532,12 +626,14 @@ class TopGainersMomentumStrategy(StrategyBase):
 
     @staticmethod
     def _attached_tp_sl(take_profit_px: float, stop_px: float) -> List[Dict]:
-        return [{
-            "tpTriggerPx": str(round(take_profit_px, 12)),
-            "tpOrdPx": "-1",
-            "slTriggerPx": str(round(stop_px, 12)),
-            "slOrdPx": "-1",
-        }]
+        return [
+            {
+                "tpTriggerPx": str(round(take_profit_px, 12)),
+                "tpOrdPx": "-1",
+                "slTriggerPx": str(round(stop_px, 12)),
+                "slOrdPx": "-1",
+            }
+        ]
 
     async def _instrument(self, symbol: str) -> Dict[str, float]:
         if symbol in self._instrument_cache:
@@ -609,7 +705,9 @@ class TopGainersMomentumStrategy(StrategyBase):
             "top_n": self.top_n,
             "last_signal": self._signal_status,
             "open_positions": len(self.positions),
-            "positions": {symbol: pos.__dict__ for symbol, pos in self.positions.items()},
+            "positions": {
+                symbol: pos.__dict__ for symbol, pos in self.positions.items()
+            },
         }
 
     def _update_signal_status(self, symbol: str, item: Dict, signal: Dict):
@@ -632,19 +730,30 @@ class TopGainersMomentumStrategy(StrategyBase):
             self._last_event_time = now
             self._log_event("signal", "涨幅榜动量信号", status["message"], data=status)
 
-    def _log_event(self, event_type: str, title: str, message: str, level: str = "info", data: Optional[Dict] = None):
+    def _log_event(
+        self,
+        event_type: str,
+        title: str,
+        message: str,
+        level: str = "info",
+        data: Optional[Dict] = None,
+    ):
         db = SessionLocal()
         try:
-            db.add(StrategyEvent(
-                strategy_id=self.strategy_id,
-                user_id=self.user_id,
-                event_type=event_type,
-                level=level,
-                title=title,
-                message=message,
-                data=data or {},
-                parameter_snapshot=self.parameters if isinstance(self.parameters, dict) else None,
-            ))
+            db.add(
+                StrategyEvent(
+                    strategy_id=self.strategy_id,
+                    user_id=self.user_id,
+                    event_type=event_type,
+                    level=level,
+                    title=title,
+                    message=message,
+                    data=data or {},
+                    parameter_snapshot=(
+                        self.parameters if isinstance(self.parameters, dict) else None
+                    ),
+                )
+            )
             db.commit()
         except Exception as exc:
             db.rollback()
@@ -664,7 +773,9 @@ class TopGainersMomentumStrategy(StrategyBase):
         original_symbol = self.symbol
         self.symbol = symbol
         try:
-            return await self._save_order_to_db(order_data, side, order_type, price, amount)
+            return await self._save_order_to_db(
+                order_data, side, order_type, price, amount
+            )
         finally:
             self.symbol = original_symbol
 
@@ -674,22 +785,34 @@ class TopGainersMomentumStrategy(StrategyBase):
         multiplier = 2 / (period + 1)
         previous = None
         for value in values:
-            previous = value if previous is None else previous + (value - previous) * multiplier
+            previous = (
+                value
+                if previous is None
+                else previous + (value - previous) * multiplier
+            )
             output.append(previous)
         return output
 
     @classmethod
-    def _atr(cls, highs: List[float], lows: List[float], closes: List[float], period: int = 14) -> List[float]:
+    def _atr(
+        cls,
+        highs: List[float],
+        lows: List[float],
+        closes: List[float],
+        period: int = 14,
+    ) -> List[float]:
         true_ranges = []
         for i, close in enumerate(closes):
             if i == 0:
                 true_ranges.append(highs[i] - lows[i])
             else:
-                true_ranges.append(max(
-                    highs[i] - lows[i],
-                    abs(highs[i] - closes[i - 1]),
-                    abs(lows[i] - closes[i - 1]),
-                ))
+                true_ranges.append(
+                    max(
+                        highs[i] - lows[i],
+                        abs(highs[i] - closes[i - 1]),
+                        abs(lows[i] - closes[i - 1]),
+                    )
+                )
         return cls._ema(true_ranges, period)
 
     @staticmethod
@@ -709,7 +832,9 @@ class TopGainersMomentumStrategy(StrategyBase):
                 losses.pop(0)
             avg_gain = sum(gains) / len(gains)
             avg_loss = sum(losses) / len(losses)
-            output.append(100.0 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss))
+            output.append(
+                100.0 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss)
+            )
         return output
 
     @staticmethod

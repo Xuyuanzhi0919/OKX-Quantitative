@@ -79,4 +79,3 @@ class PolicyGuard:
             warnings=warnings,
             next_action=next_action,
         )
-

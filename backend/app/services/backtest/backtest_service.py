@@ -2,6 +2,7 @@
 回测执行服务
 负责协调K线数据、回测引擎和结果存储
 """
+
 from typing import Dict, Optional, Type, Callable
 from sqlalchemy.orm import Session
 from loguru import logger
@@ -27,7 +28,7 @@ BACKTEST_ENGINES: Dict[str, Type[BacktestEngine]] = {
 def register_backtest_engine(strategy_type: str, engine_class: Type[BacktestEngine]):
     """
     注册新的回测引擎类型
-    
+
     Args:
         strategy_type: 策略类型标识
         engine_class: 引擎类
@@ -64,7 +65,7 @@ class BacktestService:
         end_time: int,
         initial_capital: float,
         parameters: Dict,
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ) -> Backtest:
         """
         创建回测记录
@@ -85,7 +86,9 @@ class BacktestService:
             回测记录
         """
         if strategy_type not in BACKTEST_ENGINES:
-            raise ValueError(f"不支持的策略类型: {strategy_type}，可用类型: {list(BACKTEST_ENGINES.keys())}")
+            raise ValueError(
+                f"不支持的策略类型: {strategy_type}，可用类型: {list(BACKTEST_ENGINES.keys())}"
+            )
 
         backtest = Backtest(
             user_id=user_id,
@@ -98,15 +101,17 @@ class BacktestService:
             end_time=end_time,
             initial_capital=initial_capital,
             parameters=parameters,
-            status='pending',
-            progress=0
+            status="pending",
+            progress=0,
         )
 
         self.db.add(backtest)
         self.db.commit()
         self.db.refresh(backtest)
 
-        logger.info(f"创建回测记录: ID={backtest.id}, 策略={strategy_type}, 交易对={symbol}")
+        logger.info(
+            f"创建回测记录: ID={backtest.id}, 策略={strategy_type}, 交易对={symbol}"
+        )
 
         return backtest
 
@@ -127,11 +132,13 @@ class BacktestService:
 
         try:
             # 更新状态为运行中
-            backtest.status = 'running'
+            backtest.status = "running"
             backtest.progress = 0
             self.db.commit()
 
-            logger.info(f"开始执行回测: ID={backtest_id}, 策略={backtest.strategy_type}")
+            logger.info(
+                f"开始执行回测: ID={backtest_id}, 策略={backtest.strategy_type}"
+            )
 
             # 获取K线数据
             kline_service = KlineService(self.db, None)  # 不需要exchange
@@ -139,7 +146,7 @@ class BacktestService:
                 symbol=backtest.symbol,
                 interval=backtest.interval,
                 start_time=backtest.start_time,
-                end_time=backtest.end_time
+                end_time=backtest.end_time,
             )
 
             if not klines:
@@ -156,14 +163,16 @@ class BacktestService:
                     "low": float(k.low),
                     "close": float(k.close),
                     "volume": float(k.volume),
-                    "volume_currency": float(k.volume_currency)
+                    "volume_currency": float(k.volume_currency),
                 }
                 for k in klines
             ]
 
             # 创建回测引擎
             engine = self._create_engine(backtest)
-            if hasattr(engine, "set_pair_klines") and hasattr(engine, "required_symbols"):
+            if hasattr(engine, "set_pair_klines") and hasattr(
+                engine, "required_symbols"
+            ):
                 pair_klines = {backtest.symbol.upper(): kline_dicts}
                 for pair_symbol in engine.required_symbols():
                     pair_symbol = pair_symbol.upper()
@@ -173,10 +182,12 @@ class BacktestService:
                         symbol=pair_symbol,
                         interval=backtest.interval,
                         start_time=backtest.start_time,
-                        end_time=backtest.end_time
+                        end_time=backtest.end_time,
                     )
                     if not pair_rows:
-                        raise ValueError(f"没有 {pair_symbol} 的K线数据，请先获取历史数据")
+                        raise ValueError(
+                            f"没有 {pair_symbol} 的K线数据，请先获取历史数据"
+                        )
                     pair_klines[pair_symbol] = [
                         {
                             "timestamp": k.timestamp,
@@ -185,7 +196,7 @@ class BacktestService:
                             "low": float(k.low),
                             "close": float(k.close),
                             "volume": float(k.volume),
-                            "volume_currency": float(k.volume_currency)
+                            "volume_currency": float(k.volume_currency),
                         }
                         for k in pair_rows
                     ]
@@ -204,27 +215,27 @@ class BacktestService:
             # 计算性能指标
             metrics = BacktestMetrics.calculate_all_metrics(
                 initial_capital=float(backtest.initial_capital),
-                final_capital=result['final_equity'],
+                final_capital=result["final_equity"],
                 equity_curve=engine.equity_curve,
                 trades=[self._trade_to_dict(t) for t in engine.trades],
                 start_timestamp=backtest.start_time,
-                end_timestamp=backtest.end_time
+                end_timestamp=backtest.end_time,
             )
 
             # 保存回测结果
-            backtest.status = 'completed'
+            backtest.status = "completed"
             backtest.progress = 100
-            backtest.final_capital = result['final_equity']
-            backtest.total_return = metrics['total_return']
-            backtest.annualized_return = metrics['annualized_return']
-            backtest.max_drawdown = metrics['max_drawdown']
-            backtest.sharpe_ratio = metrics['sharpe_ratio']
-            backtest.total_trades = metrics['total_trades']
-            backtest.winning_trades = metrics['winning_trades']
-            backtest.losing_trades = metrics['losing_trades']
-            backtest.win_rate = metrics['win_rate']
-            backtest.profit_factor = metrics['profit_factor']
-            backtest.total_fee = metrics['total_fee']
+            backtest.final_capital = result["final_equity"]
+            backtest.total_return = metrics["total_return"]
+            backtest.annualized_return = metrics["annualized_return"]
+            backtest.max_drawdown = metrics["max_drawdown"]
+            backtest.sharpe_ratio = metrics["sharpe_ratio"]
+            backtest.total_trades = metrics["total_trades"]
+            backtest.winning_trades = metrics["winning_trades"]
+            backtest.losing_trades = metrics["losing_trades"]
+            backtest.win_rate = metrics["win_rate"]
+            backtest.profit_factor = metrics["profit_factor"]
+            backtest.total_fee = metrics["total_fee"]
             backtest.equity_curve = engine.equity_curve
             backtest.completed_at = datetime.now()
 
@@ -242,26 +253,28 @@ class BacktestService:
                     capital_before=trade.capital_before,
                     capital_after=trade.capital_after,
                     pnl=trade.pnl,
-                    pnl_percent=trade.pnl_percent
+                    pnl_percent=trade.pnl_percent,
                 )
                 self.db.add(backtest_trade)
 
             self.db.commit()
 
-            logger.info(f"回测完成: ID={backtest_id}, "
-                       f"最终资金={result['final_equity']:.2f}, "
-                       f"收益率={metrics['total_return']*100:.2f}%")
+            logger.info(
+                f"回测完成: ID={backtest_id}, "
+                f"最终资金={result['final_equity']:.2f}, "
+                f"收益率={metrics['total_return']*100:.2f}%"
+            )
 
             return {
                 "backtest_id": backtest.id,
                 "status": "completed",
                 "metrics": metrics,
-                "final_equity": result['final_equity']
+                "final_equity": result["final_equity"],
             }
 
         except Exception as e:
             logger.error(f"回测执行失败: {e}")
-            backtest.status = 'failed'
+            backtest.status = "failed"
             backtest.error_message = str(e)
             self.db.commit()
             raise
@@ -281,18 +294,20 @@ class BacktestService:
 
         # 从注册表获取引擎类
         engine_class = BACKTEST_ENGINES.get(strategy_type)
-        
+
         if engine_class is None:
-            raise ValueError(f"不支持的策略类型: {strategy_type}，可用类型: {list(BACKTEST_ENGINES.keys())}")
+            raise ValueError(
+                f"不支持的策略类型: {strategy_type}，可用类型: {list(BACKTEST_ENGINES.keys())}"
+            )
 
         # 检查引擎是否支持 from_params 方法
-        if hasattr(engine_class, 'from_params'):
+        if hasattr(engine_class, "from_params"):
             return engine_class.from_params(
                 symbol=backtest.symbol,
                 initial_capital=float(backtest.initial_capital),
-                params=params
+                params=params,
             )
-        
+
         raise ValueError(f"无法创建策略引擎: {strategy_type}")
 
     @staticmethod
@@ -313,5 +328,5 @@ class BacktestService:
             "amount": trade.amount,
             "fee": trade.fee,
             "pnl": trade.pnl,
-            "pnl_percent": trade.pnl_percent
+            "pnl_percent": trade.pnl_percent,
         }

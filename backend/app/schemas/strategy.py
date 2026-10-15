@@ -1,6 +1,7 @@
 """
 策略相关的Pydantic schemas
 """
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -10,6 +11,7 @@ from app.models.strategy import StrategyType, StrategyStatus
 # 策略基础信息
 class StrategyBase(BaseModel):
     """策略基础信息"""
+
     model_config = ConfigDict(use_enum_values=True)
 
     name: str = Field(..., description="策略名称")
@@ -24,12 +26,14 @@ class StrategyBase(BaseModel):
 # 创建策略请求
 class StrategyCreate(StrategyBase):
     """创建策略请求"""
+
     pass
 
 
 # 更新策略请求
 class StrategyUpdate(BaseModel):
     """更新策略请求"""
+
     name: Optional[str] = None
     symbol: Optional[str] = None
     api_config_id: Optional[int] = None
@@ -41,6 +45,7 @@ class StrategyUpdate(BaseModel):
 # 策略响应
 class StrategyResponse(StrategyBase):
     """策略响应"""
+
     id: int
     user_id: int
     status: StrategyStatus
@@ -59,6 +64,7 @@ class StrategyResponse(StrategyBase):
 # 策略列表响应
 class StrategyListResponse(BaseModel):
     """策略列表响应"""
+
     total: int
     items: list[StrategyResponse]
 
@@ -66,6 +72,7 @@ class StrategyListResponse(BaseModel):
 # 网格订单详情
 class GridOrderDetail(BaseModel):
     """网格订单详情"""
+
     grid_index: int = Field(..., description="网格索引")
     buy_price: float = Field(..., description="买入价格")
     sell_price: Optional[float] = Field(None, description="卖出价格")
@@ -80,6 +87,7 @@ class GridOrderDetail(BaseModel):
 # 策略统计响应
 class StrategyStatsResponse(BaseModel):
     """策略统计响应"""
+
     strategy_id: int
     is_running: bool
     position_size: Optional[float] = None
@@ -89,7 +97,9 @@ class StrategyStatsResponse(BaseModel):
     total_buy_volume: Optional[float] = None
     total_sell_volume: Optional[float] = None
     grid_orders: Optional[int] = None
-    grid_orders_detail: Optional[list[GridOrderDetail]] = Field(None, description="网格订单详情列表")
+    grid_orders_detail: Optional[list[GridOrderDetail]] = Field(
+        None, description="网格订单详情列表"
+    )
     signal_status: Optional[dict] = Field(None, description="策略当前信号状态")
     position_status: Optional[dict] = Field(None, description="策略当前持仓风控状态")
     risk_status: Optional[dict] = Field(None, description="策略运行期风控状态")

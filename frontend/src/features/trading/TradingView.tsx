@@ -26,12 +26,12 @@ const TradingView = () => {
         setLoading(true)
         const data = await marketApi.getInstruments({
           inst_type: instType,
-          quote_ccy: 'USDT'
+          quote_ccy: 'USDT',
         })
         setInstruments(data)
 
         // 如果当前选择的交易对不在新列表中,切换到第一个
-        if (data.length > 0 && !data.find(inst => inst.instId === currentSymbol)) {
+        if (data.length > 0 && !data.find((inst) => inst.instId === currentSymbol)) {
           setCurrentSymbol(data[0].instId)
         }
       } catch (error) {
@@ -45,18 +45,28 @@ const TradingView = () => {
   }, [instType])
 
   // 过滤交易对
-  const filteredInstruments = instruments.filter(inst => {
+  const filteredInstruments = instruments.filter((inst) => {
     if (!searchText) return true
     const searchLower = searchText.toLowerCase()
-    return inst.instId.toLowerCase().includes(searchLower) ||
-           inst.baseCcy?.toLowerCase().includes(searchLower)
+    return (
+      inst.instId.toLowerCase().includes(searchLower) ||
+      inst.baseCcy?.toLowerCase().includes(searchLower)
+    )
   })
 
   return (
     <div>
       {/* 顶部交易对选择 */}
       <Card variant="borderless" size="small" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <span className="pro-card-header">{t('trading.selectSymbol').toUpperCase()}</span>
 
@@ -68,12 +78,14 @@ const TradingView = () => {
               buttonStyle="solid"
             >
               <Radio.Button value="SPOT">
-                现货 ({instruments.filter(i => i.instType === 'SPOT').length})
+                现货 ({instruments.filter((i) => i.instType === 'SPOT').length})
               </Radio.Button>
               <Radio.Button value="SWAP">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  合约 ({instruments.filter(i => i.instType === 'SWAP').length})
-                  <Tag color="orange" style={{ margin: 0, fontSize: 10 }}>杠杆</Tag>
+                  合约 ({instruments.filter((i) => i.instType === 'SWAP').length})
+                  <Tag color="orange" style={{ margin: 0, fontSize: 10 }}>
+                    杠杆
+                  </Tag>
                 </span>
               </Radio.Button>
             </Radio.Group>
@@ -104,7 +116,9 @@ const TradingView = () => {
                   </span>
                 }
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <span className="font-mono" style={{ fontWeight: 600 }}>
                     {inst.instId}
                   </span>
@@ -134,7 +148,11 @@ const TradingView = () => {
         <Col xs={24} lg={16}>
           {/* K线图区域 */}
           <Card
-            title={<div className="pro-card-header" style={{ margin: 0 }}>{t('trading.chart').toUpperCase()}</div>}
+            title={
+              <div className="pro-card-header" style={{ margin: 0 }}>
+                {t('trading.chart').toUpperCase()}
+              </div>
+            }
             variant="borderless"
             size="small"
             style={{ marginBottom: 16 }}

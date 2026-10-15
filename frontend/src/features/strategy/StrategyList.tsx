@@ -1,4 +1,17 @@
-import { Card, Table, Button, Tag, Space, App, Input, Select, Row, Col, Dropdown, Radio } from 'antd'
+import {
+  Card,
+  Table,
+  Button,
+  Tag,
+  Space,
+  App,
+  Input,
+  Select,
+  Row,
+  Col,
+  Dropdown,
+  Radio,
+} from 'antd'
 import {
   Play,
   Pause,
@@ -33,16 +46,43 @@ const apiErrorMessage = (error: any, fallback: string) => {
 
 // 常用 OKX 合约交易对（USDT 本位永续）
 const SYMBOL_OPTIONS = [
-  'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
-  'XRP-USDT-SWAP', 'DOGE-USDT-SWAP', 'ADA-USDT-SWAP', 'AVAX-USDT-SWAP',
-  'LINK-USDT-SWAP', 'DOT-USDT-SWAP', 'MATIC-USDT-SWAP', 'UNI-USDT-SWAP',
-  'LTC-USDT-SWAP', 'ATOM-USDT-SWAP', 'ETC-USDT-SWAP', 'FIL-USDT-SWAP',
-  'ARB-USDT-SWAP', 'OP-USDT-SWAP', 'APT-USDT-SWAP', 'NEAR-USDT-SWAP',
-  'SUI-USDT-SWAP', 'TRX-USDT-SWAP', 'TON-USDT-SWAP', 'KSM-USDT-SWAP',
-  'WLD-USDT-SWAP', 'INJ-USDT-SWAP', 'TIA-USDT-SWAP', 'JTO-USDT-SWAP',
-  'SEI-USDT-SWAP', 'ORDI-USDT-SWAP', 'STX-USDT-SWAP', 'MEME-USDT-SWAP',
-  'PEPE-USDT-SWAP', 'SHIB-USDT-SWAP', 'FLOKI-USDT-SWAP', 'BONK-USDT-SWAP',
-].map(s => ({ label: s, value: s }))
+  'BTC-USDT-SWAP',
+  'ETH-USDT-SWAP',
+  'SOL-USDT-SWAP',
+  'BNB-USDT-SWAP',
+  'XRP-USDT-SWAP',
+  'DOGE-USDT-SWAP',
+  'ADA-USDT-SWAP',
+  'AVAX-USDT-SWAP',
+  'LINK-USDT-SWAP',
+  'DOT-USDT-SWAP',
+  'MATIC-USDT-SWAP',
+  'UNI-USDT-SWAP',
+  'LTC-USDT-SWAP',
+  'ATOM-USDT-SWAP',
+  'ETC-USDT-SWAP',
+  'FIL-USDT-SWAP',
+  'ARB-USDT-SWAP',
+  'OP-USDT-SWAP',
+  'APT-USDT-SWAP',
+  'NEAR-USDT-SWAP',
+  'SUI-USDT-SWAP',
+  'TRX-USDT-SWAP',
+  'TON-USDT-SWAP',
+  'KSM-USDT-SWAP',
+  'WLD-USDT-SWAP',
+  'INJ-USDT-SWAP',
+  'TIA-USDT-SWAP',
+  'JTO-USDT-SWAP',
+  'SEI-USDT-SWAP',
+  'ORDI-USDT-SWAP',
+  'STX-USDT-SWAP',
+  'MEME-USDT-SWAP',
+  'PEPE-USDT-SWAP',
+  'SHIB-USDT-SWAP',
+  'FLOKI-USDT-SWAP',
+  'BONK-USDT-SWAP',
+].map((s) => ({ label: s, value: s }))
 
 // 策略类型中文标签（用于表格展示已有历史策略）
 const STRATEGY_TYPE_LABELS: Record<string, string> = {
@@ -96,12 +136,12 @@ const StrategyList = () => {
   const [emergencyLoading, setEmergencyLoading] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [selectedCreateType, setSelectedCreateType] = useState<string>('')
-  
+
   // 筛选状态
   const [searchText, setSearchText] = useState('')
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string | null>(null)
-  
+
   // 编辑/复制策略状态
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null)
@@ -109,10 +149,13 @@ const StrategyList = () => {
 
   // 过滤后的策略列表
   const filteredStrategies = useMemo(() => {
-    return strategies.filter(s => {
+    return strategies.filter((s) => {
       // 搜索过滤
-      if (searchText && !s.name.toLowerCase().includes(searchText.toLowerCase()) &&
-          !s.symbol.toLowerCase().includes(searchText.toLowerCase())) {
+      if (
+        searchText &&
+        !s.name.toLowerCase().includes(searchText.toLowerCase()) &&
+        !s.symbol.toLowerCase().includes(searchText.toLowerCase())
+      ) {
         return false
       }
       // 状态过滤
@@ -169,25 +212,37 @@ const StrategyList = () => {
         setActionLoading({ ...actionLoading, [id]: false })
         modal.confirm({
           title: blockers.length > 0 ? '启动前检查未通过' : '启动前安全确认',
-          icon: <AlertCircle size={24} className={blockers.length > 0 ? 'text-red-500' : 'text-yellow-500'} />,
+          icon: (
+            <AlertCircle
+              size={24}
+              className={blockers.length > 0 ? 'text-red-500' : 'text-yellow-500'}
+            />
+          ),
           width: 680,
           content: (
             <div>
               {checks.api_config && (
                 <p>
                   API配置：
-                  <Tag color={checks.api_config.is_simulated ? 'blue' : 'red'} style={{ marginLeft: 8 }}>
+                  <Tag
+                    color={checks.api_config.is_simulated ? 'blue' : 'red'}
+                    style={{ marginLeft: 8 }}
+                  >
                     {checks.api_config.is_simulated ? '模拟盘' : '实盘'}
                   </Tag>
                   {checks.api_config.name}
                 </p>
               )}
-              {checks.account && <p>账户权益：{Number(checks.account.total_equity || 0).toFixed(2)} USDT</p>}
+              {checks.account && (
+                <p>账户权益：{Number(checks.account.total_equity || 0).toFixed(2)} USDT</p>
+              )}
               {warnings.length > 0 && (
                 <div style={{ marginTop: 8 }}>
                   <strong>风险提醒</strong>
                   <ul style={{ paddingLeft: 18 }}>
-                    {warnings.map((item: string, idx: number) => <li key={idx}>{item}</li>)}
+                    {warnings.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -195,7 +250,9 @@ const StrategyList = () => {
                 <div style={{ marginTop: 8, color: '#ff4d4f' }}>
                   <strong>阻断项</strong>
                   <ul style={{ paddingLeft: 18 }}>
-                    {blockers.map((item: string, idx: number) => <li key={idx}>{item}</li>)}
+                    {blockers.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -245,7 +302,9 @@ const StrategyList = () => {
           <p>急停会立即暂停所有运行中的策略，并撤销相关未成交订单。</p>
           <Radio.Group
             defaultValue={false}
-            onChange={e => { closePositions = e.target.value }}
+            onChange={(e) => {
+              closePositions = e.target.value
+            }}
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           >
             <Radio value={false}>仅暂停策略并撤单，保留当前持仓</Radio>
@@ -277,25 +336,33 @@ const StrategyList = () => {
 
   // 停止策略
   const handleStopStrategy = (id: number, name: string) => {
-    let closePosition = true  // 默认停止并平仓
+    let closePosition = true // 默认停止并平仓
     modal.confirm({
       title: '停止策略',
       icon: <AlertCircle size={24} className="text-yellow-500" />,
       content: (
         <div>
-          <p style={{ marginBottom: 12 }}>确定要停止策略 <strong>{name}</strong> 吗？</p>
+          <p style={{ marginBottom: 12 }}>
+            确定要停止策略 <strong>{name}</strong> 吗？
+          </p>
           <Radio.Group
             defaultValue={true}
-            onChange={e => { closePosition = e.target.value }}
+            onChange={(e) => {
+              closePosition = e.target.value
+            }}
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           >
             <Radio value={true}>
               <span>停止并平仓</span>
-              <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>市价立即平掉当前持仓（推荐）</span>
+              <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>
+                市价立即平掉当前持仓（推荐）
+              </span>
             </Radio>
             <Radio value={false}>
               <span>仅停止策略</span>
-              <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>保留持仓，可手动管理</span>
+              <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>
+                保留持仓，可手动管理
+              </span>
             </Radio>
           </Radio.Group>
         </div>
@@ -324,13 +391,17 @@ const StrategyList = () => {
       icon: <AlertCircle size={24} className="text-red-500" />,
       content: isRunning ? (
         <div>
-          <p style={{ marginBottom: 8 }}>确定要删除策略 <strong>{name}</strong> 吗？</p>
+          <p style={{ marginBottom: 8 }}>
+            确定要删除策略 <strong>{name}</strong> 吗？
+          </p>
           <p style={{ color: '#ff4d4f', fontSize: 13, margin: 0 }}>
             ⚠️ 该策略正在运行，删除前将自动<strong>停止策略并市价平仓</strong>，请确认。
           </p>
         </div>
       ) : (
-        <p>确定要删除策略 <strong>{name}</strong> 吗？此操作不可恢复。</p>
+        <p>
+          确定要删除策略 <strong>{name}</strong> 吗？此操作不可恢复。
+        </p>
       ),
       okText: isRunning ? '平仓并删除' : '确定删除',
       okType: 'danger',
@@ -421,9 +492,7 @@ const StrategyList = () => {
       key: 'status',
       width: 90,
       render: (status) => (
-        <Tag color={statusColorMap[status] || 'default'}>
-          {statusTextMap[status] || status}
-        </Tag>
+        <Tag color={statusColorMap[status] || 'default'}>{statusTextMap[status] || status}</Tag>
       ),
     },
     {
@@ -437,7 +506,8 @@ const StrategyList = () => {
         const color = value >= 0 ? '#22c55e' : '#ef4444'
         return (
           <span style={{ color, fontWeight: 600, fontFamily: 'monospace' }}>
-            {value >= 0 ? '+' : ''}{formatPrice(value)} USDT
+            {value >= 0 ? '+' : ''}
+            {formatPrice(value)} USDT
           </span>
         )
       },
@@ -529,7 +599,13 @@ const StrategyList = () => {
                 type="text"
                 size="small"
                 icon={<Trash2 size={14} />}
-                onClick={() => handleDeleteStrategy(record.id, record.name, record.status === StrategyStatus.RUNNING)}
+                onClick={() =>
+                  handleDeleteStrategy(
+                    record.id,
+                    record.name,
+                    record.status === StrategyStatus.RUNNING,
+                  )
+                }
                 danger
               >
                 {t('common.delete')}
@@ -548,12 +624,15 @@ const StrategyList = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{t('strategy.strategyList')}</span>
             <Space>
-              <Button danger icon={<AlertCircle size={14} />} loading={emergencyLoading} onClick={handleEmergencyStop}>
+              <Button
+                danger
+                icon={<AlertCircle size={14} />}
+                loading={emergencyLoading}
+                onClick={handleEmergencyStop}
+              >
                 一键急停
               </Button>
-              <Button onClick={() => fetchStrategies()}>
-                {t('common.refresh')}
-              </Button>
+              <Button onClick={() => fetchStrategies()}>{t('common.refresh')}</Button>
               <Dropdown
                 trigger={['click']}
                 menu={{
@@ -606,7 +685,10 @@ const StrategyList = () => {
             />
           </Col>
           <Col span={4}>
-            <Button onClick={handleClearFilters} disabled={!searchText && !filterStatus && !filterType}>
+            <Button
+              onClick={handleClearFilters}
+              disabled={!searchText && !filterStatus && !filterType}
+            >
               清空筛选
             </Button>
           </Col>
@@ -617,7 +699,11 @@ const StrategyList = () => {
           dataSource={filteredStrategies}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
           scroll={{ x: 1200 }}
           locale={{ emptyText: '暂无策略' }}
         />
@@ -645,7 +731,10 @@ const StrategyList = () => {
       <StrategyCreateModal
         open={createModalOpen}
         initialType={selectedCreateType}
-        onCancel={() => { setCreateModalOpen(false); setSelectedCreateType('') }}
+        onCancel={() => {
+          setCreateModalOpen(false)
+          setSelectedCreateType('')
+        }}
         onSuccess={() => {
           setCreateModalOpen(false)
           setSelectedCreateType('')
@@ -668,14 +757,17 @@ const StrategyList = () => {
           fetchStrategies(true)
         }}
         editStrategyId={!isCopyMode && editingStrategy ? editingStrategy.id : undefined}
-        backtestData={editingStrategy ? {
-          strategy_type: editingStrategy.type,
-          symbol: editingStrategy.symbol,
-          parameters: editingStrategy.parameters || {},
-          name: isCopyMode ? `${editingStrategy.name} (副本)` : editingStrategy.name,
-        } : null}
+        backtestData={
+          editingStrategy
+            ? {
+                strategy_type: editingStrategy.type,
+                symbol: editingStrategy.symbol,
+                parameters: editingStrategy.parameters || {},
+                name: isCopyMode ? `${editingStrategy.name} (副本)` : editingStrategy.name,
+              }
+            : null
+        }
       />
-
     </div>
   )
 }

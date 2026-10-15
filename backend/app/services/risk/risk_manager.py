@@ -1,6 +1,7 @@
 """
 风控管理器 - 核心风控逻辑
 """
+
 from typing import Dict, List, Optional, Tuple
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -38,15 +39,14 @@ class RiskManager:
 
         # 加载启用的风控规则
         query = self.db.query(RiskControl).filter(
-            RiskControl.user_id == self.user_id,
-            RiskControl.is_enabled == True
+            RiskControl.user_id == self.user_id, RiskControl.is_enabled == True
         )
 
         if strategy_id:
             query = query.filter(
                 and_(
                     RiskControl.strategy_id == strategy_id,
-                    RiskControl.level == "strategy"
+                    RiskControl.level == "strategy",
                 )
             )
 
@@ -85,7 +85,9 @@ class RiskManager:
 
         return triggered_rules
 
-    async def _check_capital_risk(self, rule: RiskControl, strategy_id: Optional[int]) -> Optional[Dict]:
+    async def _check_capital_risk(
+        self, rule: RiskControl, strategy_id: Optional[int]
+    ) -> Optional[Dict]:
         """检查资金风控"""
         try:
             # 获取账户余额
@@ -97,7 +99,10 @@ class RiskManager:
             available_balance = float(balance.get("availBal", 0))
 
             # 检查最小可用资金
-            if rule.min_available_balance and available_balance < rule.min_available_balance:
+            if (
+                rule.min_available_balance
+                and available_balance < rule.min_available_balance
+            ):
                 risk_percent = available_balance / rule.min_available_balance
                 is_warning = risk_percent >= (rule.warning_threshold or 0.8)
 
@@ -109,19 +114,21 @@ class RiskManager:
                     "metrics": {
                         "available_balance": available_balance,
                         "min_required": rule.min_available_balance,
-                        "risk_percent": risk_percent
-                    }
+                        "risk_percent": risk_percent,
+                    },
                 }
 
             # 获取持仓总价值
             positions = await self.exchange.get_positions()
-            total_position_value = sum([
-                abs(float(pos.get("notionalUsd", 0)))
-                for pos in positions
-            ])
+            total_position_value = sum(
+                [abs(float(pos.get("notionalUsd", 0))) for pos in positions]
+            )
 
             # 检查最大持仓价值
-            if rule.max_position_value and total_position_value > rule.max_position_value:
+            if (
+                rule.max_position_value
+                and total_position_value > rule.max_position_value
+            ):
                 risk_percent = total_position_value / rule.max_position_value
 
                 return {
@@ -132,8 +139,8 @@ class RiskManager:
                     "metrics": {
                         "total_position_value": total_position_value,
                         "max_allowed": rule.max_position_value,
-                        "risk_percent": risk_percent
-                    }
+                        "risk_percent": risk_percent,
+                    },
                 }
 
             return None
@@ -142,7 +149,9 @@ class RiskManager:
             logger.error(f"检查资金风控失败: {e}")
             return None
 
-    async def _check_position_risk(self, rule: RiskControl, strategy_id: Optional[int]) -> Optional[Dict]:
+    async def _check_position_risk(
+        self, rule: RiskControl, strategy_id: Optional[int]
+    ) -> Optional[Dict]:
         """检查持仓风控"""
         try:
             if not self.exchange:
@@ -165,14 +174,18 @@ class RiskManager:
                             "metrics": {
                                 "symbol": symbol,
                                 "position": pos_amt,
-                                "max_allowed": rule.max_position_per_symbol
-                            }
+                                "max_allowed": rule.max_position_per_symbol,
+                            },
                         }
 
             # 检查持仓集中度
             if rule.max_concentration_ratio and len(positions) > 0:
-                total_value = sum([abs(float(p.get("notionalUsd", 0))) for p in positions])
-                max_single = max([abs(float(p.get("notionalUsd", 0))) for p in positions])
+                total_value = sum(
+                    [abs(float(p.get("notionalUsd", 0))) for p in positions]
+                )
+                max_single = max(
+                    [abs(float(p.get("notionalUsd", 0))) for p in positions]
+                )
 
                 if total_value > 0:
                     concentration = max_single / total_value
@@ -187,8 +200,8 @@ class RiskManager:
                                 "concentration": concentration,
                                 "max_allowed": rule.max_concentration_ratio,
                                 "total_value": total_value,
-                                "max_single": max_single
-                            }
+                                "max_single": max_single,
+                            },
                         }
 
             return None
@@ -197,12 +210,16 @@ class RiskManager:
             logger.error(f"检查持仓风控失败: {e}")
             return None
 
-    async def _check_loss_risk(self, rule: RiskControl, strategy_id: Optional[int]) -> Optional[Dict]:
+    async def _check_loss_risk(
+        self, rule: RiskControl, strategy_id: Optional[int]
+    ) -> Optional[Dict]:
         """检查亏损风控"""
         try:
             if strategy_id:
                 # 策略级风控
-                strategy = self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+                strategy = (
+                    self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+                )
                 if not strategy:
                     return None
 
@@ -211,14 +228,26 @@ class RiskManager:
                 # 检查日亏损限额
                 if rule.daily_loss_limit:
                     # 计算今日亏损
-                    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                    today_orders = self.db.query(Order).filter(
-                        Order.strategy_id == strategy_id,
-                        Order.status == "filled",
-                        Order.created_at >= today_start
-                    ).all()
+                    today_start = datetime.now().replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    today_orders = (
+                        self.db.query(Order)
+                        .filter(
+                            Order.strategy_id == strategy_id,
+                            Order.status == "filled",
+                            Order.created_at >= today_start,
+                        )
+                        .all()
+                    )
 
-                    today_loss = sum([float(o.realized_pnl or 0) for o in today_orders if float(o.realized_pnl or 0) < 0])
+                    today_loss = sum(
+                        [
+                            float(o.realized_pnl or 0)
+                            for o in today_orders
+                            if float(o.realized_pnl or 0) < 0
+                        ]
+                    )
 
                     if abs(today_loss) > rule.daily_loss_limit:
                         return {
@@ -228,8 +257,8 @@ class RiskManager:
                             "message": f"日亏损超限: {today_loss:.2f} USDT < -{rule.daily_loss_limit:.2f} USDT",
                             "metrics": {
                                 "today_loss": today_loss,
-                                "daily_limit": rule.daily_loss_limit
-                            }
+                                "daily_limit": rule.daily_loss_limit,
+                            },
                         }
 
                 # 检查总亏损限额
@@ -241,16 +270,21 @@ class RiskManager:
                         "message": f"总亏损超限: {total_profit:.2f} USDT < -{rule.total_loss_limit:.2f} USDT",
                         "metrics": {
                             "total_profit": total_profit,
-                            "total_limit": rule.total_loss_limit
-                        }
+                            "total_limit": rule.total_loss_limit,
+                        },
                     }
 
                 # 检查连续亏损次数
                 if rule.max_consecutive_losses:
-                    recent_orders = self.db.query(Order).filter(
-                        Order.strategy_id == strategy_id,
-                        Order.status == "filled"
-                    ).order_by(Order.created_at.desc()).limit(rule.max_consecutive_losses + 5).all()
+                    recent_orders = (
+                        self.db.query(Order)
+                        .filter(
+                            Order.strategy_id == strategy_id, Order.status == "filled"
+                        )
+                        .order_by(Order.created_at.desc())
+                        .limit(rule.max_consecutive_losses + 5)
+                        .all()
+                    )
 
                     consecutive_losses = 0
                     for order in recent_orders:
@@ -268,8 +302,8 @@ class RiskManager:
                             "message": f"连续亏损次数过多: {consecutive_losses} >= {rule.max_consecutive_losses}",
                             "metrics": {
                                 "consecutive_losses": consecutive_losses,
-                                "max_allowed": rule.max_consecutive_losses
-                            }
+                                "max_allowed": rule.max_consecutive_losses,
+                            },
                         }
 
             return None
@@ -278,21 +312,27 @@ class RiskManager:
             logger.error(f"检查亏损风控失败: {e}")
             return None
 
-    async def _check_drawdown_risk(self, rule: RiskControl, strategy_id: Optional[int]) -> Optional[Dict]:
+    async def _check_drawdown_risk(
+        self, rule: RiskControl, strategy_id: Optional[int]
+    ) -> Optional[Dict]:
         """检查回撤风控"""
         try:
             if not strategy_id:
                 return None
 
-            strategy = self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            strategy = (
+                self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            )
             if not strategy:
                 return None
 
             # 获取历史最高盈利
-            orders = self.db.query(Order).filter(
-                Order.strategy_id == strategy_id,
-                Order.status == "filled"
-            ).order_by(Order.created_at).all()
+            orders = (
+                self.db.query(Order)
+                .filter(Order.strategy_id == strategy_id, Order.status == "filled")
+                .order_by(Order.created_at)
+                .all()
+            )
 
             if not orders:
                 return None
@@ -325,8 +365,8 @@ class RiskManager:
                         "max_drawdown": max_drawdown,
                         "max_allowed": rule.max_drawdown_percent,
                         "peak_pnl": peak,
-                        "current_pnl": cumulative_pnl[-1]
-                    }
+                        "current_pnl": cumulative_pnl[-1],
+                    },
                 }
 
             return None
@@ -335,21 +375,31 @@ class RiskManager:
             logger.error(f"检查回撤风控失败: {e}")
             return None
 
-    async def _check_frequency_risk(self, rule: RiskControl, strategy_id: Optional[int]) -> Optional[Dict]:
+    async def _check_frequency_risk(
+        self, rule: RiskControl, strategy_id: Optional[int]
+    ) -> Optional[Dict]:
         """检查交易频率风控"""
         try:
-            if not strategy_id or not rule.max_trades_per_period or not rule.period_seconds:
+            if (
+                not strategy_id
+                or not rule.max_trades_per_period
+                or not rule.period_seconds
+            ):
                 return None
 
             # 计算时间窗口
             period_start = datetime.now() - timedelta(seconds=rule.period_seconds)
 
             # 统计时间窗口内的交易次数
-            trade_count = self.db.query(Order).filter(
-                Order.strategy_id == strategy_id,
-                Order.status == "filled",
-                Order.created_at >= period_start
-            ).count()
+            trade_count = (
+                self.db.query(Order)
+                .filter(
+                    Order.strategy_id == strategy_id,
+                    Order.status == "filled",
+                    Order.created_at >= period_start,
+                )
+                .count()
+            )
 
             if trade_count > rule.max_trades_per_period:
                 return {
@@ -360,8 +410,8 @@ class RiskManager:
                     "metrics": {
                         "trade_count": trade_count,
                         "max_allowed": rule.max_trades_per_period,
-                        "period_seconds": rule.period_seconds
-                    }
+                        "period_seconds": rule.period_seconds,
+                    },
                 }
 
             return None
@@ -385,7 +435,9 @@ class RiskManager:
             action_type = rule.action_on_trigger
             strategy_id = rule.strategy_id
 
-            logger.warning(f"执行风控动作: {action_type}, 规则: {rule.name}, 策略: {strategy_id}")
+            logger.warning(
+                f"执行风控动作: {action_type}, 规则: {rule.name}, 策略: {strategy_id}"
+            )
 
             # 记录风控动作
             risk_action = RiskAction(
@@ -395,7 +447,7 @@ class RiskManager:
                 action_type=action_type,
                 trigger_reason=triggered_risk["message"],
                 risk_metrics=str(triggered_risk["metrics"]),
-                execution_status="pending"
+                execution_status="pending",
             )
             self.db.add(risk_action)
             self.db.commit()
@@ -447,7 +499,7 @@ class RiskManager:
                 severity=triggered_risk["severity"],
                 title=f"风控预警: {rule.name}",
                 message=triggered_risk["message"],
-                data=str(triggered_risk["metrics"])
+                data=str(triggered_risk["metrics"]),
             )
             self.db.add(alert)
             self.db.commit()
@@ -463,7 +515,9 @@ class RiskManager:
             if not strategy_id:
                 return False
 
-            strategy = self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            strategy = (
+                self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            )
             if not strategy:
                 return False
 
@@ -483,7 +537,9 @@ class RiskManager:
             if not self.exchange or not strategy_id:
                 return False
 
-            strategy = self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            strategy = (
+                self.db.query(Strategy).filter(Strategy.id == strategy_id).first()
+            )
             if not strategy:
                 return False
 
@@ -501,7 +557,7 @@ class RiskManager:
                             symbol=symbol,
                             side="sell",
                             order_type="market",
-                            amount=abs(pos_amt)
+                            amount=abs(pos_amt),
                         )
                         logger.info(f"风控平仓: {symbol}, 数量: {pos_amt}")
 
@@ -515,7 +571,9 @@ class RiskManager:
             logger.error(f"风控平仓失败: {e}")
             return False
 
-    async def check_before_order(self, strategy_id: int, order_amount: float) -> Tuple[bool, Optional[str]]:
+    async def check_before_order(
+        self, strategy_id: int, order_amount: float
+    ) -> Tuple[bool, Optional[str]]:
         """
         下单前风控检查
 
@@ -527,16 +585,23 @@ class RiskManager:
             (是否通过, 拒绝原因)
         """
         # 检查单笔订单金额限制
-        rules = self.db.query(RiskControl).filter(
-            RiskControl.user_id == self.user_id,
-            RiskControl.strategy_id == strategy_id,
-            RiskControl.is_enabled == True,
-            RiskControl.max_order_amount.isnot(None)
-        ).all()
+        rules = (
+            self.db.query(RiskControl)
+            .filter(
+                RiskControl.user_id == self.user_id,
+                RiskControl.strategy_id == strategy_id,
+                RiskControl.is_enabled == True,
+                RiskControl.max_order_amount.isnot(None),
+            )
+            .all()
+        )
 
         for rule in rules:
             if order_amount > rule.max_order_amount:
-                return False, f"订单金额超限: {order_amount:.2f} > {rule.max_order_amount:.2f} USDT"
+                return (
+                    False,
+                    f"订单金额超限: {order_amount:.2f} > {rule.max_order_amount:.2f} USDT",
+                )
 
         # 检查是否有触发的风控规则限制交易
         triggered_rules = await self.check_all_risks(strategy_id)

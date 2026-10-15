@@ -1,5 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Card, Table, Button, Modal, Form, Input, Tag, Space, Popconfirm, App, Alert, Tooltip } from 'antd'
+import {
+  Card,
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Tag,
+  Space,
+  Popconfirm,
+  App,
+  Alert,
+  Tooltip,
+} from 'antd'
 import { Plus, Edit, Trash2, Check, Brain, Zap, Key } from 'lucide-react'
 import type { ColumnsType } from 'antd/es/table'
 import { aiApi } from '@/services/api'
@@ -49,7 +62,7 @@ const AIConfigManagement = () => {
         name: values.name,
         provider: values.provider || 'deepseek',
         api_key: values.api_key,
-        model: values.model || 'deepseek-chat'
+        model: values.model || 'deepseek-chat',
       })
 
       message.success('AI配置创建成功')
@@ -71,7 +84,7 @@ const AIConfigManagement = () => {
       await aiApi.updateConfig(editingConfig!.id, {
         name: values.name,
         api_key: values.api_key,
-        model: values.model
+        model: values.model,
       })
 
       message.success('AI配置更新成功')
@@ -111,7 +124,7 @@ const AIConfigManagement = () => {
     editForm.setFieldsValue({
       name: config.name,
       api_key: '', // 不显示原API key
-      model: config.model
+      model: config.model,
     })
     setEditModalOpen(true)
   }
@@ -124,9 +137,13 @@ const AIConfigManagement = () => {
       render: (name, record) => (
         <Space>
           <span>{name}</span>
-          {record.is_active && <Tag color="success" icon={<Check size={12} />}>已激活</Tag>}
+          {record.is_active && (
+            <Tag color="success" icon={<Check size={12} />}>
+              已激活
+            </Tag>
+          )}
         </Space>
-      )
+      ),
     },
     {
       title: '提供商',
@@ -135,25 +152,25 @@ const AIConfigManagement = () => {
       render: (provider) => {
         const color = provider === 'deepseek' ? 'blue' : 'default'
         return <Tag color={color}>{provider.toUpperCase()}</Tag>
-      }
+      },
     },
     {
       title: '模型',
       dataIndex: 'model',
       key: 'model',
-      render: (model) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{model}</span>
+      render: (model) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{model}</span>,
     },
     {
       title: 'API密钥',
       dataIndex: 'api_key',
       key: 'api_key',
-      render: () => '********************' // 隐藏API key
+      render: () => '********************', // 隐藏API key
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date) => new Date(date).toLocaleString('zh-CN')
+      render: (date) => new Date(date).toLocaleString('zh-CN'),
     },
     {
       title: '操作',
@@ -171,11 +188,7 @@ const AIConfigManagement = () => {
               激活
             </Button>
           )}
-          <Button
-            size="small"
-            icon={<Edit size={14} />}
-            onClick={() => openEditModal(record)}
-          >
+          <Button size="small" icon={<Edit size={14} />} onClick={() => openEditModal(record)}>
             编辑
           </Button>
           <Popconfirm
@@ -184,45 +197,70 @@ const AIConfigManagement = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button
-              danger
-              size="small"
-              icon={<Trash2 size={14} />}
-            >
+            <Button danger size="small" icon={<Trash2 size={14} />}>
               删除
             </Button>
           </Popconfirm>
         </Space>
-      )
-    }
+      ),
+    },
   ]
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* 页面标题 */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#fff', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <h1
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            color: '#fff',
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
           <Brain size={28} style={{ color: '#8b5cf6' }} />
           AI服务配置
         </h1>
-        <p style={{ color: '#737373', margin: 0 }}>
-          配置DeepSeek API密钥，启用AI市场分析功能
-        </p>
+        <p style={{ color: '#737373', margin: 0 }}>配置DeepSeek API密钥，启用AI市场分析功能</p>
       </div>
 
       {/* 说明卡片 */}
-      <Card style={{ marginBottom: 24, background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+      <Card
+        style={{
+          marginBottom: 24,
+          background:
+            'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.3)',
+        }}
+      >
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#a3a3a3', fontSize: 13 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              color: '#a3a3a3',
+              fontSize: 13,
+            }}
+          >
             <Brain size={14} />
             <span style={{ fontWeight: 600 }}>如何获取DeepSeek API密钥？</span>
           </div>
           <div style={{ color: '#737373', fontSize: 12, marginLeft: 22 }}>
-            1. 访问 <a href="https://platform.deepseek.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#8b5cf6' }}>DeepSeek开放平台</a>
+            1. 访问{' '}
+            <a
+              href="https://platform.deepseek.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#8b5cf6' }}
+            >
+              DeepSeek开放平台
+            </a>
           </div>
-          <div style={{ color: '#737373', fontSize: 12, marginLeft: 22 }}>
-            2. 注册/登录账号
-          </div>
+          <div style={{ color: '#737373', fontSize: 12, marginLeft: 22 }}>2. 注册/登录账号</div>
           <div style={{ color: '#737373', fontSize: 12, marginLeft: 22 }}>
             3. 进入"API Keys"页面创建密钥
           </div>
@@ -236,11 +274,7 @@ const AIConfigManagement = () => {
       <Card
         title="AI配置列表"
         extra={
-          <Button
-            type="primary"
-            icon={<Plus size={16} />}
-            onClick={() => setModalOpen(true)}
-          >
+          <Button type="primary" icon={<Plus size={16} />} onClick={() => setModalOpen(true)}>
             添加配置
           </Button>
         }
@@ -279,7 +313,7 @@ const AIConfigManagement = () => {
           layout="vertical"
           initialValues={{
             provider: 'deepseek',
-            model: 'deepseek-chat'
+            model: 'deepseek-chat',
           }}
         >
           <Form.Item
@@ -291,10 +325,7 @@ const AIConfigManagement = () => {
             <Input placeholder="例如: DeepSeek主账号" />
           </Form.Item>
 
-          <Form.Item
-            label="服务提供商"
-            name="provider"
-          >
+          <Form.Item label="服务提供商" name="provider">
             <Input disabled value="deepseek" />
           </Form.Item>
 
@@ -313,11 +344,7 @@ const AIConfigManagement = () => {
             <Input.Password placeholder="sk-xxxxxxxxxxxxxxxx" style={{ fontFamily: 'monospace' }} />
           </Form.Item>
 
-          <Form.Item
-            label="模型"
-            name="model"
-            tooltip="选择要使用的模型"
-          >
+          <Form.Item label="模型" name="model" tooltip="选择要使用的模型">
             <Input disabled value="deepseek-chat" />
           </Form.Item>
 
@@ -349,10 +376,7 @@ const AIConfigManagement = () => {
         confirmLoading={loading}
         width={600}
       >
-        <Form
-          form={editForm}
-          layout="vertical"
-        >
+        <Form form={editForm} layout="vertical">
           <Form.Item
             label="配置名称"
             name="name"

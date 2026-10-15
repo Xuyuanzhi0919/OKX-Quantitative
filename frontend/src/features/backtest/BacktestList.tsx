@@ -1,6 +1,35 @@
 import { useState, useEffect } from 'react'
-import { Card, Button, Table, Tag, Space, Modal, Form, Input, Select, InputNumber, DatePicker, Spin, Alert, App, Tooltip, Statistic, Row, Col, Steps } from 'antd'
-import { Plus, Eye, Trash2, RefreshCw, Database, HelpCircle, Calculator, Pencil } from 'lucide-react'
+import {
+  Card,
+  Button,
+  Table,
+  Tag,
+  Space,
+  Modal,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  DatePicker,
+  Spin,
+  Alert,
+  App,
+  Tooltip,
+  Statistic,
+  Row,
+  Col,
+  Steps,
+} from 'antd'
+import {
+  Plus,
+  Eye,
+  Trash2,
+  RefreshCw,
+  Database,
+  HelpCircle,
+  Calculator,
+  Pencil,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
@@ -44,8 +73,8 @@ interface CreateBacktestFormData {
   grid_upper?: number
   grid_num?: number
   // 网格做市策略参数
-  grid_spread?: number  // 网格间距(百分比)
-  grid_levels?: number  // 每侧网格层数
+  grid_spread?: number // 网格间距(百分比)
+  grid_levels?: number // 每侧网格层数
   // 通用参数
   amount_per_grid?: number
   fee_rate: number
@@ -148,7 +177,9 @@ const BacktestList = () => {
   // 对比模式状态
   const [compareMode, setCompareMode] = useState(false)
   const [compareModalOpen, setCompareModalOpen] = useState(false)
-  const [momentumTimeframe, setMomentumTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1H' | '4H'>('15m')
+  const [momentumTimeframe, setMomentumTimeframe] = useState<
+    '1m' | '5m' | '15m' | '30m' | '1H' | '4H'
+  >('15m')
 
   // 编辑描述状态
   const [editDescriptionModalOpen, setEditDescriptionModalOpen] = useState(false)
@@ -206,10 +237,12 @@ const BacktestList = () => {
         interval: form.getFieldValue('interval') || '1H',
         start_time: timeRange[0].valueOf().toString(),
         end_time: timeRange[1].valueOf().toString(),
-        limit: '100'  // 获取部分数据即可
+        limit: '100', // 获取部分数据即可
       })
 
-      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'}/api/v1/backtest/klines/query?${params}`)
+      const response = await fetch(
+        `${(import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'}/api/v1/backtest/klines/query?${params}`,
+      )
 
       if (response.ok) {
         const klines = await response.json()
@@ -226,7 +259,7 @@ const BacktestList = () => {
           setPriceReference({
             currentPrice: avgPrice,
             suggestedLower: Math.floor(avgPrice - range),
-            suggestedUpper: Math.ceil(avgPrice + range)
+            suggestedUpper: Math.ceil(avgPrice + range),
           })
 
           messageApi.success(`已加载价格参考数据`)
@@ -248,7 +281,7 @@ const BacktestList = () => {
 
     form.setFieldsValue({
       grid_lower: priceReference.suggestedLower,
-      grid_upper: priceReference.suggestedUpper
+      grid_upper: priceReference.suggestedUpper,
     })
     calculateGridParams()
     messageApi.success('已应用智能网格范围')
@@ -259,29 +292,35 @@ const BacktestList = () => {
     const templates = {
       conservative: {
         grid_num: 5,
-        description: '保守型: 5个网格,大间距,适合震荡行情'
+        description: '保守型: 5个网格,大间距,适合震荡行情',
       },
       balanced: {
         grid_num: 10,
-        description: '平衡型: 10个网格,中等间距,适合大多数情况'
+        description: '平衡型: 10个网格,中等间距,适合大多数情况',
       },
       aggressive: {
         grid_num: 20,
-        description: '激进型: 20个网格,小间距,适合高频交易'
-      }
+        description: '激进型: 20个网格,小间距,适合高频交易',
+      },
     }
 
     const selected = templates[template]
     form.setFieldsValue({
       grid_num: selected.grid_num,
-      description: selected.description
+      description: selected.description,
     })
     calculateGridParams()
-    messageApi.success(`已应用${template === 'conservative' ? '保守' : template === 'balanced' ? '平衡' : '激进'}型模板`)
+    messageApi.success(
+      `已应用${template === 'conservative' ? '保守' : template === 'balanced' ? '平衡' : '激进'}型模板`,
+    )
   }
 
   // 获取回测列表
-  const { data: rawBacktests, isLoading, refetch } = useQuery({
+  const {
+    data: rawBacktests,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['backtests'],
     queryFn: async () => {
       const response = await fetch(BACKTEST_API.list)
@@ -331,9 +370,7 @@ const BacktestList = () => {
           }
 
           if (typeof aValue === 'string' && typeof bValue === 'string') {
-            return sortOrder === 'asc'
-              ? aValue.localeCompare(bValue)
-              : bValue.localeCompare(aValue)
+            return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
           }
 
           return 0
@@ -344,18 +381,53 @@ const BacktestList = () => {
   // API 请求失败或无 K 线数据时使用；API 有数据时与此列表去重合并
   const DEFAULT_SYMBOLS = [
     // ── 合约（USDT 本位永续）──
-    'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
-    'XRP-USDT-SWAP', 'DOGE-USDT-SWAP', 'ADA-USDT-SWAP', 'AVAX-USDT-SWAP',
-    'LINK-USDT-SWAP', 'DOT-USDT-SWAP', 'LTC-USDT-SWAP', 'ATOM-USDT-SWAP',
-    'ETC-USDT-SWAP', 'ARB-USDT-SWAP', 'OP-USDT-SWAP', 'APT-USDT-SWAP',
-    'NEAR-USDT-SWAP', 'SUI-USDT-SWAP', 'TRX-USDT-SWAP', 'KSM-USDT-SWAP',
-    'INJ-USDT-SWAP', 'SEI-USDT-SWAP', 'ORDI-USDT-SWAP', 'WLD-USDT-SWAP',
-    'PEPE-USDT-SWAP', 'SHIB-USDT-SWAP',
+    'BTC-USDT-SWAP',
+    'ETH-USDT-SWAP',
+    'SOL-USDT-SWAP',
+    'BNB-USDT-SWAP',
+    'XRP-USDT-SWAP',
+    'DOGE-USDT-SWAP',
+    'ADA-USDT-SWAP',
+    'AVAX-USDT-SWAP',
+    'LINK-USDT-SWAP',
+    'DOT-USDT-SWAP',
+    'LTC-USDT-SWAP',
+    'ATOM-USDT-SWAP',
+    'ETC-USDT-SWAP',
+    'ARB-USDT-SWAP',
+    'OP-USDT-SWAP',
+    'APT-USDT-SWAP',
+    'NEAR-USDT-SWAP',
+    'SUI-USDT-SWAP',
+    'TRX-USDT-SWAP',
+    'KSM-USDT-SWAP',
+    'INJ-USDT-SWAP',
+    'SEI-USDT-SWAP',
+    'ORDI-USDT-SWAP',
+    'WLD-USDT-SWAP',
+    'PEPE-USDT-SWAP',
+    'SHIB-USDT-SWAP',
     // ── 现货（SPOT）──
-    'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'BNB-USDT', 'XRP-USDT',
-    'DOGE-USDT', 'ADA-USDT', 'AVAX-USDT', 'LINK-USDT', 'DOT-USDT',
-    'LTC-USDT', 'ATOM-USDT', 'ETC-USDT', 'ARB-USDT', 'OP-USDT',
-    'APT-USDT', 'NEAR-USDT', 'KSM-USDT', 'INJ-USDT', 'PEPE-USDT',
+    'BTC-USDT',
+    'ETH-USDT',
+    'SOL-USDT',
+    'BNB-USDT',
+    'XRP-USDT',
+    'DOGE-USDT',
+    'ADA-USDT',
+    'AVAX-USDT',
+    'LINK-USDT',
+    'DOT-USDT',
+    'LTC-USDT',
+    'ATOM-USDT',
+    'ETC-USDT',
+    'ARB-USDT',
+    'OP-USDT',
+    'APT-USDT',
+    'NEAR-USDT',
+    'KSM-USDT',
+    'INJ-USDT',
+    'PEPE-USDT',
   ]
 
   // 获取可用的交易对列表(从已有K线数据中获取，并与默认列表合并)
@@ -481,16 +553,15 @@ const BacktestList = () => {
   const batchDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
       const results = await Promise.allSettled(
-        ids.map(id =>
-          fetch(BACKTEST_API.delete(id), { method: 'DELETE' })
-            .then(res => {
-              if (!res.ok) throw new Error(`删除回测${id}失败`)
-              return res.json()
-            })
-        )
+        ids.map((id) =>
+          fetch(BACKTEST_API.delete(id), { method: 'DELETE' }).then((res) => {
+            if (!res.ok) throw new Error(`删除回测${id}失败`)
+            return res.json()
+          }),
+        ),
       )
 
-      const failed = results.filter(r => r.status === 'rejected')
+      const failed = results.filter((r) => r.status === 'rejected')
       if (failed.length > 0) {
         throw new Error(`${failed.length}个回测删除失败`)
       }
@@ -514,19 +585,19 @@ const BacktestList = () => {
       return
     }
 
-    const selectedBacktests = backtests.filter((bt: Backtest) =>
-      selectedRowKeys.includes(bt.id)
-    )
+    const selectedBacktests = backtests.filter((bt: Backtest) => selectedRowKeys.includes(bt.id))
 
     const runningCount = selectedBacktests.filter(
-      (bt: Backtest) => bt.status === 'running' || bt.status === 'pending'
+      (bt: Backtest) => bt.status === 'running' || bt.status === 'pending',
     ).length
 
     modal.confirm({
       title: '批量删除确认',
       content: (
         <div>
-          <p>确定要删除选中的 <strong>{selectedRowKeys.length}</strong> 个回测吗?</p>
+          <p>
+            确定要删除选中的 <strong>{selectedRowKeys.length}</strong> 个回测吗?
+          </p>
           {runningCount > 0 && (
             <Alert
               message="警告"
@@ -556,12 +627,10 @@ const BacktestList = () => {
       return
     }
 
-    const selectedBacktests = backtests.filter((bt: Backtest) =>
-      selectedRowKeys.includes(bt.id)
-    )
+    const selectedBacktests = backtests.filter((bt: Backtest) => selectedRowKeys.includes(bt.id))
 
     const incompleteCount = selectedBacktests.filter(
-      (bt: Backtest) => bt.status !== 'completed'
+      (bt: Backtest) => bt.status !== 'completed',
     ).length
 
     if (incompleteCount > 0) {
@@ -577,7 +646,7 @@ const BacktestList = () => {
     mutationFn: async ({ id, description }: { id: number; description: string }) => {
       const response = await fetch(
         `${BACKTEST_API.updateDescription(id)}?description=${encodeURIComponent(description)}`,
-        { method: 'PATCH' }
+        { method: 'PATCH' },
       )
       if (!response.ok) throw new Error('更新描述失败')
       return response.json()
@@ -744,7 +813,10 @@ const BacktestList = () => {
                   title: '警告',
                   content: (
                     <div>
-                      <p>回测"{record.name}"正在{record.status === 'running' ? '运行中' : '等待执行'}。</p>
+                      <p>
+                        回测"{record.name}"正在{record.status === 'running' ? '运行中' : '等待执行'}
+                        。
+                      </p>
                       <p style={{ color: '#faad14', marginTop: 8 }}>
                         删除后回测将立即停止,已执行的进度将丢失,且无法恢复。
                       </p>
@@ -793,9 +865,7 @@ const BacktestList = () => {
       key: 'change_24h_pct',
       width: 100,
       render: (value: number) => (
-        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>
-          {formatPercent(value)}%
-        </span>
+        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>{formatPercent(value)}%</span>
       ),
     },
     {
@@ -804,9 +874,7 @@ const BacktestList = () => {
       key: 'return_pct',
       width: 110,
       render: (value: number) => (
-        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>
-          {formatPercent(value)}%
-        </span>
+        <span style={{ color: value >= 0 ? '#52c41a' : '#ff4d4f' }}>{formatPercent(value)}%</span>
       ),
     },
     {
@@ -820,7 +888,8 @@ const BacktestList = () => {
       title: '交易/胜率',
       key: 'trades',
       width: 110,
-      render: (_, record) => `${record.backtest.closed_trades} / ${formatPercent(record.backtest.win_rate_pct)}%`,
+      render: (_, record) =>
+        `${record.backtest.closed_trades} / ${formatPercent(record.backtest.win_rate_pct)}%`,
     },
     {
       title: 'RSI',
@@ -849,13 +918,15 @@ const BacktestList = () => {
       const values = form.getFieldsValue()
       if (values.name || values.grid_lower) {
         // 只有填写了内容才保存
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({
-          ...values,
-          time_range: values.time_range ? [
-            values.time_range[0]?.valueOf(),
-            values.time_range[1]?.valueOf()
-          ] : undefined
-        }))
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            ...values,
+            time_range: values.time_range
+              ? [values.time_range[0]?.valueOf(), values.time_range[1]?.valueOf()]
+              : undefined,
+          }),
+        )
       }
     }, 2000) // 每2秒保存一次
 
@@ -875,10 +946,7 @@ const BacktestList = () => {
         const draftData = JSON.parse(draft)
         // 恢复时间范围
         if (draftData.time_range) {
-          draftData.time_range = [
-            dayjs(draftData.time_range[0]),
-            dayjs(draftData.time_range[1])
-          ]
+          draftData.time_range = [dayjs(draftData.time_range[0]), dayjs(draftData.time_range[1])]
         }
         form.setFieldsValue(draftData)
         setStrategyType(draftData.strategy_type || 'grid')
@@ -896,15 +964,36 @@ const BacktestList = () => {
       try {
         if (currentStep === 0) {
           // 第一步:基础信息
-          await form.validateFields(['name', 'strategy_type', 'symbol', 'interval', 'time_range', 'initial_capital'])
+          await form.validateFields([
+            'name',
+            'strategy_type',
+            'symbol',
+            'interval',
+            'time_range',
+            'initial_capital',
+          ])
         } else if (currentStep === 1) {
           // 第二步:策略参数
           if (strategyType === 'grid') {
-            await form.validateFields(['grid_lower', 'grid_upper', 'grid_num', 'amount_per_grid', 'fee_rate'])
+            await form.validateFields([
+              'grid_lower',
+              'grid_upper',
+              'grid_num',
+              'amount_per_grid',
+              'fee_rate',
+            ])
           } else if (strategyType === 'grid_mm') {
             await form.validateFields(['grid_spread', 'grid_levels', 'amount_per_grid', 'fee_rate'])
           } else if (strategyType === 'adaptive_grid_trend') {
-            await form.validateFields(['fast_period', 'slow_period', 'atr_period', 'risk_per_trade', 'max_position_usd', 'leverage', 'fee_rate'])
+            await form.validateFields([
+              'fast_period',
+              'slow_period',
+              'atr_period',
+              'risk_per_trade',
+              'max_position_usd',
+              'leverage',
+              'fee_rate',
+            ])
           }
         }
         if (step === 2) {
@@ -945,7 +1034,7 @@ const BacktestList = () => {
     setGridCalculations({
       gridSpacing,
       estimatedFunds,
-      warningMessage
+      warningMessage,
     })
   }
 
@@ -993,12 +1082,21 @@ const BacktestList = () => {
 
               {validateResult.has_data && (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 4, marginBottom: 12 }}>
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#1a1a1a',
+                      borderRadius: 4,
+                      marginBottom: 12,
+                    }}
+                  >
                     <p style={{ margin: '4px 0', fontSize: 13 }}>
-                      <strong>请求的时间范围:</strong> {validateResult.requested_start_str} 至 {validateResult.requested_end_str}
+                      <strong>请求的时间范围:</strong> {validateResult.requested_start_str} 至{' '}
+                      {validateResult.requested_end_str}
                     </p>
                     <p style={{ margin: '4px 0', fontSize: 13 }}>
-                      <strong>数据库中的数据:</strong> {validateResult.data_start_str} 至 {validateResult.data_end_str}
+                      <strong>数据库中的数据:</strong> {validateResult.data_start_str} 至{' '}
+                      {validateResult.data_end_str}
                     </p>
                   </div>
 
@@ -1062,7 +1160,7 @@ const BacktestList = () => {
           onCancel: () => {
             // 取消时返回到第一步,让用户修改参数
             setCurrentStep(0)
-          }
+          },
         })
         return
       }
@@ -1144,7 +1242,9 @@ const BacktestList = () => {
                   value={momentumAnalysis.basket.return_pct}
                   suffix="%"
                   precision={2}
-                  valueStyle={{ color: momentumAnalysis.basket.return_pct >= 0 ? '#52c41a' : '#ff4d4f' }}
+                  valueStyle={{
+                    color: momentumAnalysis.basket.return_pct >= 0 ? '#52c41a' : '#ff4d4f',
+                  }}
                 />
               </Col>
               <Col xs={24} md={8}>
@@ -1292,11 +1392,7 @@ const BacktestList = () => {
           rowSelection={{
             selectedRowKeys,
             onChange: setSelectedRowKeys,
-            selections: [
-              Table.SELECTION_ALL,
-              Table.SELECTION_INVERT,
-              Table.SELECTION_NONE,
-            ],
+            selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT, Table.SELECTION_NONE],
           }}
           scroll={{ x: 1400 }}
           pagination={{
@@ -1321,20 +1417,20 @@ const BacktestList = () => {
         width={720}
         footer={
           <Space>
-            <Button onClick={() => {
-              setCreateModalOpen(false)
-              form.resetFields()
-              setStrategyType('grid')
-              setGridCalculations(null)
-              setPriceReference(null)
-              setCurrentStep(0)
-            }}>
+            <Button
+              onClick={() => {
+                setCreateModalOpen(false)
+                form.resetFields()
+                setStrategyType('grid')
+                setGridCalculations(null)
+                setPriceReference(null)
+                setCurrentStep(0)
+              }}
+            >
               取消
             </Button>
             {currentStep > 0 && (
-              <Button onClick={() => setCurrentStep(currentStep - 1)}>
-                上一步
-              </Button>
+              <Button onClick={() => setCurrentStep(currentStep - 1)}>上一步</Button>
             )}
             {currentStep < 2 && (
               <Button type="primary" onClick={() => handleStepChange(currentStep + 1)}>
@@ -1382,7 +1478,7 @@ const BacktestList = () => {
               // 普通网格策略默认值
               grid_num: 10,
               // 网格做市策略默认值
-              grid_spread: 0.01,  // 1%
+              grid_spread: 0.01, // 1%
               grid_levels: 5,
               // 通用默认值
               amount_per_grid: 0.001,
@@ -1424,11 +1520,7 @@ const BacktestList = () => {
                 />
               </Form.Item>
 
-              <Form.Item
-                name="strategy_type"
-                label="策略类型"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="strategy_type" label="策略类型" rules={[{ required: true }]}>
                 <Select onChange={(value) => setStrategyType(value)}>
                   <Select.OptGroup label="网格策略">
                     <Select.Option value="grid">网格策略</Select.Option>
@@ -1460,20 +1552,18 @@ const BacktestList = () => {
                   allowClear
                   placeholder="选择或输入交易对，如 BTC-USDT"
                   filterOption={(input, option) =>
-                    String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    String(option?.label ?? '')
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
-                  options={(availableSymbols ?? DEFAULT_SYMBOLS).map(sym => ({
+                  options={(availableSymbols ?? DEFAULT_SYMBOLS).map((sym) => ({
                     label: sym,
                     value: sym,
                   }))}
                 />
               </Form.Item>
 
-              <Form.Item
-                name="interval"
-                label="K线周期"
-                rules={[{ required: true }]}
-              >
+              <Form.Item name="interval" label="K线周期" rules={[{ required: true }]}>
                 <Select>
                   <Select.Option value="1m">1分钟</Select.Option>
                   <Select.Option value="5m">5分钟</Select.Option>
@@ -1545,10 +1635,38 @@ const BacktestList = () => {
                   >
                     <InputNumber min={1} style={{ width: '100%' }} onChange={calculateGridParams} />
                   </Form.Item>
-                  <Button onClick={() => { form.setFieldValue('initial_capital', 1000); calculateGridParams(); }}>1千</Button>
-                  <Button onClick={() => { form.setFieldValue('initial_capital', 5000); calculateGridParams(); }}>5千</Button>
-                  <Button onClick={() => { form.setFieldValue('initial_capital', 10000); calculateGridParams(); }}>1万</Button>
-                  <Button onClick={() => { form.setFieldValue('initial_capital', 50000); calculateGridParams(); }}>5万</Button>
+                  <Button
+                    onClick={() => {
+                      form.setFieldValue('initial_capital', 1000)
+                      calculateGridParams()
+                    }}
+                  >
+                    1千
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      form.setFieldValue('initial_capital', 5000)
+                      calculateGridParams()
+                    }}
+                  >
+                    5千
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      form.setFieldValue('initial_capital', 10000)
+                      calculateGridParams()
+                    }}
+                  >
+                    1万
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      form.setFieldValue('initial_capital', 50000)
+                      calculateGridParams()
+                    }}
+                  >
+                    5万
+                  </Button>
                 </Space.Compact>
               </Form.Item>
             </div>
@@ -1563,11 +1681,22 @@ const BacktestList = () => {
                       message="价格参考"
                       description={
                         <Space>
-                          <span><strong>{priceReference.suggestedLower.toLocaleString()} - {priceReference.suggestedUpper.toLocaleString()} USDT</strong>（基于历史数据）</span>
-                          <Button size="small" type="primary" onClick={applySmartGridRange}>一键应用</Button>
+                          <span>
+                            <strong>
+                              {priceReference.suggestedLower.toLocaleString()} -{' '}
+                              {priceReference.suggestedUpper.toLocaleString()} USDT
+                            </strong>
+                            （基于历史数据）
+                          </span>
+                          <Button size="small" type="primary" onClick={applySmartGridRange}>
+                            一键应用
+                          </Button>
                         </Space>
                       }
-                      type="success" showIcon closable onClose={() => setPriceReference(null)}
+                      type="success"
+                      showIcon
+                      closable
+                      onClose={() => setPriceReference(null)}
                       style={{ marginBottom: 12 }}
                     />
                   ) : (
@@ -1575,13 +1704,23 @@ const BacktestList = () => {
                       message={
                         <Space>
                           <span>智能网格范围</span>
-                          <Button size="small" type="primary" onClick={fetchPriceReference}>获取价格参考</Button>
-                          <Button size="small" onClick={() => applyGridTemplate('conservative')}>保守型(5格)</Button>
-                          <Button size="small" onClick={() => applyGridTemplate('balanced')}>平衡型(10格)</Button>
-                          <Button size="small" onClick={() => applyGridTemplate('aggressive')}>激进型(20格)</Button>
+                          <Button size="small" type="primary" onClick={fetchPriceReference}>
+                            获取价格参考
+                          </Button>
+                          <Button size="small" onClick={() => applyGridTemplate('conservative')}>
+                            保守型(5格)
+                          </Button>
+                          <Button size="small" onClick={() => applyGridTemplate('balanced')}>
+                            平衡型(10格)
+                          </Button>
+                          <Button size="small" onClick={() => applyGridTemplate('aggressive')}>
+                            激进型(20格)
+                          </Button>
                         </Space>
                       }
-                      type="info" showIcon style={{ marginBottom: 12 }}
+                      type="info"
+                      showIcon
+                      style={{ marginBottom: 12 }}
                     />
                   )}
 
@@ -1589,37 +1728,61 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="grid_lower"
-                        label={<span>网格下限 <Tooltip title="网格交易的最低价格,建议设置为历史低点附近"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            网格下限{' '}
+                            <Tooltip title="网格交易的最低价格,建议设置为历史低点附近">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[
                           { required: true, message: '请输入网格下限' },
                           ({ getFieldValue }) => ({
                             validator(_, value) {
                               if (!value || !getFieldValue('grid_upper')) return Promise.resolve()
-                              if (value >= getFieldValue('grid_upper')) return Promise.reject(new Error('下限必须小于上限'))
+                              if (value >= getFieldValue('grid_upper'))
+                                return Promise.reject(new Error('下限必须小于上限'))
                               return Promise.resolve()
                             },
                           }),
                         ]}
                       >
-                        <InputNumber min={0} style={{ width: '100%' }} onChange={calculateGridParams} />
+                        <InputNumber
+                          min={0}
+                          style={{ width: '100%' }}
+                          onChange={calculateGridParams}
+                        />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
                       <Form.Item
                         name="grid_upper"
-                        label={<span>网格上限 <Tooltip title="网格交易的最高价格,建议设置为历史高点附近"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            网格上限{' '}
+                            <Tooltip title="网格交易的最高价格,建议设置为历史高点附近">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[
                           { required: true, message: '请输入网格上限' },
                           ({ getFieldValue }) => ({
                             validator(_, value) {
                               if (!value || !getFieldValue('grid_lower')) return Promise.resolve()
-                              if (value <= getFieldValue('grid_lower')) return Promise.reject(new Error('上限必须大于下限'))
+                              if (value <= getFieldValue('grid_lower'))
+                                return Promise.reject(new Error('上限必须大于下限'))
                               return Promise.resolve()
                             },
                           }),
                         ]}
                       >
-                        <InputNumber min={0} style={{ width: '100%' }} onChange={calculateGridParams} />
+                        <InputNumber
+                          min={0}
+                          style={{ width: '100%' }}
+                          onChange={calculateGridParams}
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1628,19 +1791,43 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="grid_num"
-                        label={<span>网格数量 <Tooltip title="将价格区间划分为多少个网格"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            网格数量{' '}
+                            <Tooltip title="将价格区间划分为多少个网格">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入网格数量' }]}
                       >
-                        <InputNumber min={2} max={100} style={{ width: '100%' }} onChange={calculateGridParams} />
+                        <InputNumber
+                          min={2}
+                          max={100}
+                          style={{ width: '100%' }}
+                          onChange={calculateGridParams}
+                        />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
                       <Form.Item
                         name="amount_per_grid"
-                        label={<span>每格数量 <Tooltip title="每个网格买入/卖出的数量（基础币种）"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            每格数量{' '}
+                            <Tooltip title="每个网格买入/卖出的数量（基础币种）">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入每格数量' }]}
                       >
-                        <InputNumber min={0} step={0.001} style={{ width: '100%' }} onChange={calculateGridParams} />
+                        <InputNumber
+                          min={0}
+                          step={0.001}
+                          style={{ width: '100%' }}
+                          onChange={calculateGridParams}
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1650,16 +1837,37 @@ const BacktestList = () => {
                       message={
                         <Row gutter={16}>
                           <Col span={12}>
-                            <Statistic title="网格间距" value={formatAmount(gridCalculations.gridSpacing)} suffix="USDT" valueStyle={{ fontSize: 16 }} />
+                            <Statistic
+                              title="网格间距"
+                              value={formatAmount(gridCalculations.gridSpacing)}
+                              suffix="USDT"
+                              valueStyle={{ fontSize: 16 }}
+                            />
                           </Col>
                           <Col span={12}>
-                            <Statistic title="估算资金需求" value={formatAmount(gridCalculations.estimatedFunds)} suffix="USDT" valueStyle={{ fontSize: 16, color: gridCalculations.warningMessage ? '#ff4d4f' : '#52c41a' }} />
+                            <Statistic
+                              title="估算资金需求"
+                              value={formatAmount(gridCalculations.estimatedFunds)}
+                              suffix="USDT"
+                              valueStyle={{
+                                fontSize: 16,
+                                color: gridCalculations.warningMessage ? '#ff4d4f' : '#52c41a',
+                              }}
+                            />
                           </Col>
                         </Row>
                       }
                       description={gridCalculations.warningMessage}
-                      type={gridCalculations.warningMessage.includes('不足') ? 'error' : gridCalculations.warningMessage ? 'warning' : 'info'}
-                      showIcon icon={<Calculator size={14} />} style={{ marginBottom: 12 }}
+                      type={
+                        gridCalculations.warningMessage.includes('不足')
+                          ? 'error'
+                          : gridCalculations.warningMessage
+                            ? 'warning'
+                            : 'info'
+                      }
+                      showIcon
+                      icon={<Calculator size={14} />}
+                      style={{ marginBottom: 12 }}
                     />
                   )}
 
@@ -1667,10 +1875,23 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="fee_rate"
-                        label={<span>手续费率 <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            手续费率{' '}
+                            <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入手续费率' }]}
                       >
-                        <InputNumber min={0} max={1} step={0.0001} style={{ width: '100%' }} placeholder="0.001" />
+                        <InputNumber
+                          min={0}
+                          max={1}
+                          step={0.0001}
+                          style={{ width: '100%' }}
+                          placeholder="0.001"
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1687,26 +1908,52 @@ const BacktestList = () => {
                   <Alert
                     message="网格做市策略"
                     description="在当前价格上下挂买卖单，通过价差持续做市获利。适合震荡行情，不适合单边行情。"
-                    type="info" showIcon style={{ marginBottom: 12 }}
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
                   />
 
                   <Row gutter={12}>
                     <Col span={12}>
                       <Form.Item
                         name="grid_spread"
-                        label={<span>网格间距 <Tooltip title="每个网格之间的价差百分比，建议0.5%-2%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            网格间距{' '}
+                            <Tooltip title="每个网格之间的价差百分比，建议0.5%-2%">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入网格间距' }]}
                       >
                         <InputNumber
-                          min={0.001} max={0.1} step={0.001} style={{ width: '100%' }} placeholder="0.01 (1%)"
-                          addonAfter={<span>{form.getFieldValue('grid_spread') ? `${formatPercent(form.getFieldValue('grid_spread') * 100)}%` : '0%'}</span>}
+                          min={0.001}
+                          max={0.1}
+                          step={0.001}
+                          style={{ width: '100%' }}
+                          placeholder="0.01 (1%)"
+                          addonAfter={
+                            <span>
+                              {form.getFieldValue('grid_spread')
+                                ? `${formatPercent(form.getFieldValue('grid_spread') * 100)}%`
+                                : '0%'}
+                            </span>
+                          }
                         />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
                       <Form.Item
                         name="grid_levels"
-                        label={<span>网格层数 <Tooltip title="价格上下各挂多少层，总挂单数 = 层数×2，建议3-10层"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            网格层数{' '}
+                            <Tooltip title="价格上下各挂多少层，总挂单数 = 层数×2，建议3-10层">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入网格层数' }]}
                       >
                         <InputNumber min={1} max={20} style={{ width: '100%' }} placeholder="5" />
@@ -1718,19 +1965,44 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="amount_per_grid"
-                        label={<span>每格数量 <Tooltip title="每个网格买入/卖出的数量（基础币种）"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            每格数量{' '}
+                            <Tooltip title="每个网格买入/卖出的数量（基础币种）">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入每格数量' }]}
                       >
-                        <InputNumber min={0} step={0.001} style={{ width: '100%' }} placeholder="0.001" />
+                        <InputNumber
+                          min={0}
+                          step={0.001}
+                          style={{ width: '100%' }}
+                          placeholder="0.001"
+                        />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
                       <Form.Item
                         name="fee_rate"
-                        label={<span>手续费率 <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            手续费率{' '}
+                            <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入手续费率' }]}
                       >
-                        <InputNumber min={0} max={1} step={0.0001} style={{ width: '100%' }} placeholder="0.001" />
+                        <InputNumber
+                          min={0}
+                          max={1}
+                          step={0.0001}
+                          style={{ width: '100%' }}
+                          placeholder="0.001"
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1747,7 +2019,9 @@ const BacktestList = () => {
                   <Alert
                     message="自适应趋势网格"
                     description="EMA趋势过滤后按ATR回撤入场，使用固定单笔风险和ATR止损止盈。不做马丁补仓，适合先用多周期回测筛参数。"
-                    type="warning" showIcon style={{ marginBottom: 12 }}
+                    type="warning"
+                    showIcon
+                    style={{ marginBottom: 12 }}
                   />
 
                   <Row gutter={12}>
@@ -1761,12 +2035,22 @@ const BacktestList = () => {
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="fast_period" label="EMA快线" rules={[{ required: true }]} initialValue={20}>
+                      <Form.Item
+                        name="fast_period"
+                        label="EMA快线"
+                        rules={[{ required: true }]}
+                        initialValue={20}
+                      >
                         <InputNumber min={5} max={80} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="slow_period" label="EMA慢线" rules={[{ required: true }]} initialValue={80}>
+                      <Form.Item
+                        name="slow_period"
+                        label="EMA慢线"
+                        rules={[{ required: true }]}
+                        initialValue={80}
+                      >
                         <InputNumber min={20} max={200} step={5} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
@@ -1774,7 +2058,12 @@ const BacktestList = () => {
 
                   <Row gutter={12}>
                     <Col span={8}>
-                      <Form.Item name="atr_period" label="ATR周期" rules={[{ required: true }]} initialValue={14}>
+                      <Form.Item
+                        name="atr_period"
+                        label="ATR周期"
+                        rules={[{ required: true }]}
+                        initialValue={14}
+                      >
                         <InputNumber min={5} max={50} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
@@ -1802,7 +2091,12 @@ const BacktestList = () => {
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="fee_rate" label="手续费率" rules={[{ required: true }]} initialValue={0.0005}>
+                      <Form.Item
+                        name="fee_rate"
+                        label="手续费率"
+                        rules={[{ required: true }]}
+                        initialValue={0.0005}
+                      >
                         <InputNumber min={0} max={0.01} step={0.0001} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
@@ -1810,17 +2104,37 @@ const BacktestList = () => {
 
                   <Row gutter={12}>
                     <Col span={8}>
-                      <Form.Item name="risk_per_trade" label="单笔风险" rules={[{ required: true }]} initialValue={0.01}>
-                        <InputNumber min={0.001} max={0.05} step={0.001} style={{ width: '100%' }} />
+                      <Form.Item
+                        name="risk_per_trade"
+                        label="单笔风险"
+                        rules={[{ required: true }]}
+                        initialValue={0.01}
+                      >
+                        <InputNumber
+                          min={0.001}
+                          max={0.05}
+                          step={0.001}
+                          style={{ width: '100%' }}
+                        />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="max_position_usd" label="最大仓位(USDT)" rules={[{ required: true }]} initialValue={500}>
+                      <Form.Item
+                        name="max_position_usd"
+                        label="最大仓位(USDT)"
+                        rules={[{ required: true }]}
+                        initialValue={500}
+                      >
                         <InputNumber min={10} step={10} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="leverage" label="杠杆倍数" rules={[{ required: true }]} initialValue={3}>
+                      <Form.Item
+                        name="leverage"
+                        label="杠杆倍数"
+                        rules={[{ required: true }]}
+                        initialValue={3}
+                      >
                         <InputNumber min={1} max={20} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
@@ -1838,14 +2152,23 @@ const BacktestList = () => {
                   <Alert
                     message="双向持仓策略"
                     description="EMA双均线判断趋势，金叉开多/死叉开空，趋势反转时自动反向开仓。支持杠杆、止损止盈和移动止损。建议使用15分钟周期。"
-                    type="info" showIcon style={{ marginBottom: 12 }}
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
                   />
 
                   <Row gutter={12}>
                     <Col span={12}>
                       <Form.Item
                         name="fast_period"
-                        label={<span>EMA快线周期 <Tooltip title="默认20，最近样本外BTC更优"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            EMA快线周期{' '}
+                            <Tooltip title="默认20，最近样本外BTC更优">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={12}
                       >
                         <InputNumber min={1} max={50} style={{ width: '100%' }} />
@@ -1854,7 +2177,14 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="slow_period"
-                        label={<span>EMA慢线周期 <Tooltip title="默认40，回测验证最优值"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            EMA慢线周期{' '}
+                            <Tooltip title="默认40，回测验证最优值">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={40}
                       >
                         <InputNumber min={1} max={200} style={{ width: '100%' }} />
@@ -1866,7 +2196,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="position_ratio"
-                        label={<span>仓位比例 <Tooltip title="每次开仓使用资金的比例"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            仓位比例{' '}
+                            <Tooltip title="每次开仓使用资金的比例">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={0.3}
                       >
                         <InputNumber min={0.1} max={1} step={0.1} style={{ width: '100%' }} />
@@ -1875,7 +2212,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="leverage"
-                        label={<span>杠杆倍数 <Tooltip title="建议3-5x低杠杆"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            杠杆倍数{' '}
+                            <Tooltip title="建议3-5x低杠杆">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={5}
                       >
                         <InputNumber min={1} max={20} style={{ width: '100%' }} />
@@ -1884,7 +2228,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="fee_rate"
-                        label={<span>手续费率 <Tooltip title="OKX默认0.1%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            手续费率{' '}
+                            <Tooltip title="OKX默认0.1%">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={0.001}
                       >
                         <InputNumber min={0} max={0.01} step={0.0001} style={{ width: '100%' }} />
@@ -1896,7 +2247,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="stop_loss"
-                        label={<span>止损比例 <Tooltip title="亏损达到此比例时平仓"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            止损比例{' '}
+                            <Tooltip title="亏损达到此比例时平仓">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={0.02}
                       >
                         <InputNumber min={0.01} max={0.2} step={0.01} style={{ width: '100%' }} />
@@ -1905,7 +2263,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="take_profit"
-                        label={<span>止盈比例 <Tooltip title="盈利达到此比例时平仓"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            止盈比例{' '}
+                            <Tooltip title="盈利达到此比例时平仓">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={0.06}
                       >
                         <InputNumber min={0.01} max={0.5} step={0.01} style={{ width: '100%' }} />
@@ -1914,7 +2279,14 @@ const BacktestList = () => {
                     <Col span={8}>
                       <Form.Item
                         name="trailing_stop"
-                        label={<span>移动止损 <Tooltip title="价格回撤此比例时触发止损，0表示禁用"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            移动止损{' '}
+                            <Tooltip title="价格回撤此比例时触发止损，0表示禁用">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue={0.02}
                       >
                         <InputNumber min={0} max={0.1} step={0.005} style={{ width: '100%' }} />
@@ -1934,14 +2306,23 @@ const BacktestList = () => {
                         ? '金叉买入，死叉卖出。适合趋势行情。'
                         : '金叉开多，死叉开空。支持杠杆和止损止盈，适合双向波动市场。'
                     }
-                    type="info" showIcon style={{ marginBottom: 12 }}
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
                   />
 
                   <Row gutter={12}>
                     <Col span={12}>
                       <Form.Item
                         name="fast_period"
-                        label={<span>快线周期 <Tooltip title="快速均线计算周期，建议5-10"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            快线周期{' '}
+                            <Tooltip title="快速均线计算周期，建议5-10">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入快线周期' }]}
                         initialValue={5}
                       >
@@ -1951,7 +2332,14 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="slow_period"
-                        label={<span>慢线周期 <Tooltip title="慢速均线计算周期，建议20-60"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            慢线周期{' '}
+                            <Tooltip title="慢速均线计算周期，建议20-60">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         rules={[{ required: true, message: '请输入慢线周期' }]}
                         initialValue={20}
                       >
@@ -1964,7 +2352,14 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="ma_type"
-                        label={<span>均线类型 <Tooltip title="SMA为简单移动平均，EMA对近期价格更敏感"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                        label={
+                          <span>
+                            均线类型{' '}
+                            <Tooltip title="SMA为简单移动平均，EMA对近期价格更敏感">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
                         initialValue="EMA"
                       >
                         <Select>
@@ -1976,11 +2371,25 @@ const BacktestList = () => {
                     <Col span={12}>
                       <Form.Item
                         name="amount_per_trade"
-                        label={<span>每次交易量 <Tooltip title="每次开仓的交易数量（基础币种）"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
-                        rules={[{ required: strategyType === 'ma_cross', message: '请输入每次交易数量' }]}
+                        label={
+                          <span>
+                            每次交易量{' '}
+                            <Tooltip title="每次开仓的交易数量（基础币种）">
+                              <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                            </Tooltip>
+                          </span>
+                        }
+                        rules={[
+                          { required: strategyType === 'ma_cross', message: '请输入每次交易数量' },
+                        ]}
                         initialValue={0.01}
                       >
-                        <InputNumber min={0.001} step={0.001} style={{ width: '100%' }} placeholder="0.01" />
+                        <InputNumber
+                          min={0.001}
+                          step={0.001}
+                          style={{ width: '100%' }}
+                          placeholder="0.01"
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1992,19 +2401,44 @@ const BacktestList = () => {
                         <Col span={12}>
                           <Form.Item
                             name="position_ratio"
-                            label={<span>仓位比例 <Tooltip title="每次开仓使用资金的比例，0.9=90%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                仓位比例{' '}
+                                <Tooltip title="每次开仓使用资金的比例，0.9=90%">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             initialValue={0.9}
                           >
-                            <InputNumber min={0.1} max={1} step={0.1} style={{ width: '100%' }} placeholder="0.9" />
+                            <InputNumber
+                              min={0.1}
+                              max={1}
+                              step={0.1}
+                              style={{ width: '100%' }}
+                              placeholder="0.9"
+                            />
                           </Form.Item>
                         </Col>
                         <Col span={12}>
                           <Form.Item
                             name="leverage"
-                            label={<span>杠杆倍数 <Tooltip title="1表示不使用杠杆"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                杠杆倍数{' '}
+                                <Tooltip title="1表示不使用杠杆">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             initialValue={1}
                           >
-                            <InputNumber min={1} max={125} style={{ width: '100%' }} placeholder="1" />
+                            <InputNumber
+                              min={1}
+                              max={125}
+                              style={{ width: '100%' }}
+                              placeholder="1"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -2013,19 +2447,45 @@ const BacktestList = () => {
                         <Col span={12}>
                           <Form.Item
                             name="stop_loss"
-                            label={<span>止损比例 <Tooltip title="亏损达到该比例时止损，0表示不启用"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                止损比例{' '}
+                                <Tooltip title="亏损达到该比例时止损，0表示不启用">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             initialValue={0}
                           >
-                            <InputNumber min={0} max={0.5} step={0.01} style={{ width: '100%' }} placeholder="0.05 (5%)" />
+                            <InputNumber
+                              min={0}
+                              max={0.5}
+                              step={0.01}
+                              style={{ width: '100%' }}
+                              placeholder="0.05 (5%)"
+                            />
                           </Form.Item>
                         </Col>
                         <Col span={12}>
                           <Form.Item
                             name="take_profit"
-                            label={<span>止盈比例 <Tooltip title="盈利达到该比例时止盈，0表示不启用"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                止盈比例{' '}
+                                <Tooltip title="盈利达到该比例时止盈，0表示不启用">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             initialValue={0}
                           >
-                            <InputNumber min={0} max={1} step={0.01} style={{ width: '100%' }} placeholder="0.1 (10%)" />
+                            <InputNumber
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              style={{ width: '100%' }}
+                              placeholder="0.1 (10%)"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -2034,7 +2494,14 @@ const BacktestList = () => {
                         <Col span={12}>
                           <Form.Item
                             name="enable_short"
-                            label={<span>启用做空 <Tooltip title="是否在死叉时开空仓"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                启用做空{' '}
+                                <Tooltip title="是否在死叉时开空仓">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             valuePropName="checked"
                             initialValue={true}
                           >
@@ -2047,10 +2514,23 @@ const BacktestList = () => {
                         <Col span={12}>
                           <Form.Item
                             name="fee_rate"
-                            label={<span>手续费率 <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                            label={
+                              <span>
+                                手续费率{' '}
+                                <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%">
+                                  <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                                </Tooltip>
+                              </span>
+                            }
                             rules={[{ required: true, message: '请输入手续费率' }]}
                           >
-                            <InputNumber min={0} max={1} step={0.0001} style={{ width: '100%' }} placeholder="0.001" />
+                            <InputNumber
+                              min={0}
+                              max={1}
+                              step={0.0001}
+                              style={{ width: '100%' }}
+                              placeholder="0.001"
+                            />
                           </Form.Item>
                         </Col>
                       </Row>
@@ -2062,10 +2542,23 @@ const BacktestList = () => {
                       <Col span={12}>
                         <Form.Item
                           name="fee_rate"
-                          label={<span>手续费率 <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%"><HelpCircle size={14} style={{ color: '#8c8c8c' }} /></Tooltip></span>}
+                          label={
+                            <span>
+                              手续费率{' '}
+                              <Tooltip title="OKX现货手续费: Maker 0.08%, Taker 0.1%">
+                                <HelpCircle size={14} style={{ color: '#8c8c8c' }} />
+                              </Tooltip>
+                            </span>
+                          }
                           rules={[{ required: true, message: '请输入手续费率' }]}
                         >
-                          <InputNumber min={0} max={1} step={0.0001} style={{ width: '100%' }} placeholder="0.001" />
+                          <InputNumber
+                            min={0}
+                            max={1}
+                            step={0.0001}
+                            style={{ width: '100%' }}
+                            placeholder="0.001"
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
@@ -2092,11 +2585,11 @@ const BacktestList = () => {
                 const values = confirmValues
                 const getStrategyName = (type: string) => {
                   const names: Record<string, string> = {
-                    'grid': '网格策略',
-                    'grid_mm': '网格做市',
-                    'ma_cross': '均线交叉',
-                    'dual_ma_cross': '双均线(多空)',
-                    'adaptive_grid_trend': '自适应趋势网格'
+                    grid: '网格策略',
+                    grid_mm: '网格做市',
+                    ma_cross: '均线交叉',
+                    dual_ma_cross: '双均线(多空)',
+                    adaptive_grid_trend: '自适应趋势网格',
                   }
                   return names[type] || type
                 }
@@ -2120,11 +2613,15 @@ const BacktestList = () => {
                             </Col>
                             <Col span={12}>
                               <div style={{ color: '#8c8c8c' }}>交易对</div>
-                              <div style={{ fontSize: 14, marginTop: 4 }}>{values.symbol || '-'}</div>
+                              <div style={{ fontSize: 14, marginTop: 4 }}>
+                                {values.symbol || '-'}
+                              </div>
                             </Col>
                             <Col span={12}>
                               <div style={{ color: '#8c8c8c' }}>K线周期</div>
-                              <div style={{ fontSize: 14, marginTop: 4 }}>{values.interval || '-'}</div>
+                              <div style={{ fontSize: 14, marginTop: 4 }}>
+                                {values.interval || '-'}
+                              </div>
                             </Col>
                             <Col span={24}>
                               <div style={{ color: '#8c8c8c' }}>时间范围</div>
@@ -2134,7 +2631,11 @@ const BacktestList = () => {
                             </Col>
                             <Col span={12}>
                               <div style={{ color: '#8c8c8c' }}>初始资金</div>
-                              <div style={{ fontSize: 14, marginTop: 4 }}>{values.initial_capital ? `${values.initial_capital.toLocaleString()} USDT` : '-'}</div>
+                              <div style={{ fontSize: 14, marginTop: 4 }}>
+                                {values.initial_capital
+                                  ? `${values.initial_capital.toLocaleString()} USDT`
+                                  : '-'}
+                              </div>
                             </Col>
                           </Row>
                         </Card>
@@ -2200,11 +2701,20 @@ const BacktestList = () => {
                                       suffix="USDT"
                                       valueStyle={{
                                         fontSize: 18,
-                                        color: gridCalculations.warningMessage.includes('不足') ? '#ff4d4f' : '#52c41a'
+                                        color: gridCalculations.warningMessage.includes('不足')
+                                          ? '#ff4d4f'
+                                          : '#52c41a',
                                       }}
                                     />
                                     {gridCalculations.warningMessage && (
-                                      <div style={{ marginTop: 8, color: gridCalculations.warningMessage.includes('不足') ? '#ff4d4f' : '#faad14' }}>
+                                      <div
+                                        style={{
+                                          marginTop: 8,
+                                          color: gridCalculations.warningMessage.includes('不足')
+                                            ? '#ff4d4f'
+                                            : '#faad14',
+                                        }}
+                                      >
                                         {gridCalculations.warningMessage}
                                       </div>
                                     )}
@@ -2214,7 +2724,13 @@ const BacktestList = () => {
                             </Row>
 
                             {values.description && (
-                              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #303030' }}>
+                              <div
+                                style={{
+                                  marginTop: 16,
+                                  paddingTop: 16,
+                                  borderTop: '1px solid #303030',
+                                }}
+                              >
                                 <div style={{ color: '#8c8c8c', marginBottom: 8 }}>描述</div>
                                 <div style={{ fontSize: 14 }}>{values.description}</div>
                               </div>
@@ -2270,7 +2786,13 @@ const BacktestList = () => {
                             </Row>
 
                             {values.description && (
-                              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #303030' }}>
+                              <div
+                                style={{
+                                  marginTop: 16,
+                                  paddingTop: 16,
+                                  borderTop: '1px solid #303030',
+                                }}
+                              >
                                 <div style={{ color: '#8c8c8c', marginBottom: 8 }}>描述</div>
                                 <div style={{ fontSize: 14 }}>{values.description}</div>
                               </div>
@@ -2280,7 +2802,8 @@ const BacktestList = () => {
                       )}
 
                       {/* 均线交叉策略参数确认 */}
-                      {(values.strategy_type === 'ma_cross' || values.strategy_type === 'dual_ma_cross') && (
+                      {(values.strategy_type === 'ma_cross' ||
+                        values.strategy_type === 'dual_ma_cross') && (
                         <Col span={24}>
                           <Card size="small" title="均线交叉参数">
                             <Row gutter={[16, 12]}>
@@ -2330,7 +2853,10 @@ const BacktestList = () => {
                                       title="杠杆倍数"
                                       value={values.leverage || 1}
                                       suffix="x"
-                                      valueStyle={{ fontSize: 18, color: values.leverage > 1 ? '#ff4d4f' : undefined }}
+                                      valueStyle={{
+                                        fontSize: 18,
+                                        color: values.leverage > 1 ? '#ff4d4f' : undefined,
+                                      }}
                                     />
                                   </Col>
                                   <Col span={12}>
@@ -2352,7 +2878,13 @@ const BacktestList = () => {
                             </Row>
 
                             {values.description && (
-                              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #303030' }}>
+                              <div
+                                style={{
+                                  marginTop: 16,
+                                  paddingTop: 16,
+                                  borderTop: '1px solid #303030',
+                                }}
+                              >
                                 <div style={{ color: '#8c8c8c', marginBottom: 8 }}>描述</div>
                                 <div style={{ fontSize: 14 }}>{values.description}</div>
                               </div>
@@ -2377,99 +2909,97 @@ const BacktestList = () => {
         width={1200}
         footer={null}
       >
-        {compareModalOpen && (() => {
-          const selectedBacktests = backtests.filter((bt: Backtest) =>
-            selectedRowKeys.includes(bt.id)
-          )
+        {compareModalOpen &&
+          (() => {
+            const selectedBacktests = backtests.filter((bt: Backtest) =>
+              selectedRowKeys.includes(bt.id),
+            )
 
-          return (
-            <div>
-              {/* 基本信息对比 */}
-              <Card size="small" title="基本信息对比" style={{ marginBottom: 16 }}>
-                <Table
-                  dataSource={selectedBacktests}
-                  rowKey="id"
-                  pagination={false}
-                  size="small"
-                  scroll={{ x: 800 }}
-                  columns={[
-                    { title: '名称', dataIndex: 'name', key: 'name', width: 200, fixed: 'left' },
-                    {
-                      title: '策略类型',
-                      dataIndex: 'strategy_type',
-                      key: 'strategy_type',
-                      width: 120,
-                      render: (type: string) => type === 'grid' ? '网格策略' : '网格做市'
-                    },
-                    { title: '交易对', dataIndex: 'symbol', key: 'symbol', width: 120 },
-                    { title: '周期', dataIndex: 'interval', key: 'interval', width: 80 },
-                    {
-                      title: '创建时间',
-                      dataIndex: 'created_at',
-                      key: 'created_at',
-                      width: 180,
-                      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
-                    },
-                  ]}
-                />
-              </Card>
+            return (
+              <div>
+                {/* 基本信息对比 */}
+                <Card size="small" title="基本信息对比" style={{ marginBottom: 16 }}>
+                  <Table
+                    dataSource={selectedBacktests}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    scroll={{ x: 800 }}
+                    columns={[
+                      { title: '名称', dataIndex: 'name', key: 'name', width: 200, fixed: 'left' },
+                      {
+                        title: '策略类型',
+                        dataIndex: 'strategy_type',
+                        key: 'strategy_type',
+                        width: 120,
+                        render: (type: string) => (type === 'grid' ? '网格策略' : '网格做市'),
+                      },
+                      { title: '交易对', dataIndex: 'symbol', key: 'symbol', width: 120 },
+                      { title: '周期', dataIndex: 'interval', key: 'interval', width: 80 },
+                      {
+                        title: '创建时间',
+                        dataIndex: 'created_at',
+                        key: 'created_at',
+                        width: 180,
+                        render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss'),
+                      },
+                    ]}
+                  />
+                </Card>
 
-              {/* 性能指标对比 */}
-              <Card size="small" title="性能指标对比">
-                <Row gutter={16}>
-                  {selectedBacktests.map((bt: Backtest) => (
-                    <Col span={24 / selectedBacktests.length} key={bt.id}>
-                      <Card
-                        size="small"
-                        title={bt.name}
-                        style={{ marginBottom: 16 }}
-                        headStyle={{ backgroundColor: '#1a1a1a' }}
-                      >
-                        <Row gutter={[8, 16]}>
-                          <Col span={24}>
-                            <Statistic
-                              title="总收益率"
-                              value={formatPercent((bt.total_return || 0) * 100)}
-                              suffix="%"
-                              valueStyle={{
-                                color: (bt.total_return || 0) >= 0 ? '#52c41a' : '#ff4d4f',
-                                fontSize: 20,
-                                fontWeight: 600
-                              }}
-                            />
-                          </Col>
-                          <Col span={24}>
-                            <Statistic
-                              title="最大回撤"
-                              value={formatPercent((bt.max_drawdown || 0) * 100)}
-                              suffix="%"
-                              valueStyle={{ color: '#ff4d4f' }}
-                            />
-                          </Col>
-                          <Col span={24}>
-                            <Statistic
-                              title="夏普比率"
-                              value={formatAmount(bt.sharpe_ratio || 0)}
-                              valueStyle={{
-                                color: (bt.sharpe_ratio || 0) > 1 ? '#52c41a' : '#8c8c8c'
-                              }}
-                            />
-                          </Col>
-                          <Col span={24}>
-                            <Statistic
-                              title="总交易次数"
-                              value={bt.total_trades || 0}
-                            />
-                          </Col>
-                        </Row>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </Card>
-            </div>
-          )
-        })()}
+                {/* 性能指标对比 */}
+                <Card size="small" title="性能指标对比">
+                  <Row gutter={16}>
+                    {selectedBacktests.map((bt: Backtest) => (
+                      <Col span={24 / selectedBacktests.length} key={bt.id}>
+                        <Card
+                          size="small"
+                          title={bt.name}
+                          style={{ marginBottom: 16 }}
+                          headStyle={{ backgroundColor: '#1a1a1a' }}
+                        >
+                          <Row gutter={[8, 16]}>
+                            <Col span={24}>
+                              <Statistic
+                                title="总收益率"
+                                value={formatPercent((bt.total_return || 0) * 100)}
+                                suffix="%"
+                                valueStyle={{
+                                  color: (bt.total_return || 0) >= 0 ? '#52c41a' : '#ff4d4f',
+                                  fontSize: 20,
+                                  fontWeight: 600,
+                                }}
+                              />
+                            </Col>
+                            <Col span={24}>
+                              <Statistic
+                                title="最大回撤"
+                                value={formatPercent((bt.max_drawdown || 0) * 100)}
+                                suffix="%"
+                                valueStyle={{ color: '#ff4d4f' }}
+                              />
+                            </Col>
+                            <Col span={24}>
+                              <Statistic
+                                title="夏普比率"
+                                value={formatAmount(bt.sharpe_ratio || 0)}
+                                valueStyle={{
+                                  color: (bt.sharpe_ratio || 0) > 1 ? '#52c41a' : '#8c8c8c',
+                                }}
+                              />
+                            </Col>
+                            <Col span={24}>
+                              <Statistic title="总交易次数" value={bt.total_trades || 0} />
+                            </Col>
+                          </Row>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              </div>
+            )
+          })()}
       </Modal>
 
       {/* 编辑描述 Modal */}
@@ -2487,18 +3017,11 @@ const BacktestList = () => {
         cancelText="取消"
         width={600}
       >
-        <Form
-          form={editDescriptionForm}
-          layout="vertical"
-          style={{ marginTop: 16 }}
-        >
+        <Form form={editDescriptionForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="回测名称">
             <Input value={editingBacktest?.name} disabled />
           </Form.Item>
-          <Form.Item
-            label="备注描述"
-            name="description"
-          >
+          <Form.Item label="备注描述" name="description">
             <TextArea
               rows={6}
               placeholder="请输入回测的备注信息，如策略思路、参数选择原因、预期结果等..."

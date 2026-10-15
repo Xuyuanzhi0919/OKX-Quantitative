@@ -2,6 +2,7 @@
 DeepSeek LLM客户端
 用于新闻分析、市场情绪分析等
 """
+
 import os
 import json
 from typing import Dict, List, Optional
@@ -13,7 +14,9 @@ from decimal import Decimal
 class DeepSeekLLM:
     """DeepSeek LLM客户端"""
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.deepseek.com"):
+    def __init__(
+        self, api_key: Optional[str] = None, base_url: str = "https://api.deepseek.com"
+    ):
         """
         初始化DeepSeek客户端
 
@@ -29,6 +32,7 @@ class DeepSeekLLM:
             if not self.api_key:
                 try:
                     from app.core.config import settings
+
                     self.api_key = settings.DEEPSEEK_API_KEY
                 except:
                     pass
@@ -46,7 +50,7 @@ class DeepSeekLLM:
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
-        max_tokens: int = 2000
+        max_tokens: int = 2000,
     ) -> str:
         """
         调用DeepSeek Chat API
@@ -65,7 +69,7 @@ class DeepSeekLLM:
         url = f"{self.base_url}/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         payload = {
@@ -73,7 +77,7 @@ class DeepSeekLLM:
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "stream": False
+            "stream": False,
         }
 
         try:
@@ -81,7 +85,9 @@ class DeepSeekLLM:
                 async with session.post(url, headers=headers, json=payload) as response:
                     if response.status != 200:
                         error_text = await response.text()
-                        raise Exception(f"DeepSeek API错误 ({response.status}): {error_text}")
+                        raise Exception(
+                            f"DeepSeek API错误 ({response.status}): {error_text}"
+                        )
 
                     result = await response.json()
                     content = result["choices"][0]["message"]["content"]
@@ -101,7 +107,7 @@ class DeepSeekLLM:
         symbol: str,
         current_price: Decimal,
         price_change_24h: float,
-        news_headlines: Optional[List[str]] = None
+        news_headlines: Optional[List[str]] = None,
     ) -> Dict:
         """
         使用LLM分析市场情绪
@@ -123,7 +129,9 @@ class DeepSeekLLM:
         # 构建提示词
         news_context = ""
         if news_headlines:
-            news_context = "\n\n最近相关新闻:\n" + "\n".join([f"- {h}" for h in news_headlines[:5]])
+            news_context = "\n\n最近相关新闻:\n" + "\n".join(
+                [f"- {h}" for h in news_headlines[:5]]
+            )
 
         prompt = f"""你是一位专业的加密货币市场分析师。请分析以下市场数据并给出情绪判断。
 
@@ -142,12 +150,17 @@ class DeepSeekLLM:
 只返回JSON，不要其他文字。"""
 
         messages = [
-            {"role": "system", "content": "你是一位专业的加密货币市场分析师，擅长技术分析和情绪分析。"},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "你是一位专业的加密货币市场分析师，擅长技术分析和情绪分析。",
+            },
+            {"role": "user", "content": prompt},
         ]
 
         try:
-            response = await self.chat_completion(messages, temperature=0.3, max_tokens=500)
+            response = await self.chat_completion(
+                messages, temperature=0.3, max_tokens=500
+            )
 
             # 解析JSON响应
             # 清理可能的markdown代码块标记
@@ -161,7 +174,9 @@ class DeepSeekLLM:
 
             result = json.loads(response_clean.strip())
 
-            logger.success(f"LLM市场情绪分析完成: {result['sentiment']} (信心度: {result['confidence']})")
+            logger.success(
+                f"LLM市场情绪分析完成: {result['sentiment']} (信心度: {result['confidence']})"
+            )
             return result
 
         except json.JSONDecodeError as e:
@@ -171,7 +186,7 @@ class DeepSeekLLM:
                 "sentiment": "neutral",
                 "confidence": 0.5,
                 "reasoning": "LLM响应解析失败，使用默认中性判断",
-                "key_factors": ["数据不足"]
+                "key_factors": ["数据不足"],
             }
         except Exception as e:
             logger.error(f"LLM市场情绪分析失败: {e}")
@@ -179,7 +194,7 @@ class DeepSeekLLM:
                 "sentiment": "neutral",
                 "confidence": 0.5,
                 "reasoning": f"分析失败: {str(e)}",
-                "key_factors": ["分析错误"]
+                "key_factors": ["分析错误"],
             }
 
     async def analyze_trading_decision(
@@ -188,7 +203,7 @@ class DeepSeekLLM:
         current_price: Decimal,
         position_info: Optional[Dict] = None,
         market_sentiment: Optional[Dict] = None,
-        technical_indicators: Optional[Dict] = None
+        technical_indicators: Optional[Dict] = None,
     ) -> Dict:
         """
         使用LLM分析交易决策
@@ -226,7 +241,9 @@ class DeepSeekLLM:
             )
 
         if technical_indicators:
-            indicators_str = ", ".join([f"{k}={v}" for k, v in technical_indicators.items()])
+            indicators_str = ", ".join(
+                [f"{k}={v}" for k, v in technical_indicators.items()]
+            )
             context_parts.append(f"技术指标: {indicators_str}")
 
         context = "\n".join(context_parts)
@@ -256,13 +273,15 @@ class DeepSeekLLM:
         messages = [
             {
                 "role": "system",
-                "content": "你是一位专业的量化交易分析师，擅长风险控制和决策分析。你的建议应该保守、理性。"
+                "content": "你是一位专业的量化交易分析师，擅长风险控制和决策分析。你的建议应该保守、理性。",
             },
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ]
 
         try:
-            response = await self.chat_completion(messages, temperature=0.2, max_tokens=500)
+            response = await self.chat_completion(
+                messages, temperature=0.2, max_tokens=500
+            )
 
             # 解析JSON响应
             response_clean = response.strip()
@@ -288,7 +307,7 @@ class DeepSeekLLM:
                 "confidence": 0.5,
                 "reasoning": "LLM响应解析失败，建议观望",
                 "risk_assessment": "medium",
-                "suggested_ratio": 0.0
+                "suggested_ratio": 0.0,
             }
         except Exception as e:
             logger.error(f"LLM交易决策分析失败: {e}")
@@ -297,7 +316,7 @@ class DeepSeekLLM:
                 "confidence": 0.5,
                 "reasoning": f"分析失败: {str(e)}",
                 "risk_assessment": "high",
-                "suggested_ratio": 0.0
+                "suggested_ratio": 0.0,
             }
 
     async def summarize_news(self, news_articles: List[Dict]) -> str:
@@ -335,11 +354,13 @@ class DeepSeekLLM:
 
         messages = [
             {"role": "system", "content": "你是一位专业的加密货币新闻分析师。"},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ]
 
         try:
-            summary = await self.chat_completion(messages, temperature=0.5, max_tokens=300)
+            summary = await self.chat_completion(
+                messages, temperature=0.5, max_tokens=300
+            )
             logger.success(f"新闻摘要生成完成: {len(summary)}字")
             return summary
         except Exception as e:

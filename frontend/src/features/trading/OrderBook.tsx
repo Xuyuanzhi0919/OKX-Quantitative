@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Spin } from 'antd'
 import { wsService, OrderBookData } from '@/services/websocket'
-import { formatPrice, formatQuantityDisplay, formatAmount, formatPriceDisplay } from '@/utils/format'
+import {
+  formatPrice,
+  formatQuantityDisplay,
+  formatAmount,
+  formatPriceDisplay,
+} from '@/utils/format'
 
 interface OrderBookProps {
   symbol: string
@@ -46,10 +51,7 @@ export default function OrderBook({ symbol, maxDepth = 10 }: OrderBookProps) {
   const bids = orderbook.bids.slice(0, maxDepth)
 
   // 计算最大数量用于进度条
-  const maxAmount = Math.max(
-    ...asks.map((a) => a[1]),
-    ...bids.map((b) => b[1])
-  )
+  const maxAmount = Math.max(...asks.map((a) => a[1]), ...bids.map((b) => b[1]))
 
   return (
     <div style={{ fontSize: 12 }}>

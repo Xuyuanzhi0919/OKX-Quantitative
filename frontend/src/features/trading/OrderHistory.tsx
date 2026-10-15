@@ -1,17 +1,5 @@
 import { useState } from 'react'
-import {
-  Card,
-  Table,
-  Tag,
-  Space,
-  Button,
-  Input,
-  Select,
-  DatePicker,
-  Row,
-  Col,
-  Tooltip,
-} from 'antd'
+import { Card, Table, Tag, Space, Button, Input, Select, DatePicker, Row, Col, Tooltip } from 'antd'
 import {
   History,
   Search,
@@ -123,10 +111,7 @@ export default function OrderHistory({ symbol }: OrderHistoryProps) {
   ]
 
   // 状态配色和文本
-  const statusConfig: Record<
-    string,
-    { bg: string; color: string; text: string; icon: any }
-  > = {
+  const statusConfig: Record<string, { bg: string; color: string; text: string; icon: any }> = {
     [OrderStatus.LIVE]: {
       bg: 'rgba(24, 144, 255, 0.15)',
       color: '#1890ff',
@@ -329,9 +314,7 @@ export default function OrderHistory({ symbol }: OrderHistoryProps) {
             <div className="font-mono" style={{ fontSize: 13, marginBottom: 2 }}>
               {formatQuantityDisplay(record.filled)}
             </div>
-            <div style={{ fontSize: 10, color: '#737373' }}>
-              {formatPercent(fillPercent, 1)}%
-            </div>
+            <div style={{ fontSize: 10, color: '#737373' }}>{formatPercent(fillPercent, 1)}%</div>
           </div>
         )
       },
@@ -457,7 +440,10 @@ export default function OrderHistory({ symbol }: OrderHistoryProps) {
             options={[
               { label: t('trading.allStatus').toUpperCase(), value: 'all' },
               { label: t('order.status.live').toUpperCase(), value: OrderStatus.LIVE },
-              { label: t('order.status.partiallyFilled').toUpperCase(), value: OrderStatus.PARTIALLY_FILLED },
+              {
+                label: t('order.status.partiallyFilled').toUpperCase(),
+                value: OrderStatus.PARTIALLY_FILLED,
+              },
               { label: t('order.status.filled').toUpperCase(), value: OrderStatus.FILLED },
               { label: t('order.status.canceled').toUpperCase(), value: OrderStatus.CANCELED },
               { label: t('order.status.failed').toUpperCase(), value: OrderStatus.FAILED },

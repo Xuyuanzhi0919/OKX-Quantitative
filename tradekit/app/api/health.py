@@ -17,4 +17,3 @@ async def health(settings: Settings = Depends(get_settings)) -> dict:
         "okx_cli": cli_status,
         "policy": policy.summary(),
     }
-

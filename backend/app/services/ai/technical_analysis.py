@@ -2,6 +2,7 @@
 技术指标分析模块
 分析趋势、动量、支撑阻力等技术面因素
 """
+
 from typing import Dict, List
 from decimal import Decimal
 from loguru import logger
@@ -55,7 +56,7 @@ class TechnicalAnalysis:
                 self._analyze_trend(klines),
                 self._analyze_momentum(klines),
                 self._analyze_support_resistance(klines, current_price),
-                self._calculate_volatility(klines)
+                self._calculate_volatility(klines),
             ]
 
             trend, momentum, sr, volatility = await asyncio.gather(*tasks)
@@ -66,15 +67,15 @@ class TechnicalAnalysis:
             sr_weight = 0.3
 
             long_score = (
-                trend["long_score"] * trend_weight +
-                momentum["long_score"] * momentum_weight +
-                sr["long_score"] * sr_weight
+                trend["long_score"] * trend_weight
+                + momentum["long_score"] * momentum_weight
+                + sr["long_score"] * sr_weight
             )
 
             short_score = (
-                trend["short_score"] * trend_weight +
-                momentum["short_score"] * momentum_weight +
-                sr["short_score"] * sr_weight
+                trend["short_score"] * trend_weight
+                + momentum["short_score"] * momentum_weight
+                + sr["short_score"] * sr_weight
             )
 
             overall_score = max(long_score, short_score)
@@ -87,8 +88,8 @@ class TechnicalAnalysis:
                     "trend": trend,
                     "momentum": momentum,
                     "support_resistance": sr,
-                    "volatility": volatility
-                }
+                    "volatility": volatility,
+                },
             }
 
         except Exception as e:
@@ -100,9 +101,7 @@ class TechnicalAnalysis:
         try:
             # 使用4小时K线
             klines = await self.exchange.get_kline(
-                symbol=symbol,
-                timeframe="4H",
-                limit=limit
+                symbol=symbol, timeframe="4H", limit=limit
             )
 
             if not klines:
@@ -198,12 +197,17 @@ class TechnicalAnalysis:
                 "analysis": analysis,
                 "ma20": round(ma20[-1], 2),
                 "ma50": round(ma50[-1], 2),
-                "ma_slope": round(ma_slope, 2)
+                "ma_slope": round(ma_slope, 2),
             }
 
         except Exception as e:
             logger.error(f"趋势分析失败: {e}")
-            return {"score": 0.5, "long_score": 0.5, "short_score": 0.5, "analysis": "分析失败"}
+            return {
+                "score": 0.5,
+                "long_score": 0.5,
+                "short_score": 0.5,
+                "analysis": "分析失败",
+            }
 
     async def _analyze_momentum(self, klines: List[Dict]) -> Dict:
         """
@@ -220,7 +224,11 @@ class TechnicalAnalysis:
             # 动量 (当前价 vs N根K线前)
             momentum_period = 10
             if len(closes) > momentum_period:
-                momentum = (closes[-1] - closes[-momentum_period]) / closes[-momentum_period] * 100
+                momentum = (
+                    (closes[-1] - closes[-momentum_period])
+                    / closes[-momentum_period]
+                    * 100
+                )
             else:
                 momentum = 0
 
@@ -256,14 +264,22 @@ class TechnicalAnalysis:
                 "long_score": long_score,
                 "short_score": short_score,
                 "rsi": round(rsi, 2),
-                "momentum": round(momentum, 2)
+                "momentum": round(momentum, 2),
             }
 
         except Exception as e:
             logger.error(f"动量分析失败: {e}")
-            return {"score": 0.5, "long_score": 0.5, "short_score": 0.5, "rsi": 50, "momentum": 0}
+            return {
+                "score": 0.5,
+                "long_score": 0.5,
+                "short_score": 0.5,
+                "rsi": 50,
+                "momentum": 0,
+            }
 
-    async def _analyze_support_resistance(self, klines: List[Dict], current_price: Decimal) -> Dict:
+    async def _analyze_support_resistance(
+        self, klines: List[Dict], current_price: Decimal
+    ) -> Dict:
         """
         支撑/阻力位分析
         """
@@ -305,7 +321,7 @@ class TechnicalAnalysis:
                 "current_price": round(float(current_price), 2),
                 "support": round(support, 2),
                 "resistance": round(resistance, 2),
-                "position": round(position, 3)  # 0-1, 0=支撑, 1=阻力
+                "position": round(position, 3),  # 0-1, 0=支撑, 1=阻力
             }
 
         except Exception as e:
@@ -316,7 +332,7 @@ class TechnicalAnalysis:
                 "short_score": 0.5,
                 "current_price": 0,
                 "support": 0,
-                "resistance": 0
+                "resistance": 0,
             }
 
     async def _calculate_volatility(self, klines: List[Dict]) -> float:
@@ -329,7 +345,7 @@ class TechnicalAnalysis:
             # 计算标准差
             mean = sum(closes) / len(closes)
             variance = sum((c - mean) ** 2 for c in closes) / len(closes)
-            std = variance ** 0.5
+            std = variance**0.5
 
             # 波动率百分比
             volatility = (std / mean) * 100
@@ -348,9 +364,9 @@ class TechnicalAnalysis:
         ma = []
         for i in range(len(data)):
             if i < period - 1:
-                ma.append(sum(data[:i+1]) / (i+1))
+                ma.append(sum(data[: i + 1]) / (i + 1))
             else:
-                ma.append(sum(data[i-period+1:i+1]) / period)
+                ma.append(sum(data[i - period + 1 : i + 1]) / period)
         return ma
 
     def _calculate_rsi(self, closes: List[float], period: int = 14) -> float:
@@ -362,7 +378,7 @@ class TechnicalAnalysis:
         losses = []
 
         for i in range(1, len(closes)):
-            change = closes[i] - closes[i-1]
+            change = closes[i] - closes[i - 1]
             if change > 0:
                 gains.append(change)
                 losses.append(0)
@@ -390,6 +406,6 @@ class TechnicalAnalysis:
                 "trend": {"score": 0.5, "analysis": "数据不足"},
                 "momentum": {"rsi": 50, "momentum": 0},
                 "support_resistance": {},
-                "volatility": 0
-            }
+                "volatility": 0,
+            },
         }

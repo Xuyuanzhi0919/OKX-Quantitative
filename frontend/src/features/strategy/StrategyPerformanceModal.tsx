@@ -12,7 +12,11 @@ interface StrategyPerformanceModalProps {
   onCancel: () => void
 }
 
-export default function StrategyPerformanceModal({ open, strategy, onCancel }: StrategyPerformanceModalProps) {
+export default function StrategyPerformanceModal({
+  open,
+  strategy,
+  onCancel,
+}: StrategyPerformanceModalProps) {
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [performance, setPerformance] = useState<StrategyPerformance | null>(null)
@@ -57,8 +61,8 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
         textStyle: {
           color: '#e5e5e5',
           fontSize: 14,
-          fontWeight: 600
-        }
+          fontWeight: 600,
+        },
       },
       backgroundColor: 'transparent',
       grid: {
@@ -66,14 +70,14 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
         right: '4%',
         bottom: '3%',
         top: '15%',
-        containLabel: true
+        containLabel: true,
       },
       tooltip: {
         trigger: 'axis',
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         borderColor: '#2a2a2a',
         textStyle: {
-          color: '#e5e5e5'
+          color: '#e5e5e5',
         },
         formatter: (params: any) => {
           const data = params[0]
@@ -87,51 +91,51 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
               </div>
             </div>
           `
-        }
+        },
       },
       xAxis: {
         type: 'category',
-        data: performance.profit_history.map(item => item.timestamp),
+        data: performance.profit_history.map((item) => item.timestamp),
         axisLabel: {
           color: '#a3a3a3',
           formatter: (value: string) => {
             const date = new Date(value)
             return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
-          }
+          },
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a2a'
-          }
-        }
+            color: '#2a2a2a',
+          },
+        },
       },
       yAxis: {
         type: 'value',
         axisLabel: {
           color: '#a3a3a3',
-          formatter: (value: number) => formatAmount(value)
+          formatter: (value: number) => formatAmount(value),
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a2a'
-          }
+            color: '#2a2a2a',
+          },
         },
         splitLine: {
           lineStyle: {
             color: '#2a2a2a',
-            type: 'dashed'
-          }
-        }
+            type: 'dashed',
+          },
+        },
       },
       series: [
         {
           name: '累计盈亏',
           type: 'line',
-          data: performance.profit_history.map(item => item.cumulative_profit),
+          data: performance.profit_history.map((item) => item.cumulative_profit),
           smooth: true,
           lineStyle: {
             color: performance.total_profit >= 0 ? '#22c55e' : '#ef4444',
-            width: 2
+            width: 2,
           },
           areaStyle: {
             color: {
@@ -143,20 +147,26 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
               colorStops: [
                 {
                   offset: 0,
-                  color: performance.total_profit >= 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                  color:
+                    performance.total_profit >= 0
+                      ? 'rgba(34, 197, 94, 0.3)'
+                      : 'rgba(239, 68, 68, 0.3)',
                 },
                 {
                   offset: 1,
-                  color: performance.total_profit >= 0 ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)'
-                }
-              ]
-            }
+                  color:
+                    performance.total_profit >= 0
+                      ? 'rgba(34, 197, 94, 0.05)'
+                      : 'rgba(239, 68, 68, 0.05)',
+                },
+              ],
+            },
           },
           itemStyle: {
-            color: performance.total_profit >= 0 ? '#22c55e' : '#ef4444'
-          }
-        }
-      ]
+            color: performance.total_profit >= 0 ? '#22c55e' : '#ef4444',
+          },
+        },
+      ],
     }
   }
 
@@ -171,8 +181,8 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
         textStyle: {
           color: '#e5e5e5',
           fontSize: 14,
-          fontWeight: 600
-        }
+          fontWeight: 600,
+        },
       },
       backgroundColor: 'transparent',
       grid: {
@@ -180,14 +190,14 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
         right: '4%',
         bottom: '3%',
         top: '15%',
-        containLabel: true
+        containLabel: true,
       },
       tooltip: {
         trigger: 'axis',
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         borderColor: '#2a2a2a',
         textStyle: {
-          color: '#e5e5e5'
+          color: '#e5e5e5',
         },
         formatter: (params: any) => {
           const data = params[0]
@@ -201,58 +211,59 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
               </div>
             </div>
           `
-        }
+        },
       },
       xAxis: {
         type: 'category',
-        data: performance.daily_profits.map(item => item.date),
+        data: performance.daily_profits.map((item) => item.date),
         axisLabel: {
           color: '#a3a3a3',
           formatter: (value: string) => {
             const parts = value.split('-')
             return `${parts[1]}/${parts[2]}`
-          }
+          },
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a2a'
-          }
-        }
+            color: '#2a2a2a',
+          },
+        },
       },
       yAxis: {
         type: 'value',
         axisLabel: {
           color: '#a3a3a3',
-          formatter: (value: number) => formatAmount(value)
+          formatter: (value: number) => formatAmount(value),
         },
         axisLine: {
           lineStyle: {
-            color: '#2a2a2a'
-          }
+            color: '#2a2a2a',
+          },
         },
         splitLine: {
           lineStyle: {
             color: '#2a2a2a',
-            type: 'dashed'
-          }
-        }
+            type: 'dashed',
+          },
+        },
       },
       series: [
         {
           name: '日盈亏',
           type: 'bar',
-          data: performance.daily_profits.map(item => item.profit),
+          data: performance.daily_profits.map((item) => item.profit),
           itemStyle: {
             color: (params: any) => {
               return params.value >= 0 ? '#22c55e' : '#ef4444'
-            }
-          }
-        }
-      ]
+            },
+          },
+        },
+      ],
     }
   }
 
-  const hasOpenPosition = Boolean(performance?.in_position) || Math.abs(performance?.unrealized_profit ?? 0) > 0
+  const hasOpenPosition =
+    Boolean(performance?.in_position) || Math.abs(performance?.unrealized_profit ?? 0) > 0
   const hasClosedTrades = (performance?.total_trades ?? 0) > 0
   const totalOrders = performance?.total_orders ?? performance?.total_trades ?? 0
 
@@ -266,8 +277,8 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
       styles={{
         body: {
           maxHeight: '70vh',
-          overflowY: 'auto'
-        }
+          overflowY: 'auto',
+        },
       }}
     >
       {loading ? (
@@ -323,7 +334,13 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
                   value={performance.total_profit}
                   precision={2}
                   valueStyle={{ color: performance.total_profit >= 0 ? '#22c55e' : '#ef4444' }}
-                  prefix={performance.total_profit >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  prefix={
+                    performance.total_profit >= 0 ? (
+                      <TrendingUp size={14} />
+                    ) : (
+                      <TrendingDown size={14} />
+                    )
+                  }
                   suffix="USDT"
                 />
               </Card>
@@ -335,7 +352,13 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
                   value={performance.total_profit_rate}
                   precision={2}
                   valueStyle={{ color: performance.total_profit_rate >= 0 ? '#22c55e' : '#ef4444' }}
-                  prefix={performance.total_profit_rate >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  prefix={
+                    performance.total_profit_rate >= 0 ? (
+                      <TrendingUp size={14} />
+                    ) : (
+                      <TrendingDown size={14} />
+                    )
+                  }
                   suffix="%"
                 />
               </Card>
@@ -353,11 +376,7 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
             </Col>
             <Col span={6}>
               <Card>
-                <Statistic
-                  title="订单次数"
-                  value={totalOrders}
-                  valueStyle={{ color: '#e5e5e5' }}
-                />
+                <Statistic title="订单次数" value={totalOrders} valueStyle={{ color: '#e5e5e5' }} />
               </Card>
             </Col>
           </Row>
@@ -420,7 +439,10 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
               {performance.daily_profits.length > 0 && (
                 <Col span={24}>
                   <Card>
-                    <ReactECharts option={getDailyProfitChartOption()} style={{ height: '300px' }} />
+                    <ReactECharts
+                      option={getDailyProfitChartOption()}
+                      style={{ height: '300px' }}
+                    />
                   </Card>
                 </Col>
               )}
@@ -440,8 +462,8 @@ export default function StrategyPerformanceModal({ open, strategy, onCancel }: S
                       {hasOpenPosition
                         ? '当前持仓尚未平仓，平仓后将生成收益曲线'
                         : strategy?.status === 'running'
-                        ? '策略正在运行中,请等待订单成交后查看性能数据'
-                        : '策略尚未启动或未产生交易,启动策略后将自动生成性能分析'}
+                          ? '策略正在运行中,请等待订单成交后查看性能数据'
+                          : '策略尚未启动或未产生交易,启动策略后将自动生成性能分析'}
                     </div>
                   </div>
                 }

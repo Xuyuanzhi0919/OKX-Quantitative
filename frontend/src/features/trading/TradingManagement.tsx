@@ -31,9 +31,7 @@ const TradingManagement = () => {
     <div style={{ padding: '0 24px 24px' }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>交易管理</h2>
-        <p style={{ margin: '8px 0 0', color: '#737373' }}>
-          实时监控持仓和订单状态
-        </p>
+        <p style={{ margin: '8px 0 0', color: '#737373' }}>实时监控持仓和订单状态</p>
       </div>
       <Tabs defaultActiveKey="positions" items={items} size="large" />
     </div>

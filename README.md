@@ -180,6 +180,8 @@ iOS 需要 macOS、Xcode、iOS 17+。复制 `Config/Secrets.xcconfig.example` �
 
 部署前配置 `POSTGRES_PASSWORD`、`REDIS_PASSWORD`、`SECRET_KEY`、`DEBUG=false`、`DOMAIN` 及后端其他必需配置；核对 Redis 认证健康检查、通知文件和代理地址，为已有数据库应用所需迁移。初始化 SQL 仅在数据库数据卷首次初始化时自动执行，新增策略枚举仍需按前文补齐。
 
+通知配置不随源码或镜像发布。首次部署先复制 `backend/notification_config.example.json` 为 `backend/notification_config.json` 并填写配置；Compose 将该文件只读挂载到后端。已有服务器保留自己的配置即可。
+
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml logs -f backend
@@ -204,5 +206,25 @@ npm run build
 ```
 
 部分测试和研究脚本需要数据库、网络或历史行情，运行前检查各自依赖。
+
+## 代码排版与仓库维护
+
+项目使用 `.editorconfig` 和 `.gitattributes` 统一缩进、文件末尾换行及源码 LF 行尾。Python 使用已在后端依赖中固定版本的 Black，前端使用固定版本的 Prettier：
+
+```bash
+# 根目录执行，使用已安装后端依赖的 Python 环境
+python -m black backend/app tradekit/app scripts
+python -m black --check backend/app tradekit/app scripts
+
+# frontend 目录执行
+npm run format
+npm run format:check
+npm run lint
+npm run build
+```
+
+仓库保留源码、测试、迁移、依赖锁文件和示例配置。本地环境变量、通知凭据、数据库备份、行情快照、回测输出、进程状态、构建压缩包、持仓归属数据及缓存由 `.gitignore` 排除；需要共享配置时提交脱敏的示例文件。
+
+部署上传脚本只打包 Git 已跟踪的文件，新增源码需先 `git add`。服务器同步会保留自己的通知配置、环境文件和 TradeKit 运行数据。首次部署必须自行创建通知配置文件，不能依赖仓库或镜像携带本地凭据。
 
 最后更新：2026-10-15

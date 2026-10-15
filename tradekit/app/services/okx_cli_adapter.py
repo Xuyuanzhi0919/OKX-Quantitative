@@ -72,7 +72,9 @@ class OkxCliAdapter:
         except FileNotFoundError:
             return CommandResult(command, 127, "", f"Command not found: {self.binary}")
         except asyncio.TimeoutError:
-            return CommandResult(command, 124, "", f"Command timed out after {self.timeout_seconds}s")
+            return CommandResult(
+                command, 124, "", f"Command timed out after {self.timeout_seconds}s"
+            )
 
         return CommandResult(
             command=command,
@@ -80,4 +82,3 @@ class OkxCliAdapter:
             stdout=stdout_bytes.decode("utf-8", errors="replace").strip(),
             stderr=stderr_bytes.decode("utf-8", errors="replace").strip(),
         )
-

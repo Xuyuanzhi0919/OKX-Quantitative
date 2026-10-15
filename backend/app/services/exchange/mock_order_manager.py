@@ -2,6 +2,7 @@
 模拟订单管理器
 用于模拟盘的订单生命周期管理
 """
+
 import time
 import asyncio
 import random
@@ -19,12 +20,7 @@ class MockOrderManager:
         self.pending_tasks = {}  # order_id -> asyncio.Task
 
     def create_order(
-        self,
-        symbol: str,
-        side: str,
-        price: str,
-        size: str,
-        order_type: str = "limit"
+        self, symbol: str, side: str, price: str, size: str, order_type: str = "limit"
     ) -> Dict:
         """
         创建模拟订单
@@ -207,8 +203,7 @@ class MockOrderManager:
             return list(self.orders.values())
         else:
             return [
-                order for order in self.orders.values()
-                if order["instId"] == symbol
+                order for order in self.orders.values() if order["instId"] == symbol
             ]
 
     def clear_filled_orders(self, older_than_seconds: int = 3600):

@@ -26,7 +26,11 @@ interface StrategyStats {
 
 const StrategyStatsCard = ({ strategyId, strategyName, symbol }: StrategyStatsCardProps) => {
   // 获取策略统计数据
-  const { data: stats, isLoading, refetch } = useQuery<StrategyStats>({
+  const {
+    data: stats,
+    isLoading,
+    refetch,
+  } = useQuery<StrategyStats>({
     queryKey: ['strategy-stats', strategyId],
     queryFn: async () => {
       const response = await fetch(STRATEGY_API.stats(strategyId))
@@ -88,7 +92,7 @@ const StrategyStatsCard = ({ strategyId, strategyName, symbol }: StrategyStatsCa
             valueStyle={{
               color: pnl >= 0 ? '#22c55e' : '#ef4444',
               fontSize: 20,
-              fontWeight: 600
+              fontWeight: 600,
             }}
             prefix={pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
           />
@@ -107,11 +111,7 @@ const StrategyStatsCard = ({ strategyId, strategyName, symbol }: StrategyStatsCa
           )}
         </Col>
         <Col span={8}>
-          <Statistic
-            title="总交易次数"
-            value={totalTrades}
-            valueStyle={{ fontSize: 18 }}
-          />
+          <Statistic title="总交易次数" value={totalTrades} valueStyle={{ fontSize: 18 }} />
         </Col>
       </Row>
 

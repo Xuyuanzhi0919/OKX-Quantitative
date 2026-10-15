@@ -18,6 +18,7 @@
   - position_ratio: 开仓资金比例（默认0.3 = 30%）
   - timeframe: K线周期（默认15m）
 """
+
 import time
 from typing import Dict, List, Optional
 from decimal import Decimal
@@ -35,8 +36,8 @@ _DEFAULT_SLOW_PERIOD = 40
 _DEFAULT_TIMEFRAME = "15m"
 _DEFAULT_KLINE_LIMIT = 80
 _DEFAULT_LEVERAGE = 5
-_DEFAULT_STOP_LOSS = 0.02      # 2%
-_DEFAULT_TAKE_PROFIT = 0.06    # 6%
+_DEFAULT_STOP_LOSS = 0.02  # 2%
+_DEFAULT_TAKE_PROFIT = 0.06  # 6%
 _DEFAULT_TRAILING_STOP = 0.02  # 2%
 _DEFAULT_POSITION_RATIO = 0.3  # 30%
 _DEFAULT_PROFIT_LOCK_RATIO = 0.5  # 锁住峰值盈利的50%，0表示禁用
@@ -45,7 +46,7 @@ _DEFAULT_PROFIT_LOCK_RATIO = 0.5  # 锁住峰值盈利的50%，0表示禁用
 class DualSideStrategy(StrategyBase):
     """
     双向持仓策略 - 支持做多和做空
-    
+
     状态机：
     - 无持仓 → 检测趋势信号 → 开多/开空
     - 持有多仓 → 检测死叉 → 平多+开空
@@ -68,15 +69,21 @@ class DualSideStrategy(StrategyBase):
         self.slow_period: int = int(p.get("slow_period", _DEFAULT_SLOW_PERIOD))
         self.timeframe: str = p.get("timeframe", _DEFAULT_TIMEFRAME)
         self.leverage: int = int(p.get("leverage", _DEFAULT_LEVERAGE))
-        
+
         # 风控参数
         self.stop_loss: float = float(p.get("stop_loss", _DEFAULT_STOP_LOSS))
         self.take_profit: float = float(p.get("take_profit", _DEFAULT_TAKE_PROFIT))
-        self.trailing_stop: float = float(p.get("trailing_stop", _DEFAULT_TRAILING_STOP))
-        self.position_ratio: float = float(p.get("position_ratio", _DEFAULT_POSITION_RATIO))
+        self.trailing_stop: float = float(
+            p.get("trailing_stop", _DEFAULT_TRAILING_STOP)
+        )
+        self.position_ratio: float = float(
+            p.get("position_ratio", _DEFAULT_POSITION_RATIO)
+        )
         # 盈利保护：峰值盈利的多少比例作为止损下限，0=禁用
-        self.profit_lock_ratio: float = float(p.get("profit_lock_ratio", _DEFAULT_PROFIT_LOCK_RATIO))
-        
+        self.profit_lock_ratio: float = float(
+            p.get("profit_lock_ratio", _DEFAULT_PROFIT_LOCK_RATIO)
+        )
+
         # 保证金模式
         self.margin_mode: str = p.get("margin_mode", "isolated")  # isolated 或 cross
 
@@ -87,21 +94,21 @@ class DualSideStrategy(StrategyBase):
         self._slow_curr: Optional[float] = None
 
         # 合约规格
-        self._ct_val: float = 0.1    # 合约面值
-        self._lot_sz: float = 1.0    # 下单精度
-        self._min_sz: float = 1.0    # 最小下单量
+        self._ct_val: float = 0.1  # 合约面值
+        self._lot_sz: float = 1.0  # 下单精度
+        self._min_sz: float = 1.0  # 最小下单量
         self._is_swap: bool = symbol.endswith("-SWAP") or symbol.endswith("-FUTURES")
         self._position_mode: str = "net_mode"
         self._use_pos_side: bool = False
 
         # 仓位状态
-        self._position_side: str = ""      # "long" / "short" / ""
+        self._position_side: str = ""  # "long" / "short" / ""
         self._entry_price: float = 0.0
         self._position_qty: float = 0.0
         self._open_time: float = 0.0
-        self._extreme_price: float = 0.0   # 多仓=最高价，空仓=最低价
+        self._extreme_price: float = 0.0  # 多仓=最高价，空仓=最低价
         self._trail_stop_px: float = 0.0
-        self._peak_pnl_pct: float = 0.0    # 本次持仓期间的浮盈峰值百分比
+        self._peak_pnl_pct: float = 0.0  # 本次持仓期间的浮盈峰值百分比
 
         # K线周期追踪
         self._last_kline_period: int = 0
@@ -155,7 +162,9 @@ class DualSideStrategy(StrategyBase):
         self.is_running = False
         if close_position and self._position_side:
             await self._close_position(reason="stop")
-        logger.info(f"策略 {self.strategy_id} [{self.symbol}] 已停止 (平仓={close_position})")
+        logger.info(
+            f"策略 {self.strategy_id} [{self.symbol}] 已停止 (平仓={close_position})"
+        )
 
     # ═══════════════════════════════════════════════════════════
     # 核心回调
@@ -186,7 +195,9 @@ class DualSideStrategy(StrategyBase):
 
     async def on_order_update(self, order: Dict):
         """订单成交回调"""
-        logger.debug(f"[{self.symbol}] 订单更新: {order.get('ordId')} status={order.get('state')}")
+        logger.debug(
+            f"[{self.symbol}] 订单更新: {order.get('ordId')} status={order.get('state')}"
+        )
 
     async def calculate_pnl(self) -> Dict:
         """返回当前盈亏统计"""
@@ -230,13 +241,19 @@ class DualSideStrategy(StrategyBase):
         try:
             _db = SessionLocal()
             try:
-                db_s = _db.query(DBStrategy).filter(DBStrategy.id == self.strategy_id).first()
+                db_s = (
+                    _db.query(DBStrategy)
+                    .filter(DBStrategy.id == self.strategy_id)
+                    .first()
+                )
                 if db_s and db_s.position_in_position:
                     self._position_side = db_s.position_side or ""
                     self._entry_price = float(db_s.position_entry_price or 0)
                     self._position_qty = float(db_s.position_qty or 0)
                     self._open_time = float(db_s.position_open_time or 0)
-                    self._extreme_price = float(db_s.position_highest_price or self._entry_price)
+                    self._extreme_price = float(
+                        db_s.position_highest_price or self._entry_price
+                    )
                     self._trail_stop_px = float(db_s.position_trail_stop_px or 0)
                     logger.warning(
                         f"[{self.symbol}] 🔄 恢复持仓: side={self._position_side} "
@@ -272,7 +289,9 @@ class DualSideStrategy(StrategyBase):
             self._position_mode = config.get("posMode") or "net_mode"
         except Exception as e:
             self._position_mode = "net_mode"
-            logger.warning(f"[{self.symbol}] 获取持仓模式失败，按 net_mode 兼容下单: {e}")
+            logger.warning(
+                f"[{self.symbol}] 获取持仓模式失败，按 net_mode 兼容下单: {e}"
+            )
 
         try:
             if self._position_mode != "long_short_mode":
@@ -308,7 +327,9 @@ class DualSideStrategy(StrategyBase):
                     mgn_mode=self.margin_mode,
                     inst_id=self.symbol,
                 )
-            logger.info(f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({self.margin_mode})")
+            logger.info(
+                f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({self.margin_mode})"
+            )
         except Exception as e:
             logger.warning(f"[{self.symbol}] 设置杠杆失败: {e}")
 
@@ -332,7 +353,7 @@ class DualSideStrategy(StrategyBase):
             # 计算EMA
             self._fast_curr = self._ema(closes, self.fast_period)
             self._slow_curr = self._ema(closes, self.slow_period)
-            
+
             # 计算前一个周期的EMA（用于交叉检测）
             prev_closes = closes[:-1]
             self._fast_prev = self._ema(prev_closes, self.fast_period)
@@ -456,18 +477,18 @@ class DualSideStrategy(StrategyBase):
 
         # 检测交叉
         golden_cross = (
-            self._fast_prev <= self._slow_prev and
-            self._fast_curr > self._slow_curr
+            self._fast_prev <= self._slow_prev and self._fast_curr > self._slow_curr
         )
         death_cross = (
-            self._fast_prev >= self._slow_prev and
-            self._fast_curr < self._slow_curr
+            self._fast_prev >= self._slow_prev and self._fast_curr < self._slow_curr
         )
 
         current_price = closes[-1]
 
         if golden_cross:
-            logger.info(f"[{self.symbol}] 📈 金叉信号: fast={self._fast_curr:.2f} > slow={self._slow_curr:.2f}")
+            logger.info(
+                f"[{self.symbol}] 📈 金叉信号: fast={self._fast_curr:.2f} > slow={self._slow_curr:.2f}"
+            )
             if self._position_side == "short":
                 # 平空并开多
                 await self._close_position(reason="golden_cross")
@@ -476,7 +497,9 @@ class DualSideStrategy(StrategyBase):
                 await self._open_position(current_price, "long")
 
         elif death_cross:
-            logger.info(f"[{self.symbol}] 📉 死叉信号: fast={self._fast_curr:.2f} < slow={self._slow_curr:.2f}")
+            logger.info(
+                f"[{self.symbol}] 📉 死叉信号: fast={self._fast_curr:.2f} < slow={self._slow_curr:.2f}"
+            )
             if self._position_side == "long":
                 # 平多并开空
                 await self._close_position(reason="death_cross")
@@ -632,7 +655,7 @@ class DualSideStrategy(StrategyBase):
                     f"方向: {'做多' if side == 'long' else '做空'}\n"
                     f"数量: {qty}\n"
                     f"价格: {price:.2f}\n"
-                    f"杠杆: {self.leverage}x"
+                    f"杠杆: {self.leverage}x",
                 )
         except Exception as e:
             logger.error(f"[{self.symbol}] 开仓失败: {e}")
@@ -685,7 +708,7 @@ class DualSideStrategy(StrategyBase):
                     f"交易对: {self.symbol}\n"
                     f"方向: {'平多' if self._position_side == 'long' else '平空'}\n"
                     f"盈亏: {pnl:.4f} USDT\n"
-                    f"累计盈亏: {self.realized_pnl:.4f} USDT"
+                    f"累计盈亏: {self.realized_pnl:.4f} USDT",
                 )
 
                 # 重置状态
@@ -702,8 +725,11 @@ class DualSideStrategy(StrategyBase):
                 # 止损/止盈/移动止损触发后，按EMA趋势方向重新入场
                 # 需同时满足：fast与slow的相对位置 AND fast自身的运动方向一致
                 if reason in ("stop_loss", "take_profit", "trailing_stop"):
-                    if (self._fast_curr is not None and self._slow_curr is not None
-                            and self._fast_prev is not None):
+                    if (
+                        self._fast_curr is not None
+                        and self._slow_curr is not None
+                        and self._fast_prev is not None
+                    ):
                         fast_above_slow = self._fast_curr > self._slow_curr
                         fast_rising = self._fast_curr > self._fast_prev
                         if fast_above_slow and fast_rising:
@@ -764,7 +790,11 @@ class DualSideStrategy(StrategyBase):
         try:
             _db = SessionLocal()
             try:
-                db_s = _db.query(DBStrategy).filter(DBStrategy.id == self.strategy_id).first()
+                db_s = (
+                    _db.query(DBStrategy)
+                    .filter(DBStrategy.id == self.strategy_id)
+                    .first()
+                )
                 if db_s:
                     db_s.position_in_position = bool(self._position_side)
                     db_s.position_side = self._position_side

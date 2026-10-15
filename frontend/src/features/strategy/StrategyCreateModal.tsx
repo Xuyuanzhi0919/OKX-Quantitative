@@ -1,7 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Modal, Form, Input, Select, Divider,
-  Row, Col, Space, Tooltip, Alert, InputNumber, Switch, Spin, Button, Table, Tag, message,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Divider,
+  Row,
+  Col,
+  Space,
+  Tooltip,
+  Alert,
+  InputNumber,
+  Switch,
+  Spin,
+  Button,
+  Table,
+  Tag,
+  message,
 } from 'antd'
 import { InfoCircleOutlined, RiseOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
@@ -85,23 +100,54 @@ const STRATEGY_TYPES: { value: string; label: string; desc: string }[] = [
 // 交易对列表：合约（SWAP）优先，后接现货（SPOT）
 const DEFAULT_SYMBOLS = [
   // ── 合约（USDT 本位永续）──
-  'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
-  'XRP-USDT-SWAP', 'DOGE-USDT-SWAP', 'ADA-USDT-SWAP', 'AVAX-USDT-SWAP',
-  'LINK-USDT-SWAP', 'DOT-USDT-SWAP', 'LTC-USDT-SWAP', 'ATOM-USDT-SWAP',
-  'ETC-USDT-SWAP', 'ARB-USDT-SWAP', 'OP-USDT-SWAP', 'APT-USDT-SWAP',
-  'NEAR-USDT-SWAP', 'SUI-USDT-SWAP', 'TRX-USDT-SWAP', 'TON-USDT-SWAP',
-  'KSM-USDT-SWAP', 'INJ-USDT-SWAP', 'SEI-USDT-SWAP', 'ORDI-USDT-SWAP',
-  'WLD-USDT-SWAP', 'PEPE-USDT-SWAP',
+  'BTC-USDT-SWAP',
+  'ETH-USDT-SWAP',
+  'SOL-USDT-SWAP',
+  'BNB-USDT-SWAP',
+  'XRP-USDT-SWAP',
+  'DOGE-USDT-SWAP',
+  'ADA-USDT-SWAP',
+  'AVAX-USDT-SWAP',
+  'LINK-USDT-SWAP',
+  'DOT-USDT-SWAP',
+  'LTC-USDT-SWAP',
+  'ATOM-USDT-SWAP',
+  'ETC-USDT-SWAP',
+  'ARB-USDT-SWAP',
+  'OP-USDT-SWAP',
+  'APT-USDT-SWAP',
+  'NEAR-USDT-SWAP',
+  'SUI-USDT-SWAP',
+  'TRX-USDT-SWAP',
+  'TON-USDT-SWAP',
+  'KSM-USDT-SWAP',
+  'INJ-USDT-SWAP',
+  'SEI-USDT-SWAP',
+  'ORDI-USDT-SWAP',
+  'WLD-USDT-SWAP',
+  'PEPE-USDT-SWAP',
   // ── 现货（SPOT）──
-  'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'BNB-USDT',
-  'XRP-USDT', 'DOGE-USDT', 'ADA-USDT', 'AVAX-USDT',
-  'LINK-USDT', 'DOT-USDT', 'LTC-USDT', 'ATOM-USDT',
+  'BTC-USDT',
+  'ETH-USDT',
+  'SOL-USDT',
+  'BNB-USDT',
+  'XRP-USDT',
+  'DOGE-USDT',
+  'ADA-USDT',
+  'AVAX-USDT',
+  'LINK-USDT',
+  'DOT-USDT',
+  'LTC-USDT',
+  'ATOM-USDT',
 ]
 
 const TIMEFRAMES = [
-  { value: '1m', label: '1分钟' }, { value: '5m', label: '5分钟' },
-  { value: '15m', label: '15分钟' }, { value: '30m', label: '30分钟' },
-  { value: '1H', label: '1小时' }, { value: '4H', label: '4小时' },
+  { value: '1m', label: '1分钟' },
+  { value: '5m', label: '5分钟' },
+  { value: '15m', label: '15分钟' },
+  { value: '30m', label: '30分钟' },
+  { value: '1H', label: '1小时' },
+  { value: '4H', label: '4小时' },
   { value: '1D', label: '1天' },
 ]
 
@@ -134,12 +180,19 @@ function percentValue(value: any, fallback?: number): number | undefined {
 }
 
 const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
-  open, onCancel, onSuccess, initialType, editStrategyId, backtestData,
+  open,
+  onCancel,
+  onSuccess,
+  initialType,
+  editStrategyId,
+  backtestData,
 }) => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [topAltcoinLoading, setTopAltcoinLoading] = useState(false)
-  const [topAltcoinCandidates, setTopAltcoinCandidates] = useState<TopAltcoinStrategyCandidate[]>([])
+  const [topAltcoinCandidates, setTopAltcoinCandidates] = useState<TopAltcoinStrategyCandidate[]>(
+    [],
+  )
   const [candidateMode, setCandidateMode] = useState<'top' | 'stealth'>('stealth')
   // 记录上一次自动生成的名称，用于判断用户是否手动修改过
   const [lastAutoName, setLastAutoName] = useState('')
@@ -214,8 +267,8 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
 
   useEffect(() => {
     if (!open || form.getFieldValue('api_config_id') != null || apiConfigs.length === 0) return
-    const activeConfig = apiConfigs.find(config => config.is_active && config.is_valid)
-    const firstValidConfig = apiConfigs.find(config => config.is_valid)
+    const activeConfig = apiConfigs.find((config) => config.is_active && config.is_valid)
+    const firstValidConfig = apiConfigs.find((config) => config.is_valid)
     const defaultConfig = activeConfig ?? firstValidConfig
     if (defaultConfig) {
       form.setFieldValue('api_config_id', defaultConfig.id)
@@ -266,16 +319,17 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         agt_max_position_usd: params.max_position_usd,
         agt_leverage: params.leverage,
         agt_margin_mode: params.margin_mode,
-        agt_cooldown_minutes: params.cooldown_seconds != null
-          ? Math.round(Number(params.cooldown_seconds) / 60)
-          : undefined,
+        agt_cooldown_minutes:
+          params.cooldown_seconds != null
+            ? Math.round(Number(params.cooldown_seconds) / 60)
+            : undefined,
         agt_notify_near_trigger: params.notify_near_trigger ?? true,
-        agt_near_trigger_pct: params.near_trigger_pct != null
-          ? percentValue(params.near_trigger_pct)
-          : 0.3,
-        agt_near_trigger_cooldown_minutes: params.near_trigger_cooldown_seconds != null
-          ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
-          : 10,
+        agt_near_trigger_pct:
+          params.near_trigger_pct != null ? percentValue(params.near_trigger_pct) : 0.3,
+        agt_near_trigger_cooldown_minutes:
+          params.near_trigger_cooldown_seconds != null
+            ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
+            : 10,
         agt_fuse_enabled: riskFuse.enabled,
         agt_fuse_max_consecutive_losses: riskFuse.max_consecutive_losses,
         agt_fuse_daily_loss_pct: percentValue(riskFuse.daily_loss_limit_pct),
@@ -302,9 +356,10 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         emc_max_open_positions: params.max_open_positions,
         emc_margin_mode: params.margin_mode,
         emc_loop_interval_seconds: params.loop_interval_seconds,
-        emc_cooldown_minutes: params.cooldown_seconds != null
-          ? Math.round(Number(params.cooldown_seconds) / 60)
-          : undefined,
+        emc_cooldown_minutes:
+          params.cooldown_seconds != null
+            ? Math.round(Number(params.cooldown_seconds) / 60)
+            : undefined,
         emc_observe_first_scan: params.observe_first_scan,
         emc_use_volume_profile_filter: params.use_volume_profile_filter,
         emc_volume_profile_hours: params.volume_profile_hours,
@@ -320,19 +375,22 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   }, [backtestData, open, form])
 
   // 自动命名：监听类型和交易对，只要名称为空或等于上次自动生成的值就覆盖
-  const watchedType   = Form.useWatch('type',   form)
+  const watchedType = Form.useWatch('type', form)
   const watchedSymbol = Form.useWatch('symbol', form)
   const watchedTgmTimeframe = Form.useWatch('tgm_timeframe', form)
   const watchedEmcTimeframe = Form.useWatch('emc_timeframe', form)
   const watchedEmcVolumeProfile = Form.useWatch('emc_use_volume_profile_filter', form)
-  const isDynamicUniverse = watchedType === 'top_gainers_momentum' || watchedType === 'explosive_momentum_chaser'
+  const isDynamicUniverse =
+    watchedType === 'top_gainers_momentum' || watchedType === 'explosive_momentum_chaser'
 
-  const { data: agtRecommendation, isLoading: agtRecommendationLoading } = useQuery<AdaptiveGridTrendRecommendation>({
-    queryKey: ['adaptive-grid-trend-recommendation'],
-    queryFn: () => strategyApi.getAdaptiveGridTrendRecommendation(),
-    enabled: open && watchedType === 'adaptive_grid_trend' && !backtestData && editStrategyId == null,
-    staleTime: 60 * 1000,
-  })
+  const { data: agtRecommendation, isLoading: agtRecommendationLoading } =
+    useQuery<AdaptiveGridTrendRecommendation>({
+      queryKey: ['adaptive-grid-trend-recommendation'],
+      queryFn: () => strategyApi.getAdaptiveGridTrendRecommendation(),
+      enabled:
+        open && watchedType === 'adaptive_grid_trend' && !backtestData && editStrategyId == null,
+      staleTime: 60 * 1000,
+    })
 
   useEffect(() => {
     if (!open || backtestData || watchedType !== 'adaptive_grid_trend') return
@@ -356,7 +414,12 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   useEffect(() => {
     if (!open || backtestData || watchedType !== 'top_gainers_momentum') return
     const current = form.getFieldValue('name') ?? ''
-    if (current === '' || current === lastAutoName || current.includes('BTC') || current.includes('自适应趋势网格')) {
+    if (
+      current === '' ||
+      current === lastAutoName ||
+      current.includes('BTC') ||
+      current.includes('自适应趋势网格')
+    ) {
       form.setFieldValue('name', TOP_GAINERS_NAME)
       setLastAutoName(TOP_GAINERS_NAME)
     }
@@ -369,7 +432,12 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   useEffect(() => {
     if (!open || backtestData || watchedType !== 'explosive_momentum_chaser') return
     const current = form.getFieldValue('name') ?? ''
-    if (current === '' || current === lastAutoName || current.includes('BTC') || current.includes('自适应趋势网格')) {
+    if (
+      current === '' ||
+      current === lastAutoName ||
+      current.includes('BTC') ||
+      current.includes('自适应趋势网格')
+    ) {
       form.setFieldValue('name', EXPLOSIVE_NAME)
       setLastAutoName(EXPLOSIVE_NAME)
     }
@@ -402,7 +470,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
   }, [open, backtestData, watchedType, watchedTgmTimeframe, form])
 
   useEffect(() => {
-    if (backtestData) return   // 回测模式不覆盖
+    if (backtestData) return // 回测模式不覆盖
     const auto = buildAutoName(watchedType, watchedSymbol)
     if (!auto) return
     const current = form.getFieldValue('name') ?? ''
@@ -424,42 +492,50 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
 
   // ── 网格策略：选择交易对后自动获取24h行情填充上下界 ──
   const [gridTickerLoading, setGridTickerLoading] = useState(false)
-  const fetchGridTicker = useCallback(async (symbol: string) => {
-    if (!symbol) return
-    setGridTickerLoading(true)
-    try {
-      const ticker = await marketApi.getTicker(symbol)
-      if (ticker) {
-        const last = parseFloat(ticker.last || '0')
-        const high24h = parseFloat(ticker.high24h || '0')
-        const low24h = parseFloat(ticker.low24h || '0')
+  const fetchGridTicker = useCallback(
+    async (symbol: string) => {
+      if (!symbol) return
+      setGridTickerLoading(true)
+      try {
+        const ticker = await marketApi.getTicker(symbol)
+        if (ticker) {
+          const last = parseFloat(ticker.last || '0')
+          const high24h = parseFloat(ticker.high24h || '0')
+          const low24h = parseFloat(ticker.low24h || '0')
 
-        if (last > 0 && high24h > 0 && low24h > 0) {
-          // 以24h高低价为基础，向外扩展一定比例作为网格范围
-          const range = high24h - low24h
-          const padding = range * 0.2 // 上下各扩展20%
-          const lower = Math.max(0, low24h - padding)
-          const upper = high24h + padding
+          if (last > 0 && high24h > 0 && low24h > 0) {
+            // 以24h高低价为基础，向外扩展一定比例作为网格范围
+            const range = high24h - low24h
+            const padding = range * 0.2 // 上下各扩展20%
+            const lower = Math.max(0, low24h - padding)
+            const upper = high24h + padding
 
-          // 根据价格量级决定小数位数
-          const decimals = last >= 1000 ? 1 : last >= 10 ? 2 : last >= 1 ? 4 : 6
-          form.setFieldsValue({
-            grid_price_lower: parseFloat(lower.toFixed(decimals)),
-            grid_price_upper: parseFloat(upper.toFixed(decimals)),
-          })
+            // 根据价格量级决定小数位数
+            const decimals = last >= 1000 ? 1 : last >= 10 ? 2 : last >= 1 ? 4 : 6
+            form.setFieldsValue({
+              grid_price_lower: parseFloat(lower.toFixed(decimals)),
+              grid_price_upper: parseFloat(upper.toFixed(decimals)),
+            })
+          }
         }
+      } catch (e) {
+        // 获取失败不阻塞用户操作
+      } finally {
+        setGridTickerLoading(false)
       }
-    } catch (e) {
-      // 获取失败不阻塞用户操作
-    } finally {
-      setGridTickerLoading(false)
-    }
-  }, [form])
+    },
+    [form],
+  )
 
   // 监听交易对变化：如果是网格类型，切换交易对时自动重新获取价格
   const [prevGridSymbol, setPrevGridSymbol] = useState<string>('')
   useEffect(() => {
-    if (watchedType === 'grid' && watchedSymbol && !backtestData && watchedSymbol !== prevGridSymbol) {
+    if (
+      watchedType === 'grid' &&
+      watchedSymbol &&
+      !backtestData &&
+      watchedSymbol !== prevGridSymbol
+    ) {
       setPrevGridSymbol(watchedSymbol)
       form.setFieldsValue({ grid_price_lower: undefined, grid_price_upper: undefined })
       fetchGridTicker(watchedSymbol)
@@ -487,50 +563,49 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
       // 构建策略参数（根据策略类型提取对应字段）
       const parameters: Record<string, any> = {}
       if (values.type === 'trend') {
-        parameters.position_ratio  = (values.position_ratio ?? 40) / 100   // 百分比 → 小数
-        parameters.stop_loss       = (values.stop_loss ?? 3) / 100
-        parameters.take_profit     = (values.take_profit ?? 8) / 100
-        parameters.use_rsi_filter  = values.use_rsi_filter ?? true
-        parameters.leverage        = values.leverage ?? 10
-        parameters.trailing_stop   = values.use_trailing_stop
-          ? (values.trailing_stop ?? 2) / 100
-          : 0  // 0 表示禁用移动止损，使用固定止损
+        parameters.position_ratio = (values.position_ratio ?? 40) / 100 // 百分比 → 小数
+        parameters.stop_loss = (values.stop_loss ?? 3) / 100
+        parameters.take_profit = (values.take_profit ?? 8) / 100
+        parameters.use_rsi_filter = values.use_rsi_filter ?? true
+        parameters.leverage = values.leverage ?? 10
+        parameters.trailing_stop = values.use_trailing_stop ? (values.trailing_stop ?? 2) / 100 : 0 // 0 表示禁用移动止损，使用固定止损
         // fast_period / slow_period 使用策略内置最优值（12/40），不对外暴露
       } else if (values.type === 'dual_side') {
         // 双向持仓策略参数
-        parameters.position_ratio  = (values.dual_position_ratio ?? 30) / 100
-        parameters.leverage        = values.dual_leverage ?? 5
-        parameters.stop_loss       = (values.dual_stop_loss ?? 2) / 100
-        parameters.take_profit     = (values.dual_take_profit ?? 6) / 100
-        parameters.trailing_stop   = values.use_dual_trailing_stop
+        parameters.position_ratio = (values.dual_position_ratio ?? 30) / 100
+        parameters.leverage = values.dual_leverage ?? 5
+        parameters.stop_loss = (values.dual_stop_loss ?? 2) / 100
+        parameters.take_profit = (values.dual_take_profit ?? 6) / 100
+        parameters.trailing_stop = values.use_dual_trailing_stop
           ? (values.dual_trailing_stop ?? 2) / 100
-          : 0.02  // 默认启用2%移动止损
-        parameters.timeframe       = values.dual_timeframe ?? '15m'
+          : 0.02 // 默认启用2%移动止损
+        parameters.timeframe = values.dual_timeframe ?? '15m'
       } else if (values.type === 'grid') {
-        parameters.price_upper   = values.grid_price_upper
-        parameters.price_lower   = values.grid_price_lower
-        parameters.grid_count    = values.grid_count ?? 10
-        parameters.total_amount  = values.grid_total_amount ?? 100
-        parameters.leverage      = values.grid_leverage ?? 1
-        parameters.stop_loss     = (values.grid_stop_loss ?? 5) / 100
+        parameters.price_upper = values.grid_price_upper
+        parameters.price_lower = values.grid_price_lower
+        parameters.grid_count = values.grid_count ?? 10
+        parameters.total_amount = values.grid_total_amount ?? 100
+        parameters.leverage = values.grid_leverage ?? 1
+        parameters.stop_loss = (values.grid_stop_loss ?? 5) / 100
       } else if (values.type === 'adaptive_grid_trend') {
-        parameters.direction                = values.agt_direction ?? 'both'
-        parameters.trend_timeframe          = values.agt_timeframe ?? '15m'
-        parameters.fast_period              = values.agt_fast_period ?? 30
-        parameters.slow_period              = values.agt_slow_period ?? 60
-        parameters.atr_period               = values.agt_atr_period ?? 14
-        parameters.entry_atr_multiple       = values.agt_entry_atr_multiple ?? 0.6
-        parameters.stop_atr_multiple        = values.agt_stop_atr_multiple ?? 2.8
+        parameters.direction = values.agt_direction ?? 'both'
+        parameters.trend_timeframe = values.agt_timeframe ?? '15m'
+        parameters.fast_period = values.agt_fast_period ?? 30
+        parameters.slow_period = values.agt_slow_period ?? 60
+        parameters.atr_period = values.agt_atr_period ?? 14
+        parameters.entry_atr_multiple = values.agt_entry_atr_multiple ?? 0.6
+        parameters.stop_atr_multiple = values.agt_stop_atr_multiple ?? 2.8
         parameters.take_profit_atr_multiple = values.agt_take_profit_atr_multiple ?? 3.2
-        parameters.risk_per_trade           = (values.agt_risk_per_trade ?? 2) / 100
-        parameters.max_position_usd         = values.agt_max_position_usd ?? 800
-        parameters.leverage                 = values.agt_leverage ?? 5
-        parameters.margin_mode              = values.agt_margin_mode ?? 'isolated'
-        parameters.cooldown_seconds         = (values.agt_cooldown_minutes ?? 60) * 60
-        parameters.notify_near_trigger      = values.agt_notify_near_trigger ?? true
-        parameters.near_trigger_pct         = (values.agt_near_trigger_pct ?? 0.3) / 100
-        parameters.near_trigger_cooldown_seconds = (values.agt_near_trigger_cooldown_minutes ?? 10) * 60
-        parameters.risk_fuse                = {
+        parameters.risk_per_trade = (values.agt_risk_per_trade ?? 2) / 100
+        parameters.max_position_usd = values.agt_max_position_usd ?? 800
+        parameters.leverage = values.agt_leverage ?? 5
+        parameters.margin_mode = values.agt_margin_mode ?? 'isolated'
+        parameters.cooldown_seconds = (values.agt_cooldown_minutes ?? 60) * 60
+        parameters.notify_near_trigger = values.agt_notify_near_trigger ?? true
+        parameters.near_trigger_pct = (values.agt_near_trigger_pct ?? 0.3) / 100
+        parameters.near_trigger_cooldown_seconds =
+          (values.agt_near_trigger_cooldown_minutes ?? 10) * 60
+        parameters.risk_fuse = {
           enabled: values.agt_fuse_enabled ?? true,
           max_consecutive_losses: values.agt_fuse_max_consecutive_losses ?? 2,
           daily_loss_limit_pct: (values.agt_fuse_daily_loss_pct ?? 3) / 100,
@@ -543,43 +618,45 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         }
       } else if (values.type === 'arbitrage') {
         const baseSymbol = String(values.symbol || 'BTC-USDT-SWAP').replace(/-SWAP$/, '')
-        parameters.spot_symbol          = values.arb_spot_symbol || baseSymbol
-        parameters.perp_symbol          = values.arb_perp_symbol || `${baseSymbol}-SWAP`
-        parameters.target_notional_usd  = values.arb_target_notional_usd ?? 100
-        parameters.max_notional_usd     = values.arb_max_notional_usd ?? values.arb_target_notional_usd ?? 100
-        parameters.open_edge_threshold  = (values.arb_open_edge_pct ?? 0.3) / 100
+        parameters.spot_symbol = values.arb_spot_symbol || baseSymbol
+        parameters.perp_symbol = values.arb_perp_symbol || `${baseSymbol}-SWAP`
+        parameters.target_notional_usd = values.arb_target_notional_usd ?? 100
+        parameters.max_notional_usd =
+          values.arb_max_notional_usd ?? values.arb_target_notional_usd ?? 100
+        parameters.open_edge_threshold = (values.arb_open_edge_pct ?? 0.3) / 100
         parameters.close_edge_threshold = (values.arb_close_edge_pct ?? 0.08) / 100
-        parameters.min_net_edge         = (values.arb_min_net_edge_pct ?? 0.15) / 100
-        parameters.fee_buffer           = (values.arb_fee_buffer_pct ?? 0.12) / 100
-        parameters.slippage_buffer      = (values.arb_slippage_buffer_pct ?? 0.08) / 100
-        parameters.poll_interval        = values.arb_poll_interval ?? 1
-        parameters.leverage             = values.arb_leverage ?? 1
-        parameters.margin_mode          = values.arb_margin_mode ?? 'isolated'
-        parameters.close_on_stop        = values.arb_close_on_stop ?? false
+        parameters.min_net_edge = (values.arb_min_net_edge_pct ?? 0.15) / 100
+        parameters.fee_buffer = (values.arb_fee_buffer_pct ?? 0.12) / 100
+        parameters.slippage_buffer = (values.arb_slippage_buffer_pct ?? 0.08) / 100
+        parameters.poll_interval = values.arb_poll_interval ?? 1
+        parameters.leverage = values.arb_leverage ?? 1
+        parameters.margin_mode = values.arb_margin_mode ?? 'isolated'
+        parameters.close_on_stop = values.arb_close_on_stop ?? false
       } else if (values.type === 'top_gainers_momentum') {
-        parameters.mode                 = 'live_trading'
-        parameters.universe             = 'okx_usdt_swap_top_gainers'
-        parameters.direction            = values.tgm_direction ?? 'both'
-        parameters.top_n                = values.tgm_top_n ?? 3
-        parameters.timeframe            = values.tgm_timeframe ?? '15m'
-        parameters.initial_capital      = values.tgm_initial_capital ?? 1000
-        parameters.lookback_hours       = values.tgm_lookback_hours ?? 24
-        parameters.risk_per_trade       = (values.tgm_risk_per_trade ?? 3.5) / 100
-        parameters.max_leverage         = values.tgm_max_leverage ?? 7
-        parameters.max_position_usd     = values.tgm_max_position_usd ?? 300
-        parameters.max_total_position_usd = values.tgm_max_total_position_usd ?? values.tgm_max_position_usd ?? 300
-        parameters.max_open_positions   = values.tgm_max_open_positions ?? 1
-        parameters.margin_mode          = values.tgm_margin_mode ?? 'isolated'
+        parameters.mode = 'live_trading'
+        parameters.universe = 'okx_usdt_swap_top_gainers'
+        parameters.direction = values.tgm_direction ?? 'both'
+        parameters.top_n = values.tgm_top_n ?? 3
+        parameters.timeframe = values.tgm_timeframe ?? '15m'
+        parameters.initial_capital = values.tgm_initial_capital ?? 1000
+        parameters.lookback_hours = values.tgm_lookback_hours ?? 24
+        parameters.risk_per_trade = (values.tgm_risk_per_trade ?? 3.5) / 100
+        parameters.max_leverage = values.tgm_max_leverage ?? 7
+        parameters.max_position_usd = values.tgm_max_position_usd ?? 300
+        parameters.max_total_position_usd =
+          values.tgm_max_total_position_usd ?? values.tgm_max_position_usd ?? 300
+        parameters.max_open_positions = values.tgm_max_open_positions ?? 1
+        parameters.margin_mode = values.tgm_margin_mode ?? 'isolated'
         parameters.loop_interval_seconds = values.tgm_loop_interval_seconds ?? 60
-        parameters.cooldown_seconds     = (values.tgm_cooldown_minutes ?? 15) * 60
-        parameters.observe_first_scan   = values.tgm_observe_first_scan ?? true
-        parameters.use_attached_tp_sl   = values.tgm_use_attached_tp_sl ?? true
+        parameters.cooldown_seconds = (values.tgm_cooldown_minutes ?? 15) * 60
+        parameters.observe_first_scan = values.tgm_observe_first_scan ?? true
+        parameters.use_attached_tp_sl = values.tgm_use_attached_tp_sl ?? true
         parameters.close_when_out_of_top = values.tgm_close_when_out_of_top ?? false
-        parameters.stop_atr             = values.tgm_stop_atr ?? 2.1
-        parameters.take_profit_r        = values.tgm_take_profit_r ?? 2
-        parameters.trailing_atr         = values.tgm_trailing_atr ?? 1.8
-        parameters.min_24h_change_pct   = values.tgm_min_24h_change_pct ?? 0
-        parameters.risk_fuse            = {
+        parameters.stop_atr = values.tgm_stop_atr ?? 2.1
+        parameters.take_profit_r = values.tgm_take_profit_r ?? 2
+        parameters.trailing_atr = values.tgm_trailing_atr ?? 1.8
+        parameters.min_24h_change_pct = values.tgm_min_24h_change_pct ?? 0
+        parameters.risk_fuse = {
           enabled: true,
           max_consecutive_losses: values.tgm_fuse_max_consecutive_losses ?? 2,
           daily_loss_limit_pct: (values.tgm_fuse_daily_loss_pct ?? 8) / 100,
@@ -589,33 +666,34 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
           risk_base_usd: values.tgm_initial_capital ?? 1000,
         }
       } else if (values.type === 'explosive_momentum_chaser') {
-        parameters.mode                  = 'sim_first_live_capable'
-        parameters.universe              = 'okx_usdt_swap_liquid_intraday'
-        parameters.timeframe             = values.emc_timeframe ?? '1H'
-        parameters.rank_feature          = values.emc_rank_feature ?? 'ret_1h'
-        parameters.hold_hours            = values.emc_hold_hours ?? 4
-        parameters.top_n                 = values.emc_top_n ?? 1
-        parameters.min_signal            = (values.emc_min_signal_pct ?? 6) / 100
-        parameters.min_gap               = (values.emc_min_gap_pct ?? 1) / 100
-        parameters.min_vol_ratio         = values.emc_min_vol_ratio ?? 1.2
-        parameters.stop_loss_pct         = (values.emc_stop_loss_pct ?? 4) / 100
-        parameters.market_filter         = values.emc_market_filter ?? 'btc_4h_positive'
-        parameters.universe_size         = values.emc_universe_size ?? 50
-        parameters.max_leverage          = values.emc_max_leverage ?? 3
-        parameters.max_position_usd      = values.emc_max_position_usd ?? 300
-        parameters.max_total_position_usd = values.emc_max_total_position_usd ?? values.emc_max_position_usd ?? 300
-        parameters.max_open_positions    = values.emc_max_open_positions ?? 1
-        parameters.margin_mode           = values.emc_margin_mode ?? 'isolated'
+        parameters.mode = 'sim_first_live_capable'
+        parameters.universe = 'okx_usdt_swap_liquid_intraday'
+        parameters.timeframe = values.emc_timeframe ?? '1H'
+        parameters.rank_feature = values.emc_rank_feature ?? 'ret_1h'
+        parameters.hold_hours = values.emc_hold_hours ?? 4
+        parameters.top_n = values.emc_top_n ?? 1
+        parameters.min_signal = (values.emc_min_signal_pct ?? 6) / 100
+        parameters.min_gap = (values.emc_min_gap_pct ?? 1) / 100
+        parameters.min_vol_ratio = values.emc_min_vol_ratio ?? 1.2
+        parameters.stop_loss_pct = (values.emc_stop_loss_pct ?? 4) / 100
+        parameters.market_filter = values.emc_market_filter ?? 'btc_4h_positive'
+        parameters.universe_size = values.emc_universe_size ?? 50
+        parameters.max_leverage = values.emc_max_leverage ?? 3
+        parameters.max_position_usd = values.emc_max_position_usd ?? 300
+        parameters.max_total_position_usd =
+          values.emc_max_total_position_usd ?? values.emc_max_position_usd ?? 300
+        parameters.max_open_positions = values.emc_max_open_positions ?? 1
+        parameters.margin_mode = values.emc_margin_mode ?? 'isolated'
         parameters.loop_interval_seconds = values.emc_loop_interval_seconds ?? 60
-        parameters.cooldown_seconds      = (values.emc_cooldown_minutes ?? 240) * 60
-        parameters.observe_first_scan    = values.emc_observe_first_scan ?? true
-        parameters.use_attached_tp_sl     = true
+        parameters.cooldown_seconds = (values.emc_cooldown_minutes ?? 240) * 60
+        parameters.observe_first_scan = values.emc_observe_first_scan ?? true
+        parameters.use_attached_tp_sl = true
         parameters.use_volume_profile_filter = values.emc_use_volume_profile_filter ?? false
-        parameters.volume_profile_hours  = values.emc_volume_profile_hours ?? 8
-        parameters.volume_profile_bins   = values.emc_volume_profile_bins ?? 48
-        parameters.volume_profile_level  = values.emc_volume_profile_level ?? 'poc'
+        parameters.volume_profile_hours = values.emc_volume_profile_hours ?? 8
+        parameters.volume_profile_bins = values.emc_volume_profile_bins ?? 48
+        parameters.volume_profile_level = values.emc_volume_profile_level ?? 'poc'
         parameters.max_high_pullback_pct = (values.emc_max_high_pullback_pct ?? 2) / 100
-        parameters.risk_fuse             = {
+        parameters.risk_fuse = {
           enabled: true,
           max_consecutive_losses: values.emc_fuse_max_consecutive_losses ?? 2,
           daily_loss_limit_pct: (values.emc_fuse_daily_loss_pct ?? 20) / 100,
@@ -629,18 +707,29 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
       const payload = {
         name: values.name,
         type: values.type as any,
-        symbol: values.type === 'top_gainers_momentum' ? TOP_GAINERS_SYMBOL
-               : values.type === 'explosive_momentum_chaser' ? EXPLOSIVE_SYMBOL
-               : values.symbol,
+        symbol:
+          values.type === 'top_gainers_momentum'
+            ? TOP_GAINERS_SYMBOL
+            : values.type === 'explosive_momentum_chaser'
+              ? EXPLOSIVE_SYMBOL
+              : values.symbol,
         api_config_id: values.api_config_id,
-        timeframe: values.type === 'trend' ? '15m'
-                 : values.type === 'dual_side' ? (values.dual_timeframe ?? '15m')
-                 : values.type === 'grid' ? '1m'
-                 : values.type === 'adaptive_grid_trend' ? (values.agt_timeframe ?? '15m')
-                 : values.type === 'arbitrage' ? '1m'
-                 : values.type === 'top_gainers_momentum' ? (values.tgm_timeframe ?? '15m')
-                 : values.type === 'explosive_momentum_chaser' ? (values.emc_timeframe ?? '1H')
-                 : (values.timeframe ?? '1H'),
+        timeframe:
+          values.type === 'trend'
+            ? '15m'
+            : values.type === 'dual_side'
+              ? (values.dual_timeframe ?? '15m')
+              : values.type === 'grid'
+                ? '1m'
+                : values.type === 'adaptive_grid_trend'
+                  ? (values.agt_timeframe ?? '15m')
+                  : values.type === 'arbitrage'
+                    ? '1m'
+                    : values.type === 'top_gainers_momentum'
+                      ? (values.tgm_timeframe ?? '15m')
+                      : values.type === 'explosive_momentum_chaser'
+                        ? (values.emc_timeframe ?? '1H')
+                        : (values.timeframe ?? '1H'),
         parameters,
         description: values.description,
       } as any
@@ -660,11 +749,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
     }
   }
 
-  const handleCancel = () => { form.resetFields(); onCancel() }
+  const handleCancel = () => {
+    form.resetFields()
+    onCancel()
+  }
 
   const applyAdaptiveGridTrendRecommendation = (
     item: AdaptiveGridTrendRecommendationItem,
-    groupLabel: string
+    groupLabel: string,
   ) => {
     const params = agtRecommendation?.params || {}
     const coin = extractCoin(item.symbol)
@@ -684,12 +776,15 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
       agt_max_position_usd: params.max_position_usd ?? 800,
       agt_leverage: params.leverage ?? 5,
       agt_margin_mode: params.margin_mode ?? 'isolated',
-      agt_cooldown_minutes: params.cooldown_seconds != null ? Math.round(Number(params.cooldown_seconds) / 60) : 60,
+      agt_cooldown_minutes:
+        params.cooldown_seconds != null ? Math.round(Number(params.cooldown_seconds) / 60) : 60,
       agt_notify_near_trigger: params.notify_near_trigger ?? true,
-      agt_near_trigger_pct: params.near_trigger_pct != null ? percentValue(params.near_trigger_pct, 0.3) : 0.3,
-      agt_near_trigger_cooldown_minutes: params.near_trigger_cooldown_seconds != null
-        ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
-        : 10,
+      agt_near_trigger_pct:
+        params.near_trigger_pct != null ? percentValue(params.near_trigger_pct, 0.3) : 0.3,
+      agt_near_trigger_cooldown_minutes:
+        params.near_trigger_cooldown_seconds != null
+          ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
+          : 10,
       agt_fuse_enabled: params.risk_fuse?.enabled ?? true,
       agt_fuse_max_consecutive_losses: params.risk_fuse?.max_consecutive_losses ?? 2,
       agt_fuse_daily_loss_pct: percentValue(params.risk_fuse?.daily_loss_limit_pct, 3),
@@ -723,12 +818,16 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
       agt_max_position_usd: params.max_position_usd,
       agt_leverage: params.leverage,
       agt_margin_mode: params.margin_mode,
-      agt_cooldown_minutes: params.cooldown_seconds != null ? Math.round(Number(params.cooldown_seconds) / 60) : undefined,
+      agt_cooldown_minutes:
+        params.cooldown_seconds != null
+          ? Math.round(Number(params.cooldown_seconds) / 60)
+          : undefined,
       agt_notify_near_trigger: params.notify_near_trigger,
       agt_near_trigger_pct: percentValue(params.near_trigger_pct),
-      agt_near_trigger_cooldown_minutes: params.near_trigger_cooldown_seconds != null
-        ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
-        : undefined,
+      agt_near_trigger_cooldown_minutes:
+        params.near_trigger_cooldown_seconds != null
+          ? Math.round(Number(params.near_trigger_cooldown_seconds) / 60)
+          : undefined,
       agt_fuse_enabled: params.risk_fuse?.enabled,
       agt_fuse_max_consecutive_losses: params.risk_fuse?.max_consecutive_losses,
       agt_fuse_daily_loss_pct: percentValue(params.risk_fuse?.daily_loss_limit_pct),
@@ -948,19 +1047,31 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         }}
       >
         {/* ── 基础信息 ── */}
-        <Divider orientation="left" style={compactDivider}>基础信息</Divider>
+        <Divider orientation="left" style={compactDivider}>
+          基础信息
+        </Divider>
         <Row gutter={12}>
           <Col span={24}>
-            <Form.Item name="name" label="策略名称" rules={[{ required: true, message: '请输入策略名称' }]} style={compactItem}>
+            <Form.Item
+              name="name"
+              label="策略名称"
+              rules={[{ required: true, message: '请输入策略名称' }]}
+              style={compactItem}
+            >
               <Input placeholder="为策略起一个名字，如：BTC网格01" />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="type" label="策略类型" rules={[{ required: true, message: '请选择策略类型' }]} style={compactItem}>
+            <Form.Item
+              name="type"
+              label="策略类型"
+              rules={[{ required: true, message: '请选择策略类型' }]}
+              style={compactItem}
+            >
               <Select
                 placeholder={noTypes ? '暂无可用策略类型' : '选择策略类型'}
                 disabled={noTypes && !backtestData}
-                options={STRATEGY_TYPES.map(t => ({ value: t.value, label: t.label }))}
+                options={STRATEGY_TYPES.map((t) => ({ value: t.value, label: t.label }))}
               />
             </Form.Item>
           </Col>
@@ -974,7 +1085,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Select
                 loading={apiConfigsLoading}
                 placeholder="选择实盘或模拟盘账户"
-                options={apiConfigs.map(config => ({
+                options={apiConfigs.map((config) => ({
                   value: config.id,
                   label: `${config.name} · ${config.is_simulated ? '模拟盘' : '实盘'}${config.is_valid ? '' : ' · 无效'}`,
                   disabled: !config.is_valid,
@@ -986,8 +1097,10 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
             <Col span={12}>
               <Form.Item name="timeframe" label="K线周期" style={compactItem}>
                 <Select placeholder="选择周期">
-                  {TIMEFRAMES.map(tf => (
-                    <Select.Option key={tf.value} value={tf.value}>{tf.label}</Select.Option>
+                  {TIMEFRAMES.map((tf) => (
+                    <Select.Option key={tf.value} value={tf.value}>
+                      {tf.label}
+                    </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -999,10 +1112,13 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               label={
                 <Space size={4}>
                   交易对
-                  <Tooltip title={isDynamicUniverse
-                    ? '动态策略会自动从OKX USDT永续池选择币种，这里只保存动态池占位符'
-                    : '合约策略请选择 XXX-USDT-SWAP 格式；现货策略请选择 XXX-USDT 格式'
-                  }>
+                  <Tooltip
+                    title={
+                      isDynamicUniverse
+                        ? '动态策略会自动从OKX USDT永续池选择币种，这里只保存动态池占位符'
+                        : '合约策略请选择 XXX-USDT-SWAP 格式；现货策略请选择 XXX-USDT 格式'
+                    }
+                  >
                     <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 13 }} />
                   </Tooltip>
                 </Space>
@@ -1015,12 +1131,17 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 allowClear
                 disabled={isDynamicUniverse}
                 loading={isDynamicUniverse ? false : symbolsLoading}
-                placeholder={isDynamicUniverse
-                  ? '动态OKX USDT永续池'
-                  : symbolsLoading ? '加载交易对中...' : '搜索交易对，如 BTC-USDT-SWAP'
+                placeholder={
+                  isDynamicUniverse
+                    ? '动态OKX USDT永续池'
+                    : symbolsLoading
+                      ? '加载交易对中...'
+                      : '搜索交易对，如 BTC-USDT-SWAP'
                 }
                 filterOption={(input, option) =>
-                  String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                  String(option?.value ?? '')
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
                 }
               >
                 {selectedType === 'top_gainers_momentum' && (
@@ -1035,13 +1156,21 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 )}
                 <Select.OptGroup label="合约（SWAP）">
                   {(availableSymbols ?? DEFAULT_SYMBOLS)
-                    .filter(s => s.endsWith('-SWAP'))
-                    .map(s => <Select.Option key={s} value={s}>{s}</Select.Option>)}
+                    .filter((s) => s.endsWith('-SWAP'))
+                    .map((s) => (
+                      <Select.Option key={s} value={s}>
+                        {s}
+                      </Select.Option>
+                    ))}
                 </Select.OptGroup>
                 <Select.OptGroup label="现货（SPOT）">
                   {(availableSymbols ?? DEFAULT_SYMBOLS)
-                    .filter(s => !s.endsWith('-SWAP'))
-                    .map(s => <Select.Option key={s} value={s}>{s}</Select.Option>)}
+                    .filter((s) => !s.endsWith('-SWAP'))
+                    .map((s) => (
+                      <Select.Option key={s} value={s}>
+                        {s}
+                      </Select.Option>
+                    ))}
                 </Select.OptGroup>
               </Select>
             </Form.Item>
@@ -1050,7 +1179,9 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
 
         {!editStrategyId && !backtestData && !isDynamicUniverse && (
           <>
-            <Divider orientation="left" style={compactDivider}>候选分析</Divider>
+            <Divider orientation="left" style={compactDivider}>
+              候选分析
+            </Divider>
             {selectedType === 'adaptive_grid_trend' && (
               <Alert
                 message={
@@ -1063,7 +1194,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                     <Space direction="vertical" size={6} style={{ width: '100%' }}>
                       <Space wrap>
                         <span style={{ color: '#595959' }}>建议运行</span>
-                        {(agtRecommendation?.active || []).map(item => (
+                        {(agtRecommendation?.active || []).map((item) => (
                           <Button
                             key={item.symbol}
                             size="small"
@@ -1076,7 +1207,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                       </Space>
                       <Space wrap>
                         <span style={{ color: '#595959' }}>观察候选</span>
-                        {(agtRecommendation?.watch || []).map(item => (
+                        {(agtRecommendation?.watch || []).map((item) => (
                           <Button
                             key={item.symbol}
                             size="small"
@@ -1088,7 +1219,7 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                       </Space>
                       <Space wrap>
                         <span style={{ color: '#595959' }}>暂缓</span>
-                        {(agtRecommendation?.excluded || []).map(item => (
+                        {(agtRecommendation?.excluded || []).map((item) => (
                           <Tag key={item.symbol} color="default">
                             {item.symbol.replace('-USDT-SWAP', '')}
                           </Tag>
@@ -1104,9 +1235,10 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               />
             )}
             <Alert
-              message={candidateMode === 'stealth'
-                ? '筛选成交量足够、涨幅未过热、价格位置偏低的潜伏候选，分析后可一键套用推荐策略。'
-                : '选择OKX USDT永续24h涨幅榜前五山寨币，分析后可一键套用推荐策略。'
+              message={
+                candidateMode === 'stealth'
+                  ? '筛选成交量足够、涨幅未过热、价格位置偏低的潜伏候选，分析后可一键套用推荐策略。'
+                  : '选择OKX USDT永续24h涨幅榜前五山寨币，分析后可一键套用推荐策略。'
               }
               type="info"
               showIcon
@@ -1151,13 +1283,19 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                     title: '涨幅',
                     dataIndex: 'change_pct',
                     width: 80,
-                    render: (value) => <span style={{ color: '#16a34a' }}>{Number(value).toFixed(2)}%</span>,
+                    render: (value) => (
+                      <span style={{ color: '#16a34a' }}>{Number(value).toFixed(2)}%</span>
+                    ),
                   },
                   {
                     title: '决策',
                     dataIndex: ['analysis', 'decision'],
                     width: 80,
-                    render: (value) => <Tag color={decisionColor[value] || 'default'}>{decisionText[value] || value}</Tag>,
+                    render: (value) => (
+                      <Tag color={decisionColor[value] || 'default'}>
+                        {decisionText[value] || value}
+                      </Tag>
+                    ),
                   },
                   {
                     title: '信心',
@@ -1174,7 +1312,11 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                     title: '',
                     width: 72,
                     render: (_, record) => (
-                      <Button size="small" type="link" onClick={() => applyStrategyRecommendation(record)}>
+                      <Button
+                        size="small"
+                        type="link"
+                        onClick={() => applyStrategyRecommendation(record)}
+                      >
                         套用
                       </Button>
                     ),
@@ -1204,7 +1346,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="position_ratio"
-                  label={<Space size={4}>仓位比例(%)<Tooltip title="每次开仓占可用余额的百分比"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      仓位比例(%)
+                      <Tooltip title="每次开仓占可用余额的百分比">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={5} max={90} step={5} suffix="%" style={{ width: '100%' }} />
@@ -1214,7 +1363,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="use_trailing_stop"
-                  label={<Space size={4}>移动止损<Tooltip title="开启后：止损价随价格上涨自动上移，锁住浮动盈利，避免利润回吐。开启后固定止损失效"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      移动止损
+                      <Tooltip title="开启后：止损价随价格上涨自动上移，锁住浮动盈利，避免利润回吐。开启后固定止损失效">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   valuePropName="checked"
                 >
@@ -1225,27 +1381,60 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 <Col span={8}>
                   <Form.Item
                     name="trailing_stop"
-                    label={<Space size={4}>回撤幅度(%)<Tooltip title="价格从最高点回撤此比例时触发止损。建议 1.5~3%，兼顾锁利与持续性"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                    label={
+                      <Space size={4}>
+                        回撤幅度(%)
+                        <Tooltip title="价格从最高点回撤此比例时触发止损。建议 1.5~3%，兼顾锁利与持续性">
+                          <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                        </Tooltip>
+                      </Space>
+                    }
                     style={compactItem}
                   >
-                    <InputNumber min={0.5} max={10} step={0.5} suffix="%" style={{ width: '100%' }} />
+                    <InputNumber
+                      min={0.5}
+                      max={10}
+                      step={0.5}
+                      suffix="%"
+                      style={{ width: '100%' }}
+                    />
                   </Form.Item>
                 </Col>
               ) : (
                 <Col span={8}>
                   <Form.Item
                     name="stop_loss"
-                    label={<Space size={4}>固定止损(%)<Tooltip title="持仓亏损达到此比例时触发市价平仓（相对开仓价）"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                    label={
+                      <Space size={4}>
+                        固定止损(%)
+                        <Tooltip title="持仓亏损达到此比例时触发市价平仓（相对开仓价）">
+                          <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                        </Tooltip>
+                      </Space>
+                    }
                     style={compactItem}
                   >
-                    <InputNumber min={0.1} max={20} step={0.5} suffix="%" style={{ width: '100%' }} />
+                    <InputNumber
+                      min={0.1}
+                      max={20}
+                      step={0.5}
+                      suffix="%"
+                      style={{ width: '100%' }}
+                    />
                   </Form.Item>
                 </Col>
               )}
               <Col span={8}>
                 <Form.Item
                   name="take_profit"
-                  label={<Space size={4}>止盈(%)<Tooltip title="持仓盈利达到此比例时触发市价平仓（实时价格）"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止盈(%)
+                      <Tooltip title="持仓盈利达到此比例时触发市价平仓（实时价格）">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={50} step={1} suffix="%" style={{ width: '100%' }} />
@@ -1254,7 +1443,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="leverage"
-                  label={<Space size={4}>杠杆倍数<Tooltip title="合约杠杆倍数，策略启动时自动设置到交易所。趋势策略建议 5~20x，过高容易强平"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      杠杆倍数
+                      <Tooltip title="合约杠杆倍数，策略启动时自动设置到交易所。趋势策略建议 5~20x，过高容易强平">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={100} step={1} suffix="x" style={{ width: '100%' }} />
@@ -1263,7 +1459,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={16}>
                 <Form.Item
                   name="use_rsi_filter"
-                  label={<Space size={4}>RSI 超买过滤<Tooltip title="开启后：金叉信号出现时如果 RSI14 ≥ 65（超买区），则跳过本次开仓。回测验证可将收益从 +3.2% 提升到 +7.7%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      RSI 超买过滤
+                      <Tooltip title="开启后：金叉信号出现时如果 RSI14 ≥ 65（超买区），则跳过本次开仓。回测验证可将收益从 +3.2% 提升到 +7.7%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   valuePropName="checked"
                 >
@@ -1271,7 +1474,6 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 </Form.Item>
               </Col>
             </Row>
-
           </>
         )}
 
@@ -1294,7 +1496,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="dual_position_ratio"
-                  label={<Space size={4}>仓位比例(%)<Tooltip title="每次开仓占可用余额的百分比，建议30%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      仓位比例(%)
+                      <Tooltip title="每次开仓占可用余额的百分比，建议30%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   initialValue={30}
                 >
@@ -1304,7 +1513,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="dual_leverage"
-                  label={<Space size={4}>杠杆倍数<Tooltip title="建议3x-5x低杠杆，控制风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      杠杆倍数
+                      <Tooltip title="建议3x-5x低杠杆，控制风险">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   initialValue={5}
                 >
@@ -1314,7 +1530,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="dual_stop_loss"
-                  label={<Space size={4}>止损(%)<Tooltip title="亏损达到此比例时平仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止损(%)
+                      <Tooltip title="亏损达到此比例时平仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   initialValue={2}
                 >
@@ -1324,7 +1547,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="dual_take_profit"
-                  label={<Space size={4}>止盈(%)<Tooltip title="盈利达到此比例时平仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止盈(%)
+                      <Tooltip title="盈利达到此比例时平仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   initialValue={6}
                 >
@@ -1334,7 +1564,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="use_dual_trailing_stop"
-                  label={<Space size={4}>移动止损<Tooltip title="开启后止损价随价格移动，锁定盈利"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      移动止损
+                      <Tooltip title="开启后止损价随价格移动，锁定盈利">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   valuePropName="checked"
                   initialValue={true}
@@ -1345,7 +1582,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="dual_trailing_stop"
-                  label={<Space size={4}>回撤幅度(%)<Tooltip title="价格回撤此比例时触发止损"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      回撤幅度(%)
+                      <Tooltip title="价格回撤此比例时触发止损">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                   initialValue={2}
                 >
@@ -1353,7 +1597,6 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 </Form.Item>
               </Col>
             </Row>
-
           </>
         )}
 
@@ -1364,9 +1607,10 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               网格参数
             </Divider>
             <Alert
-              message={gridTickerLoading
-                ? '正在获取行情数据，自动计算网格区间...'
-                : '网格区间已根据24h高低价自动填充（上下扩展20%），可手动调整'
+              message={
+                gridTickerLoading
+                  ? '正在获取行情数据，自动计算网格区间...'
+                  : '网格区间已根据24h高低价自动填充（上下扩展20%），可手动调整'
               }
               type="info"
               showIcon
@@ -1374,10 +1618,16 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               style={{ marginBottom: 10, fontSize: 12 }}
               action={
                 !gridTickerLoading && watchedSymbol ? (
-                  <a onClick={() => {
-                    form.setFieldsValue({ grid_price_lower: undefined, grid_price_upper: undefined })
-                    fetchGridTicker(watchedSymbol)
-                  }} style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                  <a
+                    onClick={() => {
+                      form.setFieldsValue({
+                        grid_price_lower: undefined,
+                        grid_price_upper: undefined,
+                      })
+                      fetchGridTicker(watchedSymbol)
+                    }}
+                    style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+                  >
                     重新获取
                   </a>
                 ) : undefined
@@ -1387,27 +1637,58 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={12}>
                 <Form.Item
                   name="grid_price_lower"
-                  label={<Space size={4}>网格下界<Tooltip title="网格的最低价格，低于此价格不再挂买单"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      网格下界
+                      <Tooltip title="网格的最低价格，低于此价格不再挂买单">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   rules={[{ required: selectedType === 'grid', message: '请输入网格下界' }]}
                   style={compactItem}
                 >
-                  <InputNumber min={0} step={0.01} placeholder="如 80000" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    placeholder="如 80000"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
                   name="grid_price_upper"
-                  label={<Space size={4}>网格上界<Tooltip title="网格的最高价格，高于此价格不再挂卖单"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      网格上界
+                      <Tooltip title="网格的最高价格，高于此价格不再挂卖单">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   rules={[{ required: selectedType === 'grid', message: '请输入网格上界' }]}
                   style={compactItem}
                 >
-                  <InputNumber min={0} step={0.01} placeholder="如 100000" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    placeholder="如 100000"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
                   name="grid_count"
-                  label={<Space size={4}>网格数量<Tooltip title="价格区间等分为多少格，越多则每格利润越小但成交越频繁"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      网格数量
+                      <Tooltip title="价格区间等分为多少格，越多则每格利润越小但成交越频繁">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={2} max={200} step={1} style={{ width: '100%' }} />
@@ -1416,7 +1697,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="grid_total_amount"
-                  label={<Space size={4}>投资总额(USDT)<Tooltip title="投入的总USDT金额，会平均分配到每个网格"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      投资总额(USDT)
+                      <Tooltip title="投入的总USDT金额，会平均分配到每个网格">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={10} step={10} style={{ width: '100%' }} />
@@ -1425,7 +1713,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="grid_leverage"
-                  label={<Space size={4}>杠杆倍数<Tooltip title="合约杠杆，现货可设为1"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      杠杆倍数
+                      <Tooltip title="合约杠杆，现货可设为1">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={100} step={1} suffix="x" style={{ width: '100%' }} />
@@ -1434,7 +1729,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="grid_stop_loss"
-                  label={<Space size={4}>止损(%)<Tooltip title="价格跌破网格下界此比例后触发止损，撤销所有挂单"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止损(%)
+                      <Tooltip title="价格跌破网格下界此比例后触发止损，撤销所有挂单">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={50} step={1} suffix="%" style={{ width: '100%' }} />
@@ -1463,7 +1765,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_direction"
-                  label={<Space size={4}>交易方向<Tooltip title="现货只支持做多；合约可选择多空或只做单边"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      交易方向
+                      <Tooltip title="现货只支持做多；合约可选择多空或只做单边">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1478,7 +1787,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_timeframe"
-                  label={<Space size={4}>趋势周期<Tooltip title="用于计算EMA趋势和ATR波动，周期越大交易越少"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      趋势周期
+                      <Tooltip title="用于计算EMA趋势和ATR波动，周期越大交易越少">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1493,7 +1809,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_margin_mode"
-                  label={<Space size={4}>保证金模式<Tooltip title="合约下单使用，isolated为逐仓，cross为全仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      保证金模式
+                      <Tooltip title="合约下单使用，isolated为逐仓，cross为全仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1507,7 +1830,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fast_period"
-                  label={<Space size={4}>EMA快线<Tooltip title="趋势快线周期，1000U稳健版默认30"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      EMA快线
+                      <Tooltip title="趋势快线周期，1000U稳健版默认30">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={5} max={80} step={1} style={{ width: '100%' }} />
@@ -1516,7 +1846,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_slow_period"
-                  label={<Space size={4}>EMA慢线<Tooltip title="趋势慢线周期，必须大于快线，1000U稳健版默认60"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      EMA慢线
+                      <Tooltip title="趋势慢线周期，必须大于快线，1000U稳健版默认60">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={20} max={200} step={5} style={{ width: '100%' }} />
@@ -1525,7 +1862,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_atr_period"
-                  label={<Space size={4}>ATR周期<Tooltip title="用于计算波动和止损距离，默认14"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      ATR周期
+                      <Tooltip title="用于计算波动和止损距离，默认14">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={5} max={50} step={1} style={{ width: '100%' }} />
@@ -1534,7 +1878,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_risk_per_trade"
-                  label={<Space size={4}>单笔风险<Tooltip title="每笔最多亏损账户权益的比例，建议0.3%到1%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      单笔风险
+                      <Tooltip title="每笔最多亏损账户权益的比例，建议0.3%到1%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.1} max={5} step={0.1} suffix="%" style={{ width: '100%' }} />
@@ -1543,7 +1894,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_max_position_usd"
-                  label={<Space size={4}>最大仓位<Tooltip title="单次开仓名义价值上限，单位USDT"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最大仓位
+                      <Tooltip title="单次开仓名义价值上限，单位USDT">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={10} step={10} prefix="$" style={{ width: '100%' }} />
@@ -1552,7 +1910,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_leverage"
-                  label={<Space size={4}>杠杆倍数<Tooltip title="合约启动时自动设置，1000U稳健版默认5x"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      杠杆倍数
+                      <Tooltip title="合约启动时自动设置，1000U稳健版默认5x">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={20} step={1} suffix="x" style={{ width: '100%' }} />
@@ -1561,7 +1926,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_entry_atr_multiple"
-                  label={<Space size={4}>入场回撤ATR<Tooltip title="趋势成立后，价格回撤到快线附近多少ATR内才入场"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      入场回撤ATR
+                      <Tooltip title="趋势成立后，价格回撤到快线附近多少ATR内才入场">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={2} step={0.05} style={{ width: '100%' }} />
@@ -1570,7 +1942,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_stop_atr_multiple"
-                  label={<Space size={4}>止损ATR<Tooltip title="止损距离 = ATR × 此倍数"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止损ATR
+                      <Tooltip title="止损距离 = ATR × 此倍数">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={5} step={0.1} style={{ width: '100%' }} />
@@ -1579,7 +1958,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_take_profit_atr_multiple"
-                  label={<Space size={4}>止盈ATR<Tooltip title="止盈距离 = ATR × 此倍数，1000U稳健版默认3.2"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止盈ATR
+                      <Tooltip title="止盈距离 = ATR × 此倍数，1000U稳健版默认3.2">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={8} step={0.1} style={{ width: '100%' }} />
@@ -1588,7 +1974,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_cooldown_minutes"
-                  label={<Space size={4}>冷却时间<Tooltip title="平仓后等待多少分钟才允许下一次开仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      冷却时间
+                      <Tooltip title="平仓后等待多少分钟才允许下一次开仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={240} step={1} suffix="分钟" style={{ width: '100%' }} />
@@ -1597,7 +1990,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_notify_near_trigger"
-                  label={<Space size={4}>临近提醒<Tooltip title="价格接近止盈或止损线时发送系统通知；配置 Bark 后手机也会收到"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      临近提醒
+                      <Tooltip title="价格接近止盈或止损线时发送系统通知；配置 Bark 后手机也会收到">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -1607,16 +2007,36 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_near_trigger_pct"
-                  label={<Space size={4}>提醒距离<Tooltip title="距离止盈或止损价小于该百分比时提醒，默认0.3%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      提醒距离
+                      <Tooltip title="距离止盈或止损价小于该百分比时提醒，默认0.3%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
-                  <InputNumber min={0.05} max={5} step={0.05} suffix="%" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0.05}
+                    max={5}
+                    step={0.05}
+                    suffix="%"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
                   name="agt_near_trigger_cooldown_minutes"
-                  label={<Space size={4}>提醒冷却<Tooltip title="同一持仓同一触发线重复提醒的最小间隔"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      提醒冷却
+                      <Tooltip title="同一持仓同一触发线重复提醒的最小间隔">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={120} step={1} suffix="分钟" style={{ width: '100%' }} />
@@ -1634,7 +2054,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_enabled"
-                  label={<Space size={4}>熔断保护<Tooltip title="开启后，连续亏损、日亏损、运行回撤或盈亏比恶化会自动暂停策略"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      熔断保护
+                      <Tooltip title="开启后，连续亏损、日亏损、运行回撤或盈亏比恶化会自动暂停策略">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -1644,7 +2071,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_max_consecutive_losses"
-                  label={<Space size={4}>连续亏损<Tooltip title="连续亏损达到该次数后暂停策略"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      连续亏损
+                      <Tooltip title="连续亏损达到该次数后暂停策略">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={10} step={1} suffix="次" style={{ width: '100%' }} />
@@ -1653,7 +2087,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_daily_loss_pct"
-                  label={<Space size={4}>日亏损上限<Tooltip title="按风险基准资金计算，1000U稳健版默认3%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      日亏损上限
+                      <Tooltip title="按风险基准资金计算，1000U稳健版默认3%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.1} max={20} step={0.1} suffix="%" style={{ width: '100%' }} />
@@ -1662,7 +2103,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_max_drawdown_pct"
-                  label={<Space size={4}>运行回撤上限<Tooltip title="本次启动后的已实现盈亏曲线最大回撤阈值"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      运行回撤上限
+                      <Tooltip title="本次启动后的已实现盈亏曲线最大回撤阈值">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={30} step={0.5} suffix="%" style={{ width: '100%' }} />
@@ -1671,7 +2119,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_min_profit_factor"
-                  label={<Space size={4}>最低盈亏比<Tooltip title="最近窗口内盈亏比低于该值后暂停，默认0.8"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最低盈亏比
+                      <Tooltip title="最近窗口内盈亏比低于该值后暂停，默认0.8">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={5} step={0.1} style={{ width: '100%' }} />
@@ -1680,7 +2135,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_profit_factor_window"
-                  label={<Space size={4}>盈亏比窗口<Tooltip title="计算最近多少笔平仓交易的盈亏比"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      盈亏比窗口
+                      <Tooltip title="计算最近多少笔平仓交易的盈亏比">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={3} max={50} step={1} suffix="笔" style={{ width: '100%' }} />
@@ -1689,7 +2151,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_min_trades"
-                  label={<Space size={4}>最少统计笔数<Tooltip title="平仓交易数达到该数量后才启用盈亏比熔断"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最少统计笔数
+                      <Tooltip title="平仓交易数达到该数量后才启用盈亏比熔断">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={3} max={50} step={1} suffix="笔" style={{ width: '100%' }} />
@@ -1698,7 +2167,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_cancel_orders"
-                  label={<Space size={4}>触发后撤单<Tooltip title="熔断暂停时撤销未成交委托"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      触发后撤单
+                      <Tooltip title="熔断暂停时撤销未成交委托">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -1708,7 +2184,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="agt_fuse_close_position"
-                  label={<Space size={4}>触发后平仓<Tooltip title="实盘初期建议关闭；开启后熔断会尝试市价平掉已有持仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      触发后平仓
+                      <Tooltip title="实盘初期建议关闭；开启后熔断会尝试市价平掉已有持仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -1738,7 +2221,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="emc_timeframe"
-                  label={<Space size={4}>K线周期<Tooltip title="周期越短越敏感、交易更多；周期越长信号更少但噪音更低"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      K线周期
+                      <Tooltip title="周期越短越敏感、交易更多；周期越长信号更少但噪音更低">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1842,16 +2332,32 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               </Col>
               <Col span={8}>
                 <Form.Item name="emc_cooldown_minutes" label="同币冷却" style={compactItem}>
-                  <InputNumber min={0} max={720} step={30} suffix="分钟" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0}
+                    max={720}
+                    step={30}
+                    suffix="分钟"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="emc_observe_first_scan" label="首轮只观察" valuePropName="checked" style={compactItem}>
+                <Form.Item
+                  name="emc_observe_first_scan"
+                  label="首轮只观察"
+                  valuePropName="checked"
+                  style={compactItem}
+                >
                   <Switch checkedChildren="观察" unCheckedChildren="可开仓" />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="emc_use_volume_profile_filter" label="成交量分布过滤" valuePropName="checked" style={compactItem}>
+                <Form.Item
+                  name="emc_use_volume_profile_filter"
+                  label="成交量分布过滤"
+                  valuePropName="checked"
+                  style={compactItem}
+                >
                   <Switch checkedChildren="启用" unCheckedChildren="关闭" />
                 </Form.Item>
               </Col>
@@ -1867,22 +2373,50 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="emc_max_high_pullback_pct" label="高点最大回落" style={compactItem}>
-                  <InputNumber disabled={!watchedEmcVolumeProfile} min={0.5} max={10} step={0.5} suffix="%" style={{ width: '100%' }} />
+                <Form.Item
+                  name="emc_max_high_pullback_pct"
+                  label="高点最大回落"
+                  style={compactItem}
+                >
+                  <InputNumber
+                    disabled={!watchedEmcVolumeProfile}
+                    min={0.5}
+                    max={10}
+                    step={0.5}
+                    suffix="%"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="emc_volume_profile_hours" label="分布回看" style={compactItem}>
-                  <InputNumber disabled={!watchedEmcVolumeProfile} min={4} max={24} step={1} suffix="小时" style={{ width: '100%' }} />
+                  <InputNumber
+                    disabled={!watchedEmcVolumeProfile}
+                    min={4}
+                    max={24}
+                    step={1}
+                    suffix="小时"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="emc_volume_profile_bins" label="价格分箱" style={compactItem}>
-                  <InputNumber disabled={!watchedEmcVolumeProfile} min={20} max={100} step={4} style={{ width: '100%' }} />
+                  <InputNumber
+                    disabled={!watchedEmcVolumeProfile}
+                    min={20}
+                    max={100}
+                    step={4}
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="emc_fuse_max_consecutive_losses" label="连续亏损熔断" style={compactItem}>
+                <Form.Item
+                  name="emc_fuse_max_consecutive_losses"
+                  label="连续亏损熔断"
+                  style={compactItem}
+                >
                   <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
@@ -1919,7 +2453,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_timeframe"
-                  label={<Space size={4}>信号周期<Tooltip title="15分钟更稳，5分钟更激进且噪音更高"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      信号周期
+                      <Tooltip title="15分钟更稳，5分钟更激进且噪音更高">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1933,7 +2474,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_direction"
-                  label={<Space size={4}>交易方向<Tooltip title="双向会根据涨幅榜币种的动量延续做多，过热转弱或下跌趋势做空"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      交易方向
+                      <Tooltip title="双向会根据涨幅榜币种的动量延续做多，过热转弱或下跌趋势做空">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -1948,7 +2496,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_top_n"
-                  label={<Space size={4}>涨幅榜数量<Tooltip title="从24h涨幅榜中取前N个USDT永续合约，当前建议前三"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      涨幅榜数量
+                      <Tooltip title="从24h涨幅榜中取前N个USDT永续合约，当前建议前三">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
@@ -1957,7 +2512,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_initial_capital"
-                  label={<Space size={4}>模拟本金<Tooltip title="用于分析面板和回测展示的权益基准，不代表自动下单金额"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      模拟本金
+                      <Tooltip title="用于分析面板和回测展示的权益基准，不代表自动下单金额">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={100} step={100} prefix="$" style={{ width: '100%' }} />
@@ -1966,7 +2528,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_lookback_hours"
-                  label={<Space size={4}>分析窗口<Tooltip title="读取最近多少小时K线用于动量和回测观察"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      分析窗口
+                      <Tooltip title="读取最近多少小时K线用于动量和回测观察">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={6} max={168} step={6} suffix="小时" style={{ width: '100%' }} />
@@ -1975,7 +2544,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_risk_per_trade"
-                  label={<Space size={4}>单笔风险<Tooltip title="每笔交易按账户权益承担的最大止损风险，高风险策略默认3.5%"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      单笔风险
+                      <Tooltip title="每笔交易按账户权益承担的最大止损风险，高风险策略默认3.5%">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={20} step={0.5} suffix="%" style={{ width: '100%' }} />
@@ -1984,7 +2560,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_max_leverage"
-                  label={<Space size={4}>最大杠杆<Tooltip title="分析用杠杆上限；山寨币短线波动极大，实盘需更保守"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最大杠杆
+                      <Tooltip title="分析用杠杆上限；山寨币短线波动极大，实盘需更保守">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={20} step={1} suffix="x" style={{ width: '100%' }} />
@@ -1993,7 +2576,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_max_position_usd"
-                  label={<Space size={4}>单仓上限<Tooltip title="单个山寨币持仓的最大名义价值，实盘建议先小额"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      单仓上限
+                      <Tooltip title="单个山寨币持仓的最大名义价值，实盘建议先小额">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
@@ -2002,7 +2592,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_max_total_position_usd"
-                  label={<Space size={4}>总持仓上限<Tooltip title="策略所有动态币种合计最大名义价值"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      总持仓上限
+                      <Tooltip title="策略所有动态币种合计最大名义价值">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={20} step={10} prefix="$" style={{ width: '100%' }} />
@@ -2011,7 +2608,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_max_open_positions"
-                  label={<Space size={4}>最多持仓数<Tooltip title="涨幅榜前三中最多同时持有几个币，默认只持有1个降低相关风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最多持仓数
+                      <Tooltip title="涨幅榜前三中最多同时持有几个币，默认只持有1个降低相关风险">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={3} step={1} style={{ width: '100%' }} />
@@ -2020,7 +2624,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_margin_mode"
-                  label={<Space size={4}>保证金模式<Tooltip title="高风险短线默认逐仓，避免单个币种拖累全仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      保证金模式
+                      <Tooltip title="高风险短线默认逐仓，避免单个币种拖累全仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -2034,7 +2645,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_loop_interval_seconds"
-                  label={<Space size={4}>扫描间隔<Tooltip title="多久刷新一次涨幅榜和持仓风控"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      扫描间隔
+                      <Tooltip title="多久刷新一次涨幅榜和持仓风控">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={15} max={300} step={15} suffix="秒" style={{ width: '100%' }} />
@@ -2043,7 +2661,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_cooldown_minutes"
-                  label={<Space size={4}>同币冷却<Tooltip title="同一个币平仓后多久内不再重新开仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      同币冷却
+                      <Tooltip title="同一个币平仓后多久内不再重新开仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={240} step={5} suffix="分钟" style={{ width: '100%' }} />
@@ -2052,7 +2677,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_observe_first_scan"
-                  label={<Space size={4}>首轮只观察<Tooltip title="启动后第一次扫描只记录信号，不立刻开仓，降低刚启动撞上假突破的风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      首轮只观察
+                      <Tooltip title="启动后第一次扫描只记录信号，不立刻开仓，降低刚启动撞上假突破的风险">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -2062,7 +2694,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_use_attached_tp_sl"
-                  label={<Space size={4}>原生止盈止损<Tooltip title="下单时附带OKX止盈止损，程序断线时仍有交易所侧保护；程序仍会轮询移动止损"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      原生止盈止损
+                      <Tooltip title="下单时附带OKX止盈止损，程序断线时仍有交易所侧保护；程序仍会轮询移动止损">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -2072,7 +2711,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_close_when_out_of_top"
-                  label={<Space size={4}>跌出榜单平仓<Tooltip title="持仓币种不再位于动态涨幅榜前N时是否平仓；默认关闭，避免频繁换手"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      跌出榜单平仓
+                      <Tooltip title="持仓币种不再位于动态涨幅榜前N时是否平仓；默认关闭，避免频繁换手">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -2082,7 +2728,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_stop_atr"
-                  label={<Space size={4}>止损ATR倍数<Tooltip title="用ATR衡量波动，倍数越小越容易被洗出"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止损ATR倍数
+                      <Tooltip title="用ATR衡量波动，倍数越小越容易被洗出">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={6} step={0.1} style={{ width: '100%' }} />
@@ -2091,7 +2744,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_take_profit_r"
-                  label={<Space size={4}>止盈R倍数<Tooltip title="以初始风险R计算目标止盈，例如2R表示盈利达到止损距离2倍时止盈"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      止盈R倍数
+                      <Tooltip title="以初始风险R计算目标止盈，例如2R表示盈利达到止损距离2倍时止盈">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={8} step={0.25} suffix="R" style={{ width: '100%' }} />
@@ -2100,7 +2760,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_trailing_atr"
-                  label={<Space size={4}>移动止损ATR<Tooltip title="盈利后用ATR跟踪回撤，数值越小锁利越快但更容易提前离场"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      移动止损ATR
+                      <Tooltip title="盈利后用ATR跟踪回撤，数值越小锁利越快但更容易提前离场">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0.5} max={6} step={0.1} style={{ width: '100%' }} />
@@ -2109,7 +2776,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_fuse_max_consecutive_losses"
-                  label={<Space size={4}>连续亏损熔断<Tooltip title="连续亏损达到该次数后自动暂停策略"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      连续亏损熔断
+                      <Tooltip title="连续亏损达到该次数后自动暂停策略">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={10} step={1} style={{ width: '100%' }} />
@@ -2118,7 +2792,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_fuse_daily_loss_pct"
-                  label={<Space size={4}>日亏损熔断<Tooltip title="按模拟本金/风险基准计算，当日已实现亏损达到该比例后暂停"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      日亏损熔断
+                      <Tooltip title="按模拟本金/风险基准计算，当日已实现亏损达到该比例后暂停">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={50} step={1} suffix="%" style={{ width: '100%' }} />
@@ -2127,7 +2808,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="tgm_fuse_max_drawdown_pct"
-                  label={<Space size={4}>回撤熔断<Tooltip title="运行期最大已实现回撤达到该比例后暂停"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      回撤熔断
+                      <Tooltip title="运行期最大已实现回撤达到该比例后暂停">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={80} step={1} suffix="%" style={{ width: '100%' }} />
@@ -2156,7 +2844,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={12}>
                 <Form.Item
                   name="arb_spot_symbol"
-                  label={<Space size={4}>现货交易对<Tooltip title="留空时根据主交易对自动推导，例如 BTC-USDT-SWAP -> BTC-USDT"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      现货交易对
+                      <Tooltip title="留空时根据主交易对自动推导，例如 BTC-USDT-SWAP -> BTC-USDT">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Input placeholder="BTC-USDT" />
@@ -2165,7 +2860,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={12}>
                 <Form.Item
                   name="arb_perp_symbol"
-                  label={<Space size={4}>永续交易对<Tooltip title="留空时根据主交易对自动推导，例如 BTC-USDT -> BTC-USDT-SWAP"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      永续交易对
+                      <Tooltip title="留空时根据主交易对自动推导，例如 BTC-USDT -> BTC-USDT-SWAP">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Input placeholder="BTC-USDT-SWAP" />
@@ -2174,7 +2876,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_target_notional_usd"
-                  label={<Space size={4}>单笔名义金额<Tooltip title="每次套利尝试的目标名义价值，单位USDT"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      单笔名义金额
+                      <Tooltip title="每次套利尝试的目标名义价值，单位USDT">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={10} step={10} prefix="$" style={{ width: '100%' }} />
@@ -2183,7 +2892,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_max_notional_usd"
-                  label={<Space size={4}>最大名义金额<Tooltip title="策略会取单笔名义金额和该上限的较小值"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最大名义金额
+                      <Tooltip title="策略会取单笔名义金额和该上限的较小值">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={10} step={10} prefix="$" style={{ width: '100%' }} />
@@ -2192,7 +2908,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_leverage"
-                  label={<Space size={4}>永续杠杆<Tooltip title="套利初期建议1x，降低强平和保证金风险"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      永续杠杆
+                      <Tooltip title="套利初期建议1x，降低强平和保证金风险">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={1} max={10} step={1} suffix="x" style={{ width: '100%' }} />
@@ -2201,16 +2924,36 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_open_edge_pct"
-                  label={<Space size={4}>开仓基差<Tooltip title="永续买一相对现货卖一的溢价达到该比例后尝试开仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      开仓基差
+                      <Tooltip title="永续买一相对现货卖一的溢价达到该比例后尝试开仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
-                  <InputNumber min={0.05} max={5} step={0.01} suffix="%" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0.05}
+                    max={5}
+                    step={0.01}
+                    suffix="%"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
                   name="arb_close_edge_pct"
-                  label={<Space size={4}>平仓基差<Tooltip title="基差回落到该比例以下时卖出现货并买回永续"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      平仓基差
+                      <Tooltip title="基差回落到该比例以下时卖出现货并买回永续">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={2} step={0.01} suffix="%" style={{ width: '100%' }} />
@@ -2219,7 +2962,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_min_net_edge_pct"
-                  label={<Space size={4}>最低净基差<Tooltip title="扣除手续费和滑点缓冲后仍需达到该比例才开仓"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      最低净基差
+                      <Tooltip title="扣除手续费和滑点缓冲后仍需达到该比例才开仓">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={3} step={0.01} suffix="%" style={{ width: '100%' }} />
@@ -2228,7 +2978,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_fee_buffer_pct"
-                  label={<Space size={4}>手续费缓冲<Tooltip title="开仓判断时预扣的双边手续费缓冲"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      手续费缓冲
+                      <Tooltip title="开仓判断时预扣的双边手续费缓冲">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={2} step={0.01} suffix="%" style={{ width: '100%' }} />
@@ -2237,7 +2994,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_slippage_buffer_pct"
-                  label={<Space size={4}>滑点缓冲<Tooltip title="开仓判断时预扣的成交滑点缓冲"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      滑点缓冲
+                      <Tooltip title="开仓判断时预扣的成交滑点缓冲">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <InputNumber min={0} max={2} step={0.01} suffix="%" style={{ width: '100%' }} />
@@ -2246,16 +3010,36 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_poll_interval"
-                  label={<Space size={4}>检查间隔<Tooltip title="REST保守版的行情检查间隔，后续可升级为WebSocket事件驱动"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      检查间隔
+                      <Tooltip title="REST保守版的行情检查间隔，后续可升级为WebSocket事件驱动">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
-                  <InputNumber min={0.5} max={10} step={0.5} suffix="秒" style={{ width: '100%' }} />
+                  <InputNumber
+                    min={0.5}
+                    max={10}
+                    step={0.5}
+                    suffix="秒"
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
                   name="arb_margin_mode"
-                  label={<Space size={4}>保证金模式<Tooltip title="永续腿使用的保证金模式"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      保证金模式
+                      <Tooltip title="永续腿使用的保证金模式">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   style={compactItem}
                 >
                   <Select
@@ -2269,7 +3053,14 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
               <Col span={8}>
                 <Form.Item
                   name="arb_close_on_stop"
-                  label={<Space size={4}>停止时平仓<Tooltip title="关闭时会尝试市价平掉套利组合；实盘初期建议关闭，手动确认后处理"><InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} /></Tooltip></Space>}
+                  label={
+                    <Space size={4}>
+                      停止时平仓
+                      <Tooltip title="关闭时会尝试市价平掉套利组合；实盘初期建议关闭，手动确认后处理">
+                        <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
+                      </Tooltip>
+                    </Space>
+                  }
                   valuePropName="checked"
                   style={compactItem}
                 >
@@ -2281,7 +3072,9 @@ const StrategyCreateModal: React.FC<StrategyCreateModalProps> = ({
         )}
 
         {/* ── 备注 ── */}
-        <Divider orientation="left" style={compactDivider}>备注</Divider>
+        <Divider orientation="left" style={compactDivider}>
+          备注
+        </Divider>
         <Form.Item name="description" style={compactItem}>
           <TextArea placeholder="可选：描述策略目标、注意事项等" rows={1} />
         </Form.Item>

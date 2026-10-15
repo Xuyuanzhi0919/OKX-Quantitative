@@ -40,10 +40,14 @@ class OKKClient:
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         return await self._get_absolute(f"{self.base_url}{path}", params=params)
 
-    async def _get_absolute(self, url: str, params: dict[str, Any] | None = None) -> Any:
+    async def _get_absolute(
+        self, url: str, params: dict[str, Any] | None = None
+    ) -> Any:
         headers = self._headers()
         try:
-            async with httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client:
+            async with httpx.AsyncClient(
+                timeout=self.timeout_seconds, trust_env=False
+            ) as client:
                 response = await client.get(url, params=params, headers=headers)
                 response.raise_for_status()
                 return response.json()

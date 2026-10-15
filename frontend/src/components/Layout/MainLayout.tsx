@@ -150,9 +150,7 @@ const MainLayout = () => {
               </>
             )}
           </div>
-          <div style={{ marginTop: 4 }}>
-            v1.0.0
-          </div>
+          <div style={{ marginTop: 4 }}>v1.0.0</div>
         </div>
       )}
     </div>

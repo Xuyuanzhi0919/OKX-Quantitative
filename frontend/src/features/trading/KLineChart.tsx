@@ -230,7 +230,16 @@ export default function KLineChart({ symbol, height = 400 }: KLineChartProps) {
           </Space>
         </div>
 
-        <div style={{ fontSize: 11, color: '#525252', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: '#525252',
+            fontFamily: 'monospace',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           {loading ? (
             <>
               <Spin size="small" />

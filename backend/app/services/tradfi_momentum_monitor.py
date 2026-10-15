@@ -1,4 +1,5 @@
 """OKX TradFi 产品短线双向异动监控（只读，不下单）。"""
+
 import asyncio
 import time
 from collections import Counter, defaultdict, deque
@@ -9,7 +10,10 @@ from loguru import logger
 
 from app.core.config import settings
 from app.services.exchange.okx import OKXExchange
-from app.services.notification.notification_service import NotificationLevel, notification_service
+from app.services.notification.notification_service import (
+    NotificationLevel,
+    notification_service,
+)
 
 
 CATEGORY_NAMES = {
@@ -24,19 +28,31 @@ DEFAULT_WINDOWS = [
     {
         "window_seconds": 300,
         "threshold_pct_by_category": {
-            "3": 1.5, "4": 0.4, "5": 0.6, "6": 0.2, "7": 0.3,
+            "3": 1.5,
+            "4": 0.4,
+            "5": 0.6,
+            "6": 0.2,
+            "7": 0.3,
         },
     },
     {
         "window_seconds": 900,
         "threshold_pct_by_category": {
-            "3": 3.0, "4": 0.8, "5": 1.2, "6": 0.4, "7": 0.6,
+            "3": 3.0,
+            "4": 0.8,
+            "5": 1.2,
+            "6": 0.4,
+            "7": 0.6,
         },
     },
 ]
 
 DEFAULT_MIN_VOLUME_USDT = {
-    "3": 100000, "4": 500000, "5": 200000, "6": 200000, "7": 100000,
+    "3": 100000,
+    "4": 500000,
+    "5": 200000,
+    "6": 200000,
+    "7": 100000,
 }
 
 
@@ -71,11 +87,20 @@ class TradFiMomentumMonitor:
     def configure(self, config: Dict[str, Any]):
         self.enabled = bool(config.get("enabled", False))
         self.inst_type = str(config.get("inst_type", self.inst_type)).upper()
-        self.interval_seconds = max(10, int(config.get("interval_seconds", self.interval_seconds)))
-        self.instrument_refresh_seconds = max(
-            300, int(config.get("instrument_refresh_seconds", self.instrument_refresh_seconds))
+        self.interval_seconds = max(
+            10, int(config.get("interval_seconds", self.interval_seconds))
         )
-        self.cooldown_seconds = max(60, int(config.get("cooldown_seconds", self.cooldown_seconds)))
+        self.instrument_refresh_seconds = max(
+            300,
+            int(
+                config.get(
+                    "instrument_refresh_seconds", self.instrument_refresh_seconds
+                )
+            ),
+        )
+        self.cooldown_seconds = max(
+            60, int(config.get("cooldown_seconds", self.cooldown_seconds))
+        )
 
         configured_windows = config.get("windows")
         if isinstance(configured_windows, list) and configured_windows:
@@ -91,10 +116,12 @@ class TradFiMomentumMonitor:
                     if str(key) in CATEGORY_NAMES and safe_float(value) > 0
                 }
                 if seconds > 0 and thresholds:
-                    parsed.append({
-                        "window_seconds": seconds,
-                        "threshold_pct_by_category": thresholds,
-                    })
+                    parsed.append(
+                        {
+                            "window_seconds": seconds,
+                            "threshold_pct_by_category": thresholds,
+                        }
+                    )
             if parsed:
                 self.windows = parsed
 
@@ -166,7 +193,9 @@ class TradFiMomentumMonitor:
         self._instruments = selected
         self._last_instrument_refresh_at = now
         counts = Counter(selected.values())
-        summary = ", ".join(f"{CATEGORY_NAMES[key]}={counts.get(key, 0)}" for key in CATEGORY_NAMES)
+        summary = ", ".join(
+            f"{CATEGORY_NAMES[key]}={counts.get(key, 0)}" for key in CATEGORY_NAMES
+        )
         logger.info(f"TradFi 产品清单已刷新: total={len(selected)}, {summary}")
 
     async def _scan_once(self):
@@ -213,8 +242,15 @@ class TradFiMomentumMonitor:
                 change_pct = (last - baseline_price) / baseline_price * 100
                 if abs(change_pct) >= threshold:
                     await self._maybe_alert(
-                        symbol, category, last, baseline_price, change_pct,
-                        volume_usdt, now, window_seconds, threshold,
+                        symbol,
+                        category,
+                        last,
+                        baseline_price,
+                        change_pct,
+                        volume_usdt,
+                        now,
+                        window_seconds,
+                        threshold,
                     )
 
     @staticmethod
@@ -233,12 +269,23 @@ class TradFiMomentumMonitor:
             safe_float(ticker.get("volUsd24h")),
         )
         last = safe_float(ticker.get("last"))
-        return max(direct, safe_float(ticker.get("volCcy24h")) * last, safe_float(ticker.get("vol24h")) * last)
+        return max(
+            direct,
+            safe_float(ticker.get("volCcy24h")) * last,
+            safe_float(ticker.get("vol24h")) * last,
+        )
 
     async def _maybe_alert(
-        self, symbol: str, category: str, last: float, baseline_price: float,
-        change_pct: float, volume_usdt: float, now: float,
-        window_seconds: int, threshold: float,
+        self,
+        symbol: str,
+        category: str,
+        last: float,
+        baseline_price: float,
+        change_pct: float,
+        volume_usdt: float,
+        now: float,
+        window_seconds: int,
+        threshold: float,
     ):
         direction = "上涨" if change_pct > 0 else "下跌"
         alert_key = f"{symbol}:{window_seconds}:{direction}"
@@ -281,13 +328,19 @@ class TradFiMomentumMonitor:
             "running": bool(self._task and not self._task.done()),
             "read_only": True,
             "instrument_count": len(self._instruments),
-            "category_counts": {CATEGORY_NAMES[key]: counts.get(key, 0) for key in CATEGORY_NAMES},
+            "category_counts": {
+                CATEGORY_NAMES[key]: counts.get(key, 0) for key in CATEGORY_NAMES
+            },
             "interval_seconds": self.interval_seconds,
             "instrument_refresh_seconds": self.instrument_refresh_seconds,
             "cooldown_seconds": self.cooldown_seconds,
             "windows": self.windows,
             "min_volume_usdt_by_category": self.min_volume_usdt_by_category,
-            "last_scan_at": datetime.fromtimestamp(self._last_scan_at).isoformat() if self._last_scan_at else None,
+            "last_scan_at": (
+                datetime.fromtimestamp(self._last_scan_at).isoformat()
+                if self._last_scan_at
+                else None
+            ),
             "last_error": self._last_error,
             "recent_signals": list(self._recent_signals),
         }

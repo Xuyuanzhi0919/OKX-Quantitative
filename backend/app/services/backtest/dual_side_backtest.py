@@ -6,6 +6,7 @@
 - 死叉（快线下穿慢线）→ 开空
 - 趋势反转时平仓并反向开仓
 """
+
 from typing import Dict, List, Optional
 from loguru import logger
 from .backtest_engine import BacktestEngine, Trade, Position
@@ -48,7 +49,7 @@ class DualSideBacktestEngine(BacktestEngine):
             initial_capital=initial_capital,
             fee_rate=fee_rate,
             leverage=leverage,
-            enable_short=True  # 双向策略必须支持做空
+            enable_short=True,  # 双向策略必须支持做空
         )
 
         self.fast_period = fast_period
@@ -88,7 +89,9 @@ class DualSideBacktestEngine(BacktestEngine):
     def reset(self):
         """重置回测状态"""
         super().reset()
-        self.kline_buffer = KlineBuffer(max_size=max(self.fast_period, self.slow_period) + 10)
+        self.kline_buffer = KlineBuffer(
+            max_size=max(self.fast_period, self.slow_period) + 10
+        )
         self.fast_ema_history = []
         self.slow_ema_history = []
         self._position_side = ""
@@ -103,7 +106,9 @@ class DualSideBacktestEngine(BacktestEngine):
         self._signal_reverse_count = 0
 
     @classmethod
-    def from_params(cls, symbol: str, initial_capital: float, params: Dict) -> "DualSideBacktestEngine":
+    def from_params(
+        cls, symbol: str, initial_capital: float, params: Dict
+    ) -> "DualSideBacktestEngine":
         """从参数字典创建引擎实例"""
         return cls(
             symbol=symbol,
@@ -255,10 +260,7 @@ class DualSideBacktestEngine(BacktestEngine):
         # 执行开仓
         if side == "long":
             trade = self.open_long(
-                price=close,
-                amount=amount,
-                timestamp=timestamp,
-                leverage=self.leverage
+                price=close, amount=amount, timestamp=timestamp, leverage=self.leverage
             )
             if trade:
                 self._position_side = "long"
@@ -268,10 +270,7 @@ class DualSideBacktestEngine(BacktestEngine):
                 self._long_trades += 1
         else:
             trade = self.open_short(
-                price=close,
-                amount=amount,
-                timestamp=timestamp,
-                leverage=self.leverage
+                price=close, amount=amount, timestamp=timestamp, leverage=self.leverage
             )
             if trade:
                 self._position_side = "short"
@@ -295,15 +294,11 @@ class DualSideBacktestEngine(BacktestEngine):
 
         if self._position_side == "long":
             trade = self.close_long(
-                price=close,
-                amount=self.position.amount,
-                timestamp=timestamp
+                price=close, amount=self.position.amount, timestamp=timestamp
             )
         else:
             trade = self.close_short(
-                price=close,
-                amount=abs(self.position.amount),
-                timestamp=timestamp
+                price=close, amount=abs(self.position.amount), timestamp=timestamp
             )
 
         # 重置状态
@@ -317,22 +312,24 @@ class DualSideBacktestEngine(BacktestEngine):
     def get_statistics(self) -> Dict:
         """获取回测统计信息"""
         base_stats = super().get_statistics()
-        
-        base_stats.update({
-            "strategy_type": "dual_side",
-            "fast_period": self.fast_period,
-            "slow_period": self.slow_period,
-            "leverage": self.leverage,
-            "position_ratio": self.position_ratio,
-            "stop_loss": self.stop_loss,
-            "take_profit": self.take_profit,
-            "trailing_stop": self.trailing_stop,
-            "long_trades": self._long_trades,
-            "short_trades": self._short_trades,
-            "stop_loss_count": self._stop_loss_count,
-            "take_profit_count": self._take_profit_count,
-            "trailing_stop_count": self._trailing_stop_count,
-            "signal_reverse_count": self._signal_reverse_count,
-        })
+
+        base_stats.update(
+            {
+                "strategy_type": "dual_side",
+                "fast_period": self.fast_period,
+                "slow_period": self.slow_period,
+                "leverage": self.leverage,
+                "position_ratio": self.position_ratio,
+                "stop_loss": self.stop_loss,
+                "take_profit": self.take_profit,
+                "trailing_stop": self.trailing_stop,
+                "long_trades": self._long_trades,
+                "short_trades": self._short_trades,
+                "stop_loss_count": self._stop_loss_count,
+                "take_profit_count": self._take_profit_count,
+                "trailing_stop_count": self._trailing_stop_count,
+                "signal_reverse_count": self._signal_reverse_count,
+            }
+        )
 
         return base_stats

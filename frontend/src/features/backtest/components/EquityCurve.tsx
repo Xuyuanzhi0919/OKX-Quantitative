@@ -63,7 +63,7 @@ const EquityCurve = ({ data, initialCapital, height = 400 }: EquityCurveProps) =
         formatter: (params: any) => {
           if (!params || params.length === 0) return ''
 
-          const timestamp = params[0].data[0]  // [timestamp, value] 格式
+          const timestamp = params[0].data[0] // [timestamp, value] 格式
           const equity = params[0].data[1]
           const drawdown = params[1]?.data?.[1] || 0
           const profit = equity - initialCapital

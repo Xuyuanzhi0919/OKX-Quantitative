@@ -55,3 +55,34 @@ ios/**/.build/
 **/xcuserdata/
 *.xcuserstate
 ios/**/Secrets.xcconfig
+
+# Private configuration (keep templates versioned)
+.env.*
+!.env.example
+!.env.*.example
+backend/notification_config.json
+.claude/settings.local.json
+
+# Test and formatter caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+*.tsbuildinfo
+venv-*/
+
+# Runtime state, local backups and generated reports
+backend/app.lock
+backend/swap_data.json
+tradekit/data/
+database_backup*.sql
+backups/
+*.bak
+*.pid
+*.dump
+frontend/dist.zip
+okk_release_*.tar.gz
+/backtest_*.json
+backend/high_risk_*_equity.html

@@ -8,6 +8,7 @@
 - 按账户权益固定比例计算单笔风险
 - 单仓位运行，不马丁、不补仓
 """
+
 from __future__ import annotations
 
 from collections import deque
@@ -15,7 +16,9 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from app.services.strategy.adaptive_grid_trend_config import normalize_adaptive_grid_trend_params
+from app.services.strategy.adaptive_grid_trend_config import (
+    normalize_adaptive_grid_trend_params,
+)
 
 from .backtest_engine import BacktestEngine, Position, Trade
 
@@ -84,7 +87,9 @@ class AdaptiveGridTrendBacktestEngine(BacktestEngine):
         )
 
     @classmethod
-    def from_params(cls, symbol: str, initial_capital: float, params: Dict) -> "AdaptiveGridTrendBacktestEngine":
+    def from_params(
+        cls, symbol: str, initial_capital: float, params: Dict
+    ) -> "AdaptiveGridTrendBacktestEngine":
         params = normalize_adaptive_grid_trend_params(params)
         return cls(
             symbol=symbol,
@@ -175,7 +180,9 @@ class AdaptiveGridTrendBacktestEngine(BacktestEngine):
         ema_fast = self._ema_fast
         ema_slow = self._ema_slow
         atr = self._true_range_sum / self.atr_period
-        trend = "bull" if ema_fast > ema_slow else "bear" if ema_fast < ema_slow else "flat"
+        trend = (
+            "bull" if ema_fast > ema_slow else "bear" if ema_fast < ema_slow else "flat"
+        )
         return {"trend": trend, "ema_fast": ema_fast, "ema_slow": ema_slow, "atr": atr}
 
     def _update_indicators(self, kline: Dict):
@@ -213,7 +220,9 @@ class AdaptiveGridTrendBacktestEngine(BacktestEngine):
         qty_by_cap = self.max_position_usd / price
         return max(0.0, min(qty_by_risk, qty_by_cap))
 
-    def _open_position(self, side: str, price: float, atr: float, timestamp: int) -> Optional[Trade]:
+    def _open_position(
+        self, side: str, price: float, atr: float, timestamp: int
+    ) -> Optional[Trade]:
         if self._position_side:
             return None
 
@@ -341,25 +350,33 @@ class AdaptiveGridTrendBacktestEngine(BacktestEngine):
 
     def _update_unrealized(self, current_price: float):
         if self.position.amount > 0:
-            self.position.unrealized_pnl = (current_price - self.position.avg_price) * self.position.amount
+            self.position.unrealized_pnl = (
+                current_price - self.position.avg_price
+            ) * self.position.amount
         elif self.position.amount < 0:
             qty = abs(self.position.amount)
-            self.position.unrealized_pnl = (self.position.avg_price - current_price) * qty
+            self.position.unrealized_pnl = (
+                self.position.avg_price - current_price
+            ) * qty
         else:
             self.position.unrealized_pnl = 0.0
 
     def update_equity(self, current_price: float, timestamp: int):
         self._update_unrealized(current_price)
-        total_equity = self.capital + self.position.margin_used + self.position.unrealized_pnl
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "equity": total_equity,
-            "capital": self.capital,
-            "position_value": self.position.margin_used,
-            "unrealized_pnl": self.position.unrealized_pnl,
-            "position_direction": self.position.direction,
-            "leverage": self.leverage,
-        })
+        total_equity = (
+            self.capital + self.position.margin_used + self.position.unrealized_pnl
+        )
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "equity": total_equity,
+                "capital": self.capital,
+                "position_value": self.position.margin_used,
+                "unrealized_pnl": self.position.unrealized_pnl,
+                "position_direction": self.position.direction,
+                "leverage": self.leverage,
+            }
+        )
 
     def get_total_equity(self, current_price: float) -> float:
         self._update_unrealized(current_price)
@@ -402,7 +419,11 @@ class AdaptiveGridTrendBacktestEngine(BacktestEngine):
         if progress_callback:
             progress_callback(total_klines, total_klines)
 
-        final_equity = self.get_total_equity(float(klines[-1]["close"])) if klines else self.initial_capital
+        final_equity = (
+            self.get_total_equity(float(klines[-1]["close"]))
+            if klines
+            else self.initial_capital
+        )
         logger.info(
             f"自适应趋势网格回测完成: 最终权益={final_equity:.2f}, "
             f"交易次数={len(self.trades)}, 强平次数={self.liquidation_count}"

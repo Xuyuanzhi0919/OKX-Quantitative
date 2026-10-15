@@ -316,14 +316,15 @@ body {
    智能推荐参数按钮 - Hover 效果
    ======================================== */
 .apply-recommendation-btn:hover {
-  background: linear-gradient(135deg, #8B52FF 0%, #AC37C0 100%) !important;
+  background: linear-gradient(135deg, #8b52ff 0%, #ac37c0 100%) !important;
 }
 
 /* ========================================
    动画效果
    ======================================== */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

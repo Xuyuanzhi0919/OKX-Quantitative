@@ -1,24 +1,6 @@
 import { useState } from 'react'
-import {
-  Card,
-  Form,
-  Input,
-  InputNumber,
-  Button,
-  Row,
-  Col,
-  Radio,
-  Space,
-  Divider,
-  App,
-} from 'antd'
-import {
-  Save,
-  Key,
-  Shield,
-  CheckCircle,
-  AlertTriangle,
-} from 'lucide-react'
+import { Card, Form, Input, InputNumber, Button, Row, Col, Radio, Space, Divider, App } from 'antd'
+import { Save, Key, Shield, CheckCircle, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 const Settings = () => {
@@ -76,7 +58,9 @@ const Settings = () => {
             >
               {t('settings.securityWarning')}
             </div>
-            <div style={{ fontSize: 12, color: '#a3a3a3', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+            <div
+              style={{ fontSize: 12, color: '#a3a3a3', lineHeight: 1.6, whiteSpace: 'pre-line' }}
+            >
               {t('settings.securityTips')}
             </div>
           </div>
@@ -101,7 +85,9 @@ const Settings = () => {
             <Form form={apiForm} layout="vertical" onFinish={onSaveApi}>
               {/* 环境选择 */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.environment').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.environment').toUpperCase()}</span>
+                }
                 name="environment"
                 initialValue="demo"
                 style={{ marginBottom: 20 }}
@@ -114,7 +100,9 @@ const Settings = () => {
 
               {/* API Key */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.apiKey').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.apiKey').toUpperCase()}</span>
+                }
                 name="apiKey"
                 rules={[{ required: true, message: t('message.required') }]}
                 style={{ marginBottom: 20 }}
@@ -129,7 +117,9 @@ const Settings = () => {
 
               {/* Secret Key */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.secretKey').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.secretKey').toUpperCase()}</span>
+                }
                 name="secretKey"
                 rules={[{ required: true, message: t('message.required') }]}
                 style={{ marginBottom: 20 }}
@@ -144,7 +134,9 @@ const Settings = () => {
 
               {/* Passphrase */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.passphrase').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.passphrase').toUpperCase()}</span>
+                }
                 name="passphrase"
                 rules={[{ required: true, message: t('message.required') }]}
                 style={{ marginBottom: 20 }}
@@ -203,7 +195,9 @@ const Settings = () => {
             <Form form={riskForm} layout="vertical" onFinish={onSaveRisk}>
               {/* 最大仓位 */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.maxPosition').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.maxPosition').toUpperCase()}</span>
+                }
                 name="maxPosition"
                 initialValue={10000}
                 rules={[
@@ -224,7 +218,9 @@ const Settings = () => {
 
               {/* 全局止损 */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.stopLoss').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.stopLoss').toUpperCase()}</span>
+                }
                 name="stopLoss"
                 initialValue={5}
                 rules={[
@@ -245,7 +241,11 @@ const Settings = () => {
 
               {/* 单笔最大投入 */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.maxOrderSize').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">
+                    {t('settings.maxOrderSize').toUpperCase()}
+                  </span>
+                }
                 name="maxOrderSize"
                 initialValue={1000}
                 rules={[
@@ -266,7 +266,9 @@ const Settings = () => {
 
               {/* 最大杠杆 */}
               <Form.Item
-                label={<span className="pro-card-header">{t('settings.maxLeverage').toUpperCase()}</span>}
+                label={
+                  <span className="pro-card-header">{t('settings.maxLeverage').toUpperCase()}</span>
+                }
                 name="maxLeverage"
                 initialValue={5}
                 rules={[
@@ -339,7 +341,11 @@ const Settings = () => {
 
       {/* API权限说明 */}
       <Card
-        title={<div className="pro-card-header" style={{ margin: 0 }}>{t('settings.requiredPermissions').toUpperCase()}</div>}
+        title={
+          <div className="pro-card-header" style={{ margin: 0 }}>
+            {t('settings.requiredPermissions').toUpperCase()}
+          </div>
+        }
         variant="borderless"
         size="small"
         style={{ marginTop: 16 }}

@@ -19,14 +19,7 @@ import {
   Typography,
   message,
 } from 'antd'
-import {
-  Bot,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  Activity,
-  Wallet,
-} from 'lucide-react'
+import { Bot, RefreshCw, Search, ShieldCheck, Activity, Wallet } from 'lucide-react'
 
 const { Text, Title } = Typography
 
@@ -123,7 +116,10 @@ function getTotalEq(balance: any) {
 }
 
 function getPositionNotional(positions?: any[]) {
-  return (positions || []).reduce((sum, item) => sum + Number(item.notional_usd || item.notionalUsd || 0), 0)
+  return (positions || []).reduce(
+    (sum, item) => sum + Number(item.notional_usd || item.notionalUsd || 0),
+    0,
+  )
 }
 
 function riskTagColor(level?: string) {
@@ -157,7 +153,8 @@ const TradeKitPage = () => {
   })
 
   const tickerMutation = useMutation({
-    mutationFn: (symbol: string) => tradeKitFetch<any>(`/market/ticker/${encodeURIComponent(symbol)}`),
+    mutationFn: (symbol: string) =>
+      tradeKitFetch<any>(`/market/ticker/${encodeURIComponent(symbol)}`),
     onSuccess: (data) => {
       setTickerOutput(data.stdout || JSON.stringify(data, null, 2))
     },
@@ -168,19 +165,20 @@ const TradeKitPage = () => {
   })
 
   const reviewMutation = useMutation({
-    mutationFn: (values: any) => tradeKitFetch<ProposalReview>('/proposal/review', {
-      method: 'POST',
-      body: JSON.stringify({
-        inst_id: values.inst_id,
-        side: values.side,
-        product_type: 'swap',
-        notional_usdt: Number(values.notional_usdt),
-        leverage: Number(values.leverage),
-        order_type: 'market',
-        reason: values.reason || '',
-        source: 'okk-frontend',
+    mutationFn: (values: any) =>
+      tradeKitFetch<ProposalReview>('/proposal/review', {
+        method: 'POST',
+        body: JSON.stringify({
+          inst_id: values.inst_id,
+          side: values.side,
+          product_type: 'swap',
+          notional_usdt: Number(values.notional_usdt),
+          leverage: Number(values.leverage),
+          order_type: 'market',
+          reason: values.reason || '',
+          source: 'okk-frontend',
+        }),
       }),
-    }),
     onSuccess: (data) => {
       setReviewOutput(data)
     },
@@ -207,7 +205,10 @@ const TradeKitPage = () => {
   const health = healthQuery.data
   const overview = overviewQuery.data
   const totalEq = useMemo(() => getTotalEq(overview?.balance), [overview?.balance])
-  const positionNotional = useMemo(() => getPositionNotional(overview?.swap_positions), [overview?.swap_positions])
+  const positionNotional = useMemo(
+    () => getPositionNotional(overview?.swap_positions),
+    [overview?.swap_positions],
+  )
 
   const refreshAll = () => {
     healthQuery.refetch()
@@ -216,7 +217,9 @@ const TradeKitPage = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}
+      >
         <div>
           <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Bot size={22} />
@@ -224,7 +227,11 @@ const TradeKitPage = () => {
           </Title>
           <Text type="secondary">TradeKit 只读实盘体检、策略建议草稿和风控预检</Text>
         </div>
-        <Button icon={<RefreshCw size={15} />} onClick={refreshAll} loading={healthQuery.isFetching || overviewQuery.isFetching}>
+        <Button
+          icon={<RefreshCw size={15} />}
+          onClick={refreshAll}
+          loading={healthQuery.isFetching || overviewQuery.isFetching}
+        >
           刷新
         </Button>
       </div>
@@ -236,9 +243,14 @@ const TradeKitPage = () => {
               title="TradeKit"
               value={health?.okx_cli?.installed ? '可用' : '不可用'}
               prefix={<Activity size={18} />}
-              valueStyle={{ color: health?.okx_cli?.installed ? '#22c55e' : '#ef4444', fontSize: 22 }}
+              valueStyle={{
+                color: health?.okx_cli?.installed ? '#22c55e' : '#ef4444',
+                fontSize: 22,
+              }}
             />
-            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>{formatCliVersion(health)}</Text>
+            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+              {formatCliVersion(health)}
+            </Text>
           </Card>
         </Col>
         <Col xs={24} md={12} xl={6}>
@@ -247,21 +259,40 @@ const TradeKitPage = () => {
               title="OKK 后端"
               value={overview?.status?.connected ? '已连接' : '未连接'}
               prefix={<ShieldCheck size={18} />}
-              valueStyle={{ color: overview?.status?.connected ? '#22c55e' : '#ef4444', fontSize: 22 }}
+              valueStyle={{
+                color: overview?.status?.connected ? '#22c55e' : '#ef4444',
+                fontSize: 22,
+              }}
             />
-            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>{overview?.status?.base_url || '--'}</Text>
+            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+              {overview?.status?.base_url || '--'}
+            </Text>
           </Card>
         </Col>
         <Col xs={24} md={12} xl={6}>
           <Card>
-            <Statistic title="账户净值" value={totalEq} precision={2} suffix="USDT" prefix={<Wallet size={18} />} />
-            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>由 OKK 余额接口读取</Text>
+            <Statistic
+              title="账户净值"
+              value={totalEq}
+              precision={2}
+              suffix="USDT"
+              prefix={<Wallet size={18} />}
+            />
+            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+              由 OKK 余额接口读取
+            </Text>
           </Card>
         </Col>
         <Col xs={24} md={12} xl={6}>
           <Card>
-            <Statistic title="SWAP 持仓" value={overview?.swap_positions?.length || 0} suffix="个" />
-            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>名义价值约 {positionNotional.toFixed(2)} USD</Text>
+            <Statistic
+              title="SWAP 持仓"
+              value={overview?.swap_positions?.length || 0}
+              suffix="个"
+            />
+            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+              名义价值约 {positionNotional.toFixed(2)} USD
+            </Text>
           </Card>
         </Col>
       </Row>
@@ -269,14 +300,18 @@ const TradeKitPage = () => {
       {health?.policy && (
         <Card title="安全策略">
           <Space size={[8, 8]} wrap>
-            <Tag color={health.policy.mode === 'read_only' ? 'blue' : 'orange'}>{health.policy.mode}</Tag>
+            <Tag color={health.policy.mode === 'read_only' ? 'blue' : 'orange'}>
+              {health.policy.mode}
+            </Tag>
             <Tag color={health.policy.require_human_confirm ? 'gold' : 'red'}>
               {health.policy.require_human_confirm ? '需要人工确认' : '无需人工确认'}
             </Tag>
             <Tag>单笔 {health.policy.limits?.max_order_notional_usdt ?? '--'} USDT</Tag>
             <Tag>日内 {health.policy.limits?.max_daily_notional_usdt ?? '--'} USDT</Tag>
             <Tag>杠杆 {health.policy.limits?.max_leverage ?? '--'}x</Tag>
-            {(health.policy.allowed_modules || []).map((item) => <Tag key={item}>{item}</Tag>)}
+            {(health.policy.allowed_modules || []).map((item) => (
+              <Tag key={item}>{item}</Tag>
+            ))}
           </Space>
         </Card>
       )}
@@ -284,7 +319,11 @@ const TradeKitPage = () => {
       {overview?.health_report && (
         <Card
           title="实盘体检"
-          extra={<Tag color={riskTagColor(overview.health_report.risk_level)}>{overview.health_report.risk_level}</Tag>}
+          extra={
+            <Tag color={riskTagColor(overview.health_report.risk_level)}>
+              {overview.health_report.risk_level}
+            </Tag>
+          }
         >
           <Alert
             type={riskAlertType(overview.health_report.risk_level)}
@@ -294,21 +333,37 @@ const TradeKitPage = () => {
           />
           <Row gutter={[16, 16]}>
             <Col xs={12} md={6}>
-              <Statistic title="暴露倍数" value={overview.health_report.notional_to_equity} precision={2} suffix="x" />
+              <Statistic
+                title="暴露倍数"
+                value={overview.health_report.notional_to_equity}
+                precision={2}
+                suffix="x"
+              />
             </Col>
             <Col xs={12} md={6}>
               <Statistic
                 title="未实现盈亏"
                 value={overview.health_report.unrealized_pnl}
                 precision={2}
-                valueStyle={{ color: overview.health_report.unrealized_pnl < 0 ? '#ef4444' : '#22c55e' }}
+                valueStyle={{
+                  color: overview.health_report.unrealized_pnl < 0 ? '#ef4444' : '#22c55e',
+                }}
               />
             </Col>
             <Col xs={12} md={6}>
-              <Statistic title="最高杠杆" value={overview.health_report.max_leverage} precision={1} suffix="x" />
+              <Statistic
+                title="最高杠杆"
+                value={overview.health_report.max_leverage}
+                precision={1}
+                suffix="x"
+              />
             </Col>
             <Col xs={12} md={6}>
-              <Statistic title="未归因持仓" value={overview.health_report.unresolved_orphan_position_count} suffix="个" />
+              <Statistic
+                title="未归因持仓"
+                value={overview.health_report.unresolved_orphan_position_count}
+                suffix="个"
+              />
             </Col>
           </Row>
           <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
@@ -346,7 +401,9 @@ const TradeKitPage = () => {
               title: '方向',
               dataIndex: 'side',
               width: 90,
-              render: (value, record) => <Tag>{value || record.pos_side || record.posSide || 'net'}</Tag>,
+              render: (value, record) => (
+                <Tag>{value || record.pos_side || record.posSide || 'net'}</Tag>
+              ),
             },
             {
               title: '名义价值',
@@ -360,7 +417,9 @@ const TradeKitPage = () => {
               width: 120,
               render: (value, record) => {
                 const pnl = Number(value || record.upl || 0)
-                return <span style={{ color: pnl < 0 ? '#ef4444' : '#22c55e' }}>{pnl.toFixed(2)}</span>
+                return (
+                  <span style={{ color: pnl < 0 ? '#ef4444' : '#22c55e' }}>{pnl.toFixed(2)}</span>
+                )
               },
             },
             {
@@ -375,8 +434,22 @@ const TradeKitPage = () => {
               width: 140,
               render: (value) => {
                 const kind = value?.kind || 'pending'
-                const color = kind === 'manual' ? 'blue' : kind === 'strategy' ? 'green' : kind === 'ignored' ? 'default' : 'gold'
-                const label = kind === 'manual' ? '手动仓位' : kind === 'strategy' ? '策略仓位' : kind === 'ignored' ? '忽略' : '待处理'
+                const color =
+                  kind === 'manual'
+                    ? 'blue'
+                    : kind === 'strategy'
+                      ? 'green'
+                      : kind === 'ignored'
+                        ? 'default'
+                        : 'gold'
+                const label =
+                  kind === 'manual'
+                    ? '手动仓位'
+                    : kind === 'strategy'
+                      ? '策略仓位'
+                      : kind === 'ignored'
+                        ? '忽略'
+                        : '待处理'
                 return <Tag color={color}>{label}</Tag>
               },
             },
@@ -385,7 +458,9 @@ const TradeKitPage = () => {
               key: 'actions',
               width: 300,
               render: (_, record) => {
-                const positionKey = record.position_key || `symbol:${record.symbol || record.inst_id || record.instId}:${record.side || record.pos_side || 'net'}`
+                const positionKey =
+                  record.position_key ||
+                  `symbol:${record.symbol || record.inst_id || record.instId}:${record.side || record.pos_side || 'net'}`
                 const save = (kind: string) => {
                   attributionMutation.mutate({
                     positionKey,
@@ -398,10 +473,18 @@ const TradeKitPage = () => {
                 }
                 return (
                   <Space wrap>
-                    <Button size="small" onClick={() => save('manual')}>标手动</Button>
-                    <Button size="small" onClick={() => save('strategy')}>标策略</Button>
-                    <Button size="small" onClick={() => save('ignored')}>忽略</Button>
-                    <Button size="small" onClick={() => save('pending')}>待处理</Button>
+                    <Button size="small" onClick={() => save('manual')}>
+                      标手动
+                    </Button>
+                    <Button size="small" onClick={() => save('strategy')}>
+                      标策略
+                    </Button>
+                    <Button size="small" onClick={() => save('ignored')}>
+                      忽略
+                    </Button>
+                    <Button size="small" onClick={() => save('pending')}>
+                      待处理
+                    </Button>
                   </Space>
                 )
               },
@@ -426,7 +509,9 @@ const TradeKitPage = () => {
             }
           >
             <Input value={tickerSymbol} onChange={(event) => setTickerSymbol(event.target.value)} />
-            <pre className="font-mono" style={preStyle}>{tickerOutput}</pre>
+            <pre className="font-mono" style={preStyle}>
+              {tickerOutput}
+            </pre>
           </Card>
         </Col>
 
@@ -453,7 +538,10 @@ const TradeKitPage = () => {
                 <Col xs={12} md={5}>
                   <Form.Item label="方向" name="side" rules={[{ required: true }]}>
                     <Select
-                      options={['long', 'short', 'buy', 'sell', 'close'].map((value) => ({ label: value, value }))}
+                      options={['long', 'short', 'buy', 'sell', 'close'].map((value) => ({
+                        label: value,
+                        value,
+                      }))}
                     />
                   </Form.Item>
                 </Col>
@@ -485,8 +573,16 @@ const TradeKitPage = () => {
                   description={`模式: ${reviewOutput.mode} · 下一步: ${reviewOutput.next_action}`}
                 />
                 <Space size={[8, 8]} wrap style={{ marginTop: 12 }}>
-                  {reviewOutput.violations.map((item) => <Tag color="red" key={item.code}>{item.message}</Tag>)}
-                  {reviewOutput.warnings.map((item) => <Tag color="gold" key={item}>{item}</Tag>)}
+                  {reviewOutput.violations.map((item) => (
+                    <Tag color="red" key={item.code}>
+                      {item.message}
+                    </Tag>
+                  ))}
+                  {reviewOutput.warnings.map((item) => (
+                    <Tag color="gold" key={item}>
+                      {item}
+                    </Tag>
+                  ))}
                 </Space>
               </div>
             )}
@@ -512,7 +608,13 @@ const TradeKitPage = () => {
                     <Space wrap>
                       <Tag>{item.type}</Tag>
                       <Tag>{item.symbol}</Tag>
-                      <Tag color={String(item.status).toLowerCase() === 'running' ? 'green' : 'default'}>{item.status}</Tag>
+                      <Tag
+                        color={
+                          String(item.status).toLowerCase() === 'running' ? 'green' : 'default'
+                        }
+                      >
+                        {item.status}
+                      </Tag>
                     </Space>
                   </Descriptions.Item>
                 ))}

@@ -2,6 +2,7 @@
 AI市场分析API端点
 提供多因子分析、决策建议等功能
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -65,7 +66,15 @@ class StealthAltcoinStrategyRequest(BaseModel):
 
 
 MAJOR_AND_STABLE_COINS = {
-    "BTC", "ETH", "USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDD", "USD",
+    "BTC",
+    "ETH",
+    "USDT",
+    "USDC",
+    "DAI",
+    "FDUSD",
+    "TUSD",
+    "USDD",
+    "USD",
 }
 
 
@@ -141,7 +150,9 @@ def _stealth_trend_metrics(klines: List[Dict[str, Any]]) -> Dict[str, float]:
 
     first_close = closes[0]
     last_close = closes[-1]
-    lookback_change_pct = (last_close - first_close) / first_close * 100 if first_close > 0 else 0.0
+    lookback_change_pct = (
+        (last_close - first_close) / first_close * 100 if first_close > 0 else 0.0
+    )
 
     fast_window = closes[-24:]
     slow_window = closes[-96:] if len(closes) >= 96 else closes
@@ -171,11 +182,15 @@ async def _get_stealth_trend_metrics(
     timeframe: str,
     lookback: int,
 ) -> Dict[str, float]:
-    klines = await exchange.get_kline(symbol, timeframe=timeframe, limit=min(max(lookback, 60), 300))
+    klines = await exchange.get_kline(
+        symbol, timeframe=timeframe, limit=min(max(lookback, 60), 300)
+    )
     return _stealth_trend_metrics(klines)
 
 
-def _analysis_for_stealth_candidate(symbol: str, candidate: Dict[str, Any], score: float) -> Dict[str, Any]:
+def _analysis_for_stealth_candidate(
+    symbol: str, candidate: Dict[str, Any], score: float
+) -> Dict[str, Any]:
     confidence = max(0.35, min(0.85, score / 100))
     position = candidate.get("range_position", 1.0)
     change_pct = candidate.get("change_pct", 0.0)
@@ -210,7 +225,9 @@ def _analysis_for_stealth_candidate(symbol: str, candidate: Dict[str, Any], scor
                     "range_position": round(position, 3),
                     "range_pct": round(candidate.get("range_pct", 0), 2),
                     "volume_usdt": round(candidate.get("volume_usdt", 0), 2),
-                    "lookback_change_pct": round(candidate.get("lookback_change_pct", 0), 2),
+                    "lookback_change_pct": round(
+                        candidate.get("lookback_change_pct", 0), 2
+                    ),
                     "ma_gap_pct": round(candidate.get("ma_gap_pct", 0), 2),
                     "recent_position": round(candidate.get("recent_position", 1), 3),
                 },
@@ -228,7 +245,9 @@ def _analysis_for_stealth_candidate(symbol: str, candidate: Dict[str, Any], scor
     }
 
 
-def _strategy_from_analysis(analysis: Dict[str, Any], change_pct: float, volume_usdt: float) -> Dict[str, Any]:
+def _strategy_from_analysis(
+    analysis: Dict[str, Any], change_pct: float, volume_usdt: float
+) -> Dict[str, Any]:
     decision = analysis.get("decision") or "wait"
     risk_level = analysis.get("risk_level") or "high"
     confidence = _to_float(analysis.get("confidence"))
@@ -298,7 +317,7 @@ def _strategy_from_analysis(analysis: Dict[str, Any], change_pct: float, volume_
 async def analyze_market(
     request: AnalysisRequest,
     user_id: int = Depends(get_current_user_api_config),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     AI市场分析接口
@@ -310,20 +329,23 @@ async def analyze_market(
     """
     try:
         # 获取用户的API配置
-        api_config = db.query(APIConfig).filter(
-            APIConfig.user_id == user_id,
-            APIConfig.is_active == True
-        ).first()
+        api_config = (
+            db.query(APIConfig)
+            .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+            .first()
+        )
 
         if not api_config:
             raise HTTPException(status_code=400, detail="请先配置OKX API密钥")
 
         # 获取用户的AI配置
         from app.models.ai_config import AIConfig
-        ai_config = db.query(AIConfig).filter(
-            AIConfig.user_id == user_id,
-            AIConfig.is_active == True
-        ).first()
+
+        ai_config = (
+            db.query(AIConfig)
+            .filter(AIConfig.user_id == user_id, AIConfig.is_active == True)
+            .first()
+        )
 
         if not ai_config:
             raise HTTPException(status_code=400, detail="请先配置AI服务")
@@ -333,7 +355,7 @@ async def analyze_market(
             api_key=api_config.api_key,
             secret_key=api_config.secret_key,
             passphrase=api_config.passphrase,
-            simulated=api_config.is_simulated
+            simulated=api_config.is_simulated,
         )
 
         # 创建分析器
@@ -342,7 +364,9 @@ async def analyze_market(
         # 执行分析
         result = await analyzer.analyze(request.symbol)
 
-        logger.info(f"分析完成: {request.symbol} -> {result['decision']} (信心度: {result['confidence']})")
+        logger.info(
+            f"分析完成: {request.symbol} -> {result['decision']} (信心度: {result['confidence']})"
+        )
 
         return result
 
@@ -357,15 +381,13 @@ async def analyze_market(
 async def get_analysis(
     symbol: str,
     user_id: int = Depends(get_current_user_api_config),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     GET方式调用分析（简化版）
     """
     return await analyze_market(
-        AnalysisRequest(symbol=symbol, detailed=False),
-        user_id,
-        db
+        AnalysisRequest(symbol=symbol, detailed=False), user_id, db
     )
 
 
@@ -373,7 +395,7 @@ async def get_analysis(
 async def analyze_batch(
     symbols: list[str],
     user_id: int = Depends(get_current_user_api_config),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     批量分析多个交易对
@@ -382,10 +404,11 @@ async def analyze_batch(
     """
     try:
         # 获取用户的API配置
-        api_config = db.query(APIConfig).filter(
-            APIConfig.user_id == user_id,
-            APIConfig.is_active == True
-        ).first()
+        api_config = (
+            db.query(APIConfig)
+            .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+            .first()
+        )
 
         if not api_config:
             raise HTTPException(status_code=400, detail="请先配置API密钥")
@@ -394,7 +417,7 @@ async def analyze_batch(
             api_key=api_config.api_key,
             secret_key=api_config.secret_key,
             passphrase=api_config.passphrase,
-            simulated=api_config.is_simulated
+            simulated=api_config.is_simulated,
         )
 
         analyzer = MultiFactorAnalyzer(exchange)
@@ -406,10 +429,7 @@ async def analyze_batch(
                 results.append(result)
             except Exception as e:
                 logger.error(f"分析{symbol}失败: {e}")
-                results.append({
-                    "symbol": symbol,
-                    "error": str(e)
-                })
+                results.append({"symbol": symbol, "error": str(e)})
 
         return {"results": results}
 
@@ -422,35 +442,42 @@ async def analyze_batch(
 async def analyze_top_altcoin_strategies(
     request: TopAltcoinStrategyRequest,
     user_id: int = Depends(get_current_user_api_config),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     选择24h涨幅榜前N个USDT山寨币并给出策略建议。
     """
-    api_config = db.query(APIConfig).filter(
-        APIConfig.user_id == user_id,
-        APIConfig.is_active == True
-    ).first()
+    api_config = (
+        db.query(APIConfig)
+        .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+        .first()
+    )
 
     if not api_config:
         raise HTTPException(status_code=400, detail="请先配置OKX API密钥")
 
     from app.models.ai_config import AIConfig
-    ai_config = db.query(AIConfig).filter(
-        AIConfig.user_id == user_id,
-        AIConfig.is_active == True
-    ).first()
+
+    ai_config = (
+        db.query(AIConfig)
+        .filter(AIConfig.user_id == user_id, AIConfig.is_active == True)
+        .first()
+    )
 
     exchange = OKXExchange(
         api_key=api_config.api_key,
         secret_key=api_config.secret_key,
         passphrase=api_config.passphrase,
-        simulated=api_config.is_simulated
+        simulated=api_config.is_simulated,
     )
 
     try:
         tickers = await exchange.get_tickers(request.inst_type.upper())
-        suffix = f"-{request.quote_ccy.upper()}-SWAP" if request.inst_type.upper() == "SWAP" else f"-{request.quote_ccy.upper()}"
+        suffix = (
+            f"-{request.quote_ccy.upper()}-SWAP"
+            if request.inst_type.upper() == "SWAP"
+            else f"-{request.quote_ccy.upper()}"
+        )
 
         candidates = []
         for ticker in tickers:
@@ -467,19 +494,25 @@ async def analyze_top_altcoin_strategies(
             if change_pct <= 0 or volume_usdt < request.min_volume_usdt:
                 continue
 
-            candidates.append({
-                "symbol": inst_id,
-                "base_ccy": base_ccy,
-                "last": _to_float(ticker.get("last")),
-                "open24h": _to_float(ticker.get("open24h")),
-                "high24h": _to_float(ticker.get("high24h")),
-                "low24h": _to_float(ticker.get("low24h")),
-                "volume_usdt": volume_usdt,
-                "change_pct": change_pct,
-            })
+            candidates.append(
+                {
+                    "symbol": inst_id,
+                    "base_ccy": base_ccy,
+                    "last": _to_float(ticker.get("last")),
+                    "open24h": _to_float(ticker.get("open24h")),
+                    "high24h": _to_float(ticker.get("high24h")),
+                    "low24h": _to_float(ticker.get("low24h")),
+                    "volume_usdt": volume_usdt,
+                    "change_pct": change_pct,
+                }
+            )
 
-        top_candidates = sorted(candidates, key=lambda item: item["change_pct"], reverse=True)[:request.limit]
-        analyzer = MultiFactorAnalyzer(exchange, ai_config.api_key if ai_config else None)
+        top_candidates = sorted(
+            candidates, key=lambda item: item["change_pct"], reverse=True
+        )[: request.limit]
+        analyzer = MultiFactorAnalyzer(
+            exchange, ai_config.api_key if ai_config else None
+        )
 
         results: List[Dict[str, Any]] = []
         for candidate in top_candidates:
@@ -494,13 +527,15 @@ async def analyze_top_altcoin_strategies(
                 candidate["change_pct"],
                 candidate["volume_usdt"],
             )
-            results.append({
-                **candidate,
-                "change_pct": round(candidate["change_pct"], 2),
-                "volume_usdt": round(candidate["volume_usdt"], 2),
-                "analysis": analysis,
-                "recommended_strategy": recommendation,
-            })
+            results.append(
+                {
+                    **candidate,
+                    "change_pct": round(candidate["change_pct"], 2),
+                    "volume_usdt": round(candidate["volume_usdt"], 2),
+                    "analysis": analysis,
+                    "recommended_strategy": recommendation,
+                }
+            )
 
         return {
             "code": 0,
@@ -509,7 +544,7 @@ async def analyze_top_altcoin_strategies(
                 "items": results,
                 "universe_count": len(candidates),
                 "ai_enabled": ai_config is not None,
-            }
+            },
         }
     except HTTPException:
         raise
@@ -524,15 +559,16 @@ async def analyze_top_altcoin_strategies(
 async def analyze_stealth_altcoin_strategies(
     request: StealthAltcoinStrategyRequest,
     user_id: int = Depends(get_current_user_api_config),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     筛选适合潜伏的USDT山寨币候选：成交量足够、未明显过热、价格位置偏低。
     """
-    api_config = db.query(APIConfig).filter(
-        APIConfig.user_id == user_id,
-        APIConfig.is_active == True
-    ).first()
+    api_config = (
+        db.query(APIConfig)
+        .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+        .first()
+    )
 
     if not api_config:
         raise HTTPException(status_code=400, detail="请先配置OKX API密钥")
@@ -541,12 +577,16 @@ async def analyze_stealth_altcoin_strategies(
         api_key=api_config.api_key,
         secret_key=api_config.secret_key,
         passphrase=api_config.passphrase,
-        simulated=api_config.is_simulated
+        simulated=api_config.is_simulated,
     )
 
     try:
         tickers = await exchange.get_tickers(request.inst_type.upper())
-        suffix = f"-{request.quote_ccy.upper()}-SWAP" if request.inst_type.upper() == "SWAP" else f"-{request.quote_ccy.upper()}"
+        suffix = (
+            f"-{request.quote_ccy.upper()}-SWAP"
+            if request.inst_type.upper() == "SWAP"
+            else f"-{request.quote_ccy.upper()}"
+        )
 
         candidates = []
         for ticker in tickers:
@@ -565,7 +605,10 @@ async def analyze_stealth_altcoin_strategies(
 
             if volume_usdt < request.min_volume_usdt:
                 continue
-            if change_pct < request.min_change_pct or change_pct > request.max_change_pct:
+            if (
+                change_pct < request.min_change_pct
+                or change_pct > request.max_change_pct
+            ):
                 continue
             if range_pct < request.min_range_pct or range_pct > request.max_range_pct:
                 continue
@@ -573,29 +616,33 @@ async def analyze_stealth_altcoin_strategies(
                 continue
 
             score = _stealth_score(ticker)
-            candidates.append({
-                "symbol": inst_id,
-                "base_ccy": base_ccy,
-                "last": _to_float(ticker.get("last")),
-                "open24h": _to_float(ticker.get("open24h")),
-                "high24h": _to_float(ticker.get("high24h")),
-                "low24h": _to_float(ticker.get("low24h")),
-                "volume_usdt": volume_usdt,
-                "change_pct": change_pct,
-                "range_pct": range_pct,
-                "range_position": range_position,
-                "stealth_score": score,
-            })
+            candidates.append(
+                {
+                    "symbol": inst_id,
+                    "base_ccy": base_ccy,
+                    "last": _to_float(ticker.get("last")),
+                    "open24h": _to_float(ticker.get("open24h")),
+                    "high24h": _to_float(ticker.get("high24h")),
+                    "low24h": _to_float(ticker.get("low24h")),
+                    "volume_usdt": volume_usdt,
+                    "change_pct": change_pct,
+                    "range_pct": range_pct,
+                    "range_position": range_position,
+                    "stealth_score": score,
+                }
+            )
 
         preliminary_candidates = sorted(
             candidates,
             key=lambda item: item["stealth_score"],
             reverse=True,
-        )[:max(request.limit * 8, 20)]
+        )[: max(request.limit * 8, 20)]
 
         semaphore = asyncio.Semaphore(6)
 
-        async def enrich_candidate(candidate: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        async def enrich_candidate(
+            candidate: Dict[str, Any]
+        ) -> Optional[Dict[str, Any]]:
             try:
                 async with semaphore:
                     metrics = await _get_stealth_trend_metrics(
@@ -614,24 +661,27 @@ async def analyze_stealth_altcoin_strategies(
                 if recent_position > request.max_recent_position:
                     return None
 
-                trend_score = max(0.0, min(10.0, lookback_change_pct + request.max_lookback_drop_pct))
+                trend_score = max(
+                    0.0, min(10.0, lookback_change_pct + request.max_lookback_drop_pct)
+                )
                 ma_score = max(0.0, min(10.0, ma_gap_pct - request.min_ma_gap_pct))
                 candidate.update(metrics)
-                candidate["stealth_score"] = candidate["stealth_score"] + trend_score + ma_score
+                candidate["stealth_score"] = (
+                    candidate["stealth_score"] + trend_score + ma_score
+                )
                 return candidate
             except Exception as exc:
                 logger.warning(f"潜伏候选趋势过滤失败 {candidate['symbol']}: {exc}")
                 return None
 
-        enriched_candidates = await asyncio.gather(*[
-            enrich_candidate(candidate)
-            for candidate in preliminary_candidates
-        ])
+        enriched_candidates = await asyncio.gather(
+            *[enrich_candidate(candidate) for candidate in preliminary_candidates]
+        )
         top_candidates = sorted(
             [candidate for candidate in enriched_candidates if candidate is not None],
             key=lambda item: item["stealth_score"],
             reverse=True,
-        )[:request.limit]
+        )[: request.limit]
 
         results: List[Dict[str, Any]] = []
         for candidate in top_candidates:
@@ -655,19 +705,23 @@ async def analyze_stealth_altcoin_strategies(
             recommendation["parameters"]["risk_fuse"]["daily_loss_limit_pct"] = 0.03
             recommendation["parameters"]["risk_fuse"]["max_drawdown_pct"] = 0.08
             recommendation["direction"] = "both"
-            results.append({
-                **candidate,
-                "change_pct": round(candidate["change_pct"], 2),
-                "volume_usdt": round(candidate["volume_usdt"], 2),
-                "range_pct": round(candidate["range_pct"], 2),
-                "range_position": round(candidate["range_position"], 3),
-                "lookback_change_pct": round(candidate.get("lookback_change_pct", 0), 2),
-                "ma_gap_pct": round(candidate.get("ma_gap_pct", 0), 2),
-                "recent_position": round(candidate.get("recent_position", 1), 3),
-                "stealth_score": round(candidate["stealth_score"], 2),
-                "analysis": analysis,
-                "recommended_strategy": recommendation,
-            })
+            results.append(
+                {
+                    **candidate,
+                    "change_pct": round(candidate["change_pct"], 2),
+                    "volume_usdt": round(candidate["volume_usdt"], 2),
+                    "range_pct": round(candidate["range_pct"], 2),
+                    "range_position": round(candidate["range_position"], 3),
+                    "lookback_change_pct": round(
+                        candidate.get("lookback_change_pct", 0), 2
+                    ),
+                    "ma_gap_pct": round(candidate.get("ma_gap_pct", 0), 2),
+                    "recent_position": round(candidate.get("recent_position", 1), 3),
+                    "stealth_score": round(candidate["stealth_score"], 2),
+                    "analysis": analysis,
+                    "recommended_strategy": recommendation,
+                }
+            )
 
         return {
             "code": 0,
@@ -676,9 +730,15 @@ async def analyze_stealth_altcoin_strategies(
                 "items": results,
                 "universe_count": len(candidates),
                 "preliminary_count": len(preliminary_candidates),
-                "trend_filtered_count": len([candidate for candidate in enriched_candidates if candidate is not None]),
+                "trend_filtered_count": len(
+                    [
+                        candidate
+                        for candidate in enriched_candidates
+                        if candidate is not None
+                    ]
+                ),
                 "ai_enabled": False,
-            }
+            },
         }
     except HTTPException:
         raise

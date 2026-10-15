@@ -48,13 +48,10 @@ const StrategyOrderHistory = ({ strategyId }: StrategyOrderHistoryProps) => {
   // 订阅WebSocket订单更新
   useEffect(() => {
     // 订阅该策略的订单更新
-    const unsubscribe = wsService.onSingleOrderUpdate(
-      strategyId,
-      (orderData: OrderUpdateData) => {
-        // 订单状态发生变化，立即刷新订单列表
-        queryClient.invalidateQueries({ queryKey: ['strategy-orders', strategyId] })
-      }
-    )
+    const unsubscribe = wsService.onSingleOrderUpdate(strategyId, (orderData: OrderUpdateData) => {
+      // 订单状态发生变化，立即刷新订单列表
+      queryClient.invalidateQueries({ queryKey: ['strategy-orders', strategyId] })
+    })
 
     return () => {
       unsubscribe()
@@ -74,9 +71,7 @@ const StrategyOrderHistory = ({ strategyId }: StrategyOrderHistoryProps) => {
       key: 'side',
       width: 70,
       render: (side: string) => (
-        <Tag color={side === 'buy' ? '#22c55e' : '#ef4444'}>
-          {side === 'buy' ? '买入' : '卖出'}
-        </Tag>
+        <Tag color={side === 'buy' ? '#22c55e' : '#ef4444'}>{side === 'buy' ? '买入' : '卖出'}</Tag>
       ),
     },
     {

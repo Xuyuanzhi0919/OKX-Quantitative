@@ -1,6 +1,7 @@
 """
 持仓和账户管理API
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from datetime import datetime, timedelta, timezone
@@ -18,10 +19,7 @@ def get_okx_exchange(user_id: int) -> OKXExchange:
         return api_config_service.get_exchange(user_id=user_id)
     except Exception as e:
         logger.error(f"获取交易所实例失败: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"API配置错误: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"API配置错误: {str(e)}")
 
 
 @router.get("/balance")
@@ -43,11 +41,7 @@ async def get_balance(
         balance = await exchange.get_balance(ccy=ccy)
         await exchange.close()
 
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": balance
-        }
+        return {"code": 0, "msg": "success", "data": balance}
     except Exception as e:
         logger.error(f"获取余额失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -55,7 +49,9 @@ async def get_balance(
 
 @router.get("/list")
 async def list_positions(
-    inst_type: Optional[str] = Query(None, description="产品类型: MARGIN/SWAP/FUTURES/OPTION"),
+    inst_type: Optional[str] = Query(
+        None, description="产品类型: MARGIN/SWAP/FUTURES/OPTION"
+    ),
     inst_id: Optional[str] = Query(None, description="产品ID,如 BTC-USDT-SWAP"),
     pos_id: Optional[str] = Query(None, description="持仓ID"),
     user_id: int = Depends(require_current_user_id),
@@ -74,16 +70,14 @@ async def list_positions(
     try:
         exchange = get_okx_exchange(user_id)
         positions = await exchange.get_positions(
-            inst_type=inst_type,
-            inst_id=inst_id,
-            pos_id=pos_id
+            inst_type=inst_type, inst_id=inst_id, pos_id=pos_id
         )
         await exchange.close()
 
         # 安全转换函数
         def safe_float(value, default=0.0):
             """安全地转换为float,处理空字符串和None"""
-            if value is None or value == '' or value == "":
+            if value is None or value == "" or value == "":
                 return default
             try:
                 return float(value)
@@ -93,64 +87,73 @@ async def list_positions(
         # 转换为前端需要的格式(直接返回数组)
         result = []
         for idx, pos in enumerate(positions):
-            pos_size = safe_float(pos.get('pos', 0))
+            pos_size = safe_float(pos.get("pos", 0))
             if pos_size == 0:
                 continue  # 跳过空持仓
 
-            avg_px = safe_float(pos.get('avgPx', 0))
-            mark_px = safe_float(pos.get('markPx', avg_px))
-            last_px = safe_float(pos.get('last', mark_px))
-            upl = safe_float(pos.get('upl', 0))
-            upl_ratio = safe_float(pos.get('uplRatio', 0))
-            margin = safe_float(pos.get('margin', 0))
-            imr = safe_float(pos.get('imr', 0))
-            mmr = safe_float(pos.get('mmr', 0))
-            mgn_ratio = safe_float(pos.get('mgnRatio', 0))
-            liq_px = safe_float(pos.get('liqPx', 0))
-            lever = safe_float(pos.get('lever', 0))
-            pos_side = pos.get('posSide') or 'net'
-            side = pos_side if pos_side in ('long', 'short') else ("long" if pos_size > 0 else "short")
+            avg_px = safe_float(pos.get("avgPx", 0))
+            mark_px = safe_float(pos.get("markPx", avg_px))
+            last_px = safe_float(pos.get("last", mark_px))
+            upl = safe_float(pos.get("upl", 0))
+            upl_ratio = safe_float(pos.get("uplRatio", 0))
+            margin = safe_float(pos.get("margin", 0))
+            imr = safe_float(pos.get("imr", 0))
+            mmr = safe_float(pos.get("mmr", 0))
+            mgn_ratio = safe_float(pos.get("mgnRatio", 0))
+            liq_px = safe_float(pos.get("liqPx", 0))
+            lever = safe_float(pos.get("lever", 0))
+            pos_side = pos.get("posSide") or "net"
+            side = (
+                pos_side
+                if pos_side in ("long", "short")
+                else ("long" if pos_size > 0 else "short")
+            )
             # notionalUsd: OKX 已按合约面值算好的名义价值（USD），SWAP 张数≠币数，
             # 前端必须用此值，否则直接 size×price 会差一个合约面值倍数
-            notional_usd = safe_float(pos.get('notionalUsd', 0))
+            notional_usd = safe_float(pos.get("notionalUsd", 0))
 
             # OKX uTime/cTime 是毫秒级 Unix 时间戳字符串，需转为 ISO 格式再返回前端
             def ms_to_iso(ms_str: str) -> str:
                 if not ms_str:
-                    return ''
+                    return ""
                 try:
                     from datetime import datetime, timezone
-                    return datetime.fromtimestamp(int(ms_str) / 1000, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+
+                    return datetime.fromtimestamp(
+                        int(ms_str) / 1000, tz=timezone.utc
+                    ).strftime("%Y-%m-%d %H:%M:%S")
                 except Exception:
                     return ms_str
 
-            result.append({
-                "id": pos.get('posId') or idx + 1,
-                "pos_id": pos.get('posId', ''),
-                "pos_side": pos_side,
-                "mgn_mode": pos.get('mgnMode', ''),
-                "strategy_id": None,
-                "strategy_name": None,
-                "symbol": pos.get('instId', ''),
-                "inst_type": pos.get('instType', 'SWAP'),
-                "side": side,
-                "size": abs(pos_size),
-                "avg_price": avg_px,
-                "current_price": mark_px,
-                "last_price": last_px,
-                "unrealized_pnl": upl,
-                "unrealized_pnl_pct": upl_ratio * 100,
-                "notional_usd": notional_usd if notional_usd > 0 else None,
-                "margin": margin,
-                "imr": imr,
-                "mmr": mmr,
-                "mgn_ratio": mgn_ratio,
-                "leverage": lever,
-                "adl": safe_float(pos.get('adl', 0)),
-                "liquidation_price": liq_px if liq_px > 0 else None,
-                "created_at": ms_to_iso(pos.get('cTime', '')),
-                "updated_at": ms_to_iso(pos.get('uTime', ''))
-            })
+            result.append(
+                {
+                    "id": pos.get("posId") or idx + 1,
+                    "pos_id": pos.get("posId", ""),
+                    "pos_side": pos_side,
+                    "mgn_mode": pos.get("mgnMode", ""),
+                    "strategy_id": None,
+                    "strategy_name": None,
+                    "symbol": pos.get("instId", ""),
+                    "inst_type": pos.get("instType", "SWAP"),
+                    "side": side,
+                    "size": abs(pos_size),
+                    "avg_price": avg_px,
+                    "current_price": mark_px,
+                    "last_price": last_px,
+                    "unrealized_pnl": upl,
+                    "unrealized_pnl_pct": upl_ratio * 100,
+                    "notional_usd": notional_usd if notional_usd > 0 else None,
+                    "margin": margin,
+                    "imr": imr,
+                    "mmr": mmr,
+                    "mgn_ratio": mgn_ratio,
+                    "leverage": lever,
+                    "adl": safe_float(pos.get("adl", 0)),
+                    "liquidation_price": liq_px if liq_px > 0 else None,
+                    "created_at": ms_to_iso(pos.get("cTime", "")),
+                    "updated_at": ms_to_iso(pos.get("uTime", "")),
+                }
+            )
 
         logger.info(f"获取到 {len(result)} 个持仓")
         return result
@@ -205,7 +208,9 @@ async def get_account_snapshots(
         if snap_list:
             # 过滤异常快照：equity <= 0 的点直接跳过
             # 同时过滤极端异常值：若某点低于所有快照中位数的 20%，视为数据异常
-            valid_equities = [s["total_equity"] for s in snap_list if s["total_equity"] > 0]
+            valid_equities = [
+                s["total_equity"] for s in snap_list if s["total_equity"] > 0
+            ]
             if valid_equities:
                 sorted_eq = sorted(valid_equities)
                 median_eq = sorted_eq[len(sorted_eq) // 2]

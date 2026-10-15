@@ -1,6 +1,7 @@
 """
 账户监控服务 - 定期推送账户余额和持仓数据，并定时保存净值快照
 """
+
 import asyncio
 from loguru import logger
 from datetime import datetime, timedelta
@@ -98,7 +99,9 @@ class AccountMonitor:
 
         self.is_running = True
         self._task = asyncio.create_task(self._monitor_loop())
-        logger.info(f"✅ 账户监控器已启动 (推送间隔: {self.interval}秒, 快照间隔: {self._snapshot_interval * self.interval}秒)")
+        logger.info(
+            f"✅ 账户监控器已启动 (推送间隔: {self.interval}秒, 快照间隔: {self._snapshot_interval * self.interval}秒)"
+        )
 
     async def stop(self):
         """停止监控"""
@@ -174,7 +177,7 @@ class AccountMonitor:
                     # 累加各币种的未实现盈亏
                     upl = safe_float(detail.get("upl"))
                     iso_upl = safe_float(detail.get("isoUpl"))
-                    total_upl += (upl + iso_upl)
+                    total_upl += upl + iso_upl
 
                 ws_data = {
                     "total_equity": total_eq,
@@ -186,12 +189,14 @@ class AccountMonitor:
                     "mmr": safe_float(balance_data.get("mmr")),
                     "notional_usd": safe_float(balance_data.get("notionalUsd")),
                     "details": details,
-                    "timestamp": int(datetime.now().timestamp() * 1000)
+                    "timestamp": int(datetime.now().timestamp() * 1000),
                 }
 
                 # 广播余额更新
                 await broadcast_balance_update(ws_data)
-                logger.debug(f"余额更新已推送: 总权益={total_eq}, 未实现盈亏={total_upl}")
+                logger.debug(
+                    f"余额更新已推送: 总权益={total_eq}, 未实现盈亏={total_upl}"
+                )
 
                 # 返回用于快照的核心数据
                 return {
@@ -216,7 +221,9 @@ class AccountMonitor:
         successful_queries = 0
         for ord_type in ("conditional", "oco", "move_order_stop"):
             try:
-                orders = await exchange.get_pending_algo_orders(ord_type=ord_type, inst_type="SWAP")
+                orders = await exchange.get_pending_algo_orders(
+                    ord_type=ord_type, inst_type="SWAP"
+                )
                 successful_queries += 1
             except Exception as exc:
                 logger.warning(f"读取 {ord_type} 风控委托失败: {exc}")
@@ -252,16 +259,22 @@ class AccountMonitor:
         if positions and total_equity > 0:
             margin_usage = initial_margin / total_equity
             if margin_usage >= safe_float(self._risk_config["margin_usage_threshold"]):
-                conditions.append({
-                    "code": "margin_usage",
-                    "message": f"保证金占总资产 {margin_usage * 100:.1f}%",
-                })
+                conditions.append(
+                    {
+                        "code": "margin_usage",
+                        "message": f"保证金占总资产 {margin_usage * 100:.1f}%",
+                    }
+                )
             available_ratio = available / total_equity
-            if available_ratio <= safe_float(self._risk_config["available_ratio_threshold"]):
-                conditions.append({
-                    "code": "low_available",
-                    "message": f"可用余额仅占总资产 {available_ratio * 100:.1f}%",
-                })
+            if available_ratio <= safe_float(
+                self._risk_config["available_ratio_threshold"]
+            ):
+                conditions.append(
+                    {
+                        "code": "low_available",
+                        "message": f"可用余额仅占总资产 {available_ratio * 100:.1f}%",
+                    }
+                )
 
         active_symbols = set()
         for pos in positions:
@@ -269,26 +282,34 @@ class AccountMonitor:
             active_symbols.add(symbol)
             leverage = safe_float(pos.get("leverage"))
             if leverage >= safe_float(self._risk_config["high_leverage_threshold"]):
-                conditions.append({
-                    "code": f"high_leverage:{symbol}",
-                    "message": f"{symbol} 杠杆 {leverage:g}x",
-                })
+                conditions.append(
+                    {
+                        "code": f"high_leverage:{symbol}",
+                        "message": f"{symbol} 杠杆 {leverage:g}x",
+                    }
+                )
 
             current = safe_float(pos.get("current_price") or pos.get("last_price"))
             liquidation = safe_float(pos.get("liquidation_price"))
             if current > 0 and liquidation > 0:
                 distance_pct = abs(current - liquidation) / current * 100
-                if distance_pct <= safe_float(self._risk_config["liquidation_distance_threshold_pct"]):
-                    conditions.append({
-                        "code": f"liquidation_distance:{symbol}",
-                        "message": f"{symbol} 距强平价仅 {distance_pct:.1f}%",
-                    })
+                if distance_pct <= safe_float(
+                    self._risk_config["liquidation_distance_threshold_pct"]
+                ):
+                    conditions.append(
+                        {
+                            "code": f"liquidation_distance:{symbol}",
+                            "message": f"{symbol} 距强平价仅 {distance_pct:.1f}%",
+                        }
+                    )
 
             if protected_symbols is not None and symbol not in protected_symbols:
-                conditions.append({
-                    "code": f"missing_stop:{symbol}",
-                    "message": f"{symbol} 未检测到止损委托",
-                })
+                conditions.append(
+                    {
+                        "code": f"missing_stop:{symbol}",
+                        "message": f"{symbol} 未检测到止损委托",
+                    }
+                )
 
             upl = safe_float(pos.get("unrealized_pnl"))
             peak = max(self._position_upl_peaks.get(symbol, upl), upl)
@@ -302,10 +323,12 @@ class AccountMonitor:
                 peak >= safe_float(self._risk_config["profit_drawdown_min_peak_usdt"])
                 and drawdown >= drawdown_limit
             ):
-                conditions.append({
-                    "code": f"profit_drawdown:{symbol}",
-                    "message": f"{symbol} 浮盈由 {peak:.2f} 回撤至 {upl:.2f} USDT",
-                })
+                conditions.append(
+                    {
+                        "code": f"profit_drawdown:{symbol}",
+                        "message": f"{symbol} 浮盈由 {peak:.2f} 回撤至 {upl:.2f} USDT",
+                    }
+                )
 
         for symbol in set(self._position_upl_peaks) - active_symbols:
             self._position_upl_peaks.pop(symbol, None)
@@ -317,7 +340,11 @@ class AccountMonitor:
         positions_data: Optional[dict],
     ):
         """Send one deduplicated Bark alert; never place or modify orders."""
-        if not self._risk_config.get("enabled") or not balance_data or positions_data is None:
+        if (
+            not self._risk_config.get("enabled")
+            or not balance_data
+            or positions_data is None
+        ):
             return
 
         self._risk_check_counter += self.interval
@@ -326,8 +353,12 @@ class AccountMonitor:
         self._risk_check_counter = 0
 
         positions = positions_data.get("positions", [])
-        protected_symbols = await self._get_stop_protected_symbols() if positions else set()
-        conditions = self._build_risk_conditions(balance_data, positions, protected_symbols)
+        protected_symbols = (
+            await self._get_stop_protected_symbols() if positions else set()
+        )
+        conditions = self._build_risk_conditions(
+            balance_data, positions, protected_symbols
+        )
         fingerprint = "|".join(sorted(item["code"] for item in conditions))
         now = datetime.now()
 
@@ -382,38 +413,51 @@ class AccountMonitor:
                     if pos_size != 0:  # 只推送有持仓的
                         upl = safe_float(pos.get("upl"))
                         pos_side = pos.get("posSide") or "net"
-                        side = pos_side if pos_side in ("long", "short") else ("long" if pos_size > 0 else "short")
+                        side = (
+                            pos_side
+                            if pos_side in ("long", "short")
+                            else ("long" if pos_size > 0 else "short")
+                        )
                         total_unrealized_pnl += upl
 
-                        active_positions.append({
-                            "pos_id": pos.get("posId", ""),
-                            "pos_side": pos_side,
-                            "mgn_mode": pos.get("mgnMode", ""),
-                            "symbol": pos.get("instId", ""),
-                            "side": side,
-                            "size": abs(pos_size),
-                            "avg_price": safe_float(pos.get("avgPx")),
-                            "current_price": safe_float(pos.get("markPx")),
-                            "last_price": safe_float(pos.get("last")),
-                            "unrealized_pnl": upl,
-                            "unrealized_pnl_pct": safe_float(pos.get("uplRatio")) * 100,
-                            "margin": safe_float(pos.get("margin")),
-                            "imr": safe_float(pos.get("imr")),
-                            "mmr": safe_float(pos.get("mmr")),
-                            "mgn_ratio": safe_float(pos.get("mgnRatio")),
-                            "adl": safe_float(pos.get("adl")),
-                            "liquidation_price": safe_float(pos.get("liqPx")) if pos.get("liqPx") else None,
-                            "leverage": safe_float(pos.get("lever")),
-                            "inst_type": pos.get("instType", "SWAP"),
-                            "notional_usd": safe_float(pos.get("notionalUsd")),  # OKX返回的持仓美元价值
-                        })
+                        active_positions.append(
+                            {
+                                "pos_id": pos.get("posId", ""),
+                                "pos_side": pos_side,
+                                "mgn_mode": pos.get("mgnMode", ""),
+                                "symbol": pos.get("instId", ""),
+                                "side": side,
+                                "size": abs(pos_size),
+                                "avg_price": safe_float(pos.get("avgPx")),
+                                "current_price": safe_float(pos.get("markPx")),
+                                "last_price": safe_float(pos.get("last")),
+                                "unrealized_pnl": upl,
+                                "unrealized_pnl_pct": safe_float(pos.get("uplRatio"))
+                                * 100,
+                                "margin": safe_float(pos.get("margin")),
+                                "imr": safe_float(pos.get("imr")),
+                                "mmr": safe_float(pos.get("mmr")),
+                                "mgn_ratio": safe_float(pos.get("mgnRatio")),
+                                "adl": safe_float(pos.get("adl")),
+                                "liquidation_price": (
+                                    safe_float(pos.get("liqPx"))
+                                    if pos.get("liqPx")
+                                    else None
+                                ),
+                                "leverage": safe_float(pos.get("lever")),
+                                "inst_type": pos.get("instType", "SWAP"),
+                                "notional_usd": safe_float(
+                                    pos.get("notionalUsd")
+                                ),  # OKX返回的持仓美元价值
+                            }
+                        )
 
                 # 构造WebSocket推送数据
                 ws_data = {
                     "positions": active_positions,
                     "total_positions": len(active_positions),
                     "total_unrealized_pnl": total_unrealized_pnl,
-                    "timestamp": int(datetime.now().timestamp() * 1000)
+                    "timestamp": int(datetime.now().timestamp() * 1000),
                 }
 
                 # 广播持仓更新
@@ -426,9 +470,11 @@ class AccountMonitor:
 
     async def _save_snapshot(self, data: dict):
         """保存账户净值快照到数据库（每小时一次）"""
+
         def _sync_save():
             from app.core.database import SessionLocal
             from app.models.account_snapshot import AccountSnapshot
+
             db = SessionLocal()
             try:
                 new_equity = data["total_equity"]
@@ -472,7 +518,9 @@ class AccountMonitor:
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, _sync_save)
 
-    async def _maybe_send_daily_report(self, balance_data: Optional[dict], positions_data: Optional[dict]):
+    async def _maybe_send_daily_report(
+        self, balance_data: Optional[dict], positions_data: Optional[dict]
+    ):
         """每天晚间发送一次账户摘要。"""
         now = datetime.now()
         if now.hour < 23 or (now.hour == 23 and now.minute < 50):
@@ -483,7 +531,9 @@ class AccountMonitor:
             return
 
         positions = (positions_data or {}).get("positions", [])
-        total_unrealized_pnl = safe_float((positions_data or {}).get("total_unrealized_pnl"))
+        total_unrealized_pnl = safe_float(
+            (positions_data or {}).get("total_unrealized_pnl")
+        )
         position_lines = []
         for pos in positions[:5]:
             position_lines.append(
@@ -503,8 +553,12 @@ class AccountMonitor:
                 ),
                 level="info",
                 data={
-                    "total_equity": round(safe_float(balance_data.get("total_equity")), 4),
-                    "available_balance": round(safe_float(balance_data.get("available_balance")), 4),
+                    "total_equity": round(
+                        safe_float(balance_data.get("total_equity")), 4
+                    ),
+                    "available_balance": round(
+                        safe_float(balance_data.get("available_balance")), 4
+                    ),
                     "unrealized_pnl": round(total_unrealized_pnl, 4),
                     "positions": position_lines,
                 },

@@ -2,6 +2,7 @@
 Bark 推送渠道
 官方服务: https://api.day.app
 """
+
 from typing import Dict, Optional
 
 import httpx
@@ -26,7 +27,9 @@ class BarkChannel(NotificationChannel):
         }
         """
         super().__init__(config)
-        self.server_url = str(config.get("server_url") or "https://api.day.app").rstrip("/")
+        self.server_url = str(config.get("server_url") or "https://api.day.app").rstrip(
+            "/"
+        )
         self.device_key = str(config.get("device_key") or "").strip().strip("/")
         self.group = config.get("group", "OKK")
         self.sound = config.get("sound")
@@ -39,11 +42,7 @@ class BarkChannel(NotificationChannel):
             self.enabled = False
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送 Bark 消息。"""
         if not self.is_enabled():
@@ -64,7 +63,9 @@ class BarkChannel(NotificationChannel):
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(f"{self.server_url}/{self.device_key}", json=payload)
+                response = await client.post(
+                    f"{self.server_url}/{self.device_key}", json=payload
+                )
                 response.raise_for_status()
                 result = response.json()
 

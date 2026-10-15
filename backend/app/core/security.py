@@ -1,6 +1,7 @@
 """
 Authentication helpers.
 """
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -21,7 +22,9 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(subject: str | int, expires_delta: timedelta | None = None) -> str:
+def create_access_token(
+    subject: str | int, expires_delta: timedelta | None = None
+) -> str:
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )

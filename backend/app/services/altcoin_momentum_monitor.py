@@ -5,6 +5,7 @@
 - ticker 级别短窗口涨幅
 - 5m K线级别涨幅 + 成交量突增
 """
+
 import asyncio
 import time
 from collections import defaultdict, deque
@@ -15,11 +16,22 @@ from loguru import logger
 
 from app.core.config import settings
 from app.services.exchange.okx import OKXExchange
-from app.services.notification.notification_service import NotificationLevel, notification_service
+from app.services.notification.notification_service import (
+    NotificationLevel,
+    notification_service,
+)
 
 
 MAJOR_AND_STABLE_COINS = {
-    "BTC", "ETH", "USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDD", "USD",
+    "BTC",
+    "ETH",
+    "USDT",
+    "USDC",
+    "DAI",
+    "FDUSD",
+    "TUSD",
+    "USDD",
+    "USD",
 }
 
 
@@ -68,7 +80,9 @@ class AltcoinMomentumMonitor:
 
     def configure(self, config: Dict[str, Any]):
         self.enabled = bool(config.get("enabled", False))
-        self.interval_seconds = int(config.get("interval_seconds", self.interval_seconds))
+        self.interval_seconds = int(
+            config.get("interval_seconds", self.interval_seconds)
+        )
         self.window_seconds = int(config.get("window_seconds", self.window_seconds))
         self.threshold_pct = float(config.get("threshold_pct", self.threshold_pct))
         configured_windows = config.get("windows")
@@ -80,42 +94,72 @@ class AltcoinMomentumMonitor:
                 window_seconds = int(item.get("window_seconds", self.window_seconds))
                 threshold_pct = float(item.get("threshold_pct", self.threshold_pct))
                 if window_seconds > 0 and threshold_pct > 0:
-                    self.windows.append({
-                        "window_seconds": window_seconds,
-                        "threshold_pct": threshold_pct,
-                    })
+                    self.windows.append(
+                        {
+                            "window_seconds": window_seconds,
+                            "threshold_pct": threshold_pct,
+                        }
+                    )
             if not self.windows:
-                self.windows = [{"window_seconds": self.window_seconds, "threshold_pct": self.threshold_pct}]
+                self.windows = [
+                    {
+                        "window_seconds": self.window_seconds,
+                        "threshold_pct": self.threshold_pct,
+                    }
+                ]
         else:
-            self.windows = [{"window_seconds": self.window_seconds, "threshold_pct": self.threshold_pct}]
-        self.cooldown_seconds = int(config.get("cooldown_seconds", self.cooldown_seconds))
+            self.windows = [
+                {
+                    "window_seconds": self.window_seconds,
+                    "threshold_pct": self.threshold_pct,
+                }
+            ]
+        self.cooldown_seconds = int(
+            config.get("cooldown_seconds", self.cooldown_seconds)
+        )
         self.inst_type = str(config.get("inst_type", self.inst_type)).upper()
         self.quote_ccy = str(config.get("quote_ccy", self.quote_ccy)).upper()
-        self.min_volume_usdt = float(config.get("min_volume_usdt", self.min_volume_usdt))
+        self.min_volume_usdt = float(
+            config.get("min_volume_usdt", self.min_volume_usdt)
+        )
         self.exclude_majors = bool(config.get("exclude_majors", self.exclude_majors))
         self.user_id = int(config.get("user_id", self.user_id))
-        self.kline_monitor_enabled = bool(config.get("kline_monitor_enabled", self.kline_monitor_enabled))
+        self.kline_monitor_enabled = bool(
+            config.get("kline_monitor_enabled", self.kline_monitor_enabled)
+        )
         self.kline_timeframe = str(config.get("kline_timeframe", self.kline_timeframe))
         if self.kline_timeframe not in {"1m", "3m", "5m", "15m"}:
             self.kline_timeframe = "5m"
-        self.kline_scan_interval_seconds = int(config.get(
-            "kline_scan_interval_seconds",
-            self.kline_scan_interval_seconds,
-        ))
-        self.kline_change_threshold_pct = float(config.get(
-            "kline_change_threshold_pct",
-            self.kline_change_threshold_pct,
-        ))
-        self.kline_volume_spike_multiple = float(config.get(
-            "kline_volume_spike_multiple",
-            self.kline_volume_spike_multiple,
-        ))
-        self.kline_volume_lookback = int(config.get("kline_volume_lookback", self.kline_volume_lookback))
-        self.kline_min_volume_usdt = float(config.get("kline_min_volume_usdt", self.kline_min_volume_usdt))
-        self.kline_max_symbols_per_scan = int(config.get(
-            "kline_max_symbols_per_scan",
-            self.kline_max_symbols_per_scan,
-        ))
+        self.kline_scan_interval_seconds = int(
+            config.get(
+                "kline_scan_interval_seconds",
+                self.kline_scan_interval_seconds,
+            )
+        )
+        self.kline_change_threshold_pct = float(
+            config.get(
+                "kline_change_threshold_pct",
+                self.kline_change_threshold_pct,
+            )
+        )
+        self.kline_volume_spike_multiple = float(
+            config.get(
+                "kline_volume_spike_multiple",
+                self.kline_volume_spike_multiple,
+            )
+        )
+        self.kline_volume_lookback = int(
+            config.get("kline_volume_lookback", self.kline_volume_lookback)
+        )
+        self.kline_min_volume_usdt = float(
+            config.get("kline_min_volume_usdt", self.kline_min_volume_usdt)
+        )
+        self.kline_max_symbols_per_scan = int(
+            config.get(
+                "kline_max_symbols_per_scan",
+                self.kline_max_symbols_per_scan,
+            )
+        )
 
     async def start(self):
         if not self.enabled:
@@ -138,7 +182,8 @@ class AltcoinMomentumMonitor:
         )
         self._task = asyncio.create_task(self._monitor_loop())
         windows_text = ", ".join(
-            f"{item['window_seconds']}s>={item['threshold_pct']}%" for item in self.windows
+            f"{item['window_seconds']}s>={item['threshold_pct']}%"
+            for item in self.windows
         )
         logger.info(
             f"山寨币短线异动监控已启动: windows=[{windows_text}], "
@@ -182,11 +227,15 @@ class AltcoinMomentumMonitor:
         now = time.time()
         tickers = await self._exchange.get_tickers(self.inst_type)
         supported_tickers = [
-            ticker for ticker in tickers
+            ticker
+            for ticker in tickers
             if self._is_supported_symbol(str(ticker.get("instId") or ""))
         ]
 
-        if self.kline_monitor_enabled and now - self._last_kline_scan_at >= self.kline_scan_interval_seconds:
+        if (
+            self.kline_monitor_enabled
+            and now - self._last_kline_scan_at >= self.kline_scan_interval_seconds
+        ):
             self._last_kline_scan_at = now
             await self._scan_kline_spikes(supported_tickers, now)
 
@@ -267,12 +316,14 @@ class AltcoinMomentumMonitor:
             candidates.append((symbol, volume_usdt))
 
         candidates.sort(key=lambda item: item[1], reverse=True)
-        candidates = candidates[:max(1, self.kline_max_symbols_per_scan)]
+        candidates = candidates[: max(1, self.kline_max_symbols_per_scan)]
 
         limit = max(10, min(100, self.kline_volume_lookback + 3))
         for symbol, volume_24h_usdt in candidates:
             try:
-                raw = await self._exchange.get_kline(symbol, self.kline_timeframe, limit=limit)
+                raw = await self._exchange.get_kline(
+                    symbol, self.kline_timeframe, limit=limit
+                )
                 signal = self._build_kline_signal(symbol, raw, volume_24h_usdt, now)
                 if signal:
                     await self._maybe_alert_kline_spike(signal)
@@ -288,8 +339,7 @@ class AltcoinMomentumMonitor:
         now: float,
     ) -> Optional[Dict[str, Any]]:
         confirmed = [
-            item for item in raw_klines
-            if str(item.get("confirm", "1")) == "1"
+            item for item in raw_klines if str(item.get("confirm", "1")) == "1"
         ]
         if len(confirmed) < self.kline_volume_lookback + 2:
             return None
@@ -297,7 +347,7 @@ class AltcoinMomentumMonitor:
         candles = sorted(confirmed, key=lambda item: int(item["ts"]))
         latest = candles[-1]
         previous = candles[-2]
-        lookback = candles[-self.kline_volume_lookback - 1:-1]
+        lookback = candles[-self.kline_volume_lookback - 1 : -1]
 
         latest_close = safe_float(latest.get("c"))
         previous_close = safe_float(previous.get("c"))
@@ -306,7 +356,9 @@ class AltcoinMomentumMonitor:
 
         change_pct = (latest_close - previous_close) / previous_close * 100
         latest_volume_usdt = self._kline_quote_volume(latest)
-        avg_volume_usdt = sum(self._kline_quote_volume(item) for item in lookback) / len(lookback)
+        avg_volume_usdt = sum(
+            self._kline_quote_volume(item) for item in lookback
+        ) / len(lookback)
         if avg_volume_usdt <= 0:
             return None
 
@@ -323,7 +375,9 @@ class AltcoinMomentumMonitor:
             "symbol": symbol,
             "timeframe": self.kline_timeframe,
             "timestamp": int(latest["ts"]),
-            "time": datetime.fromtimestamp(int(latest["ts"]) / 1000).strftime("%Y-%m-%d %H:%M"),
+            "time": datetime.fromtimestamp(int(latest["ts"]) / 1000).strftime(
+                "%Y-%m-%d %H:%M"
+            ),
             "open": safe_float(latest.get("o")),
             "high": safe_float(latest.get("h")),
             "low": safe_float(latest.get("l")),
@@ -383,7 +437,9 @@ class AltcoinMomentumMonitor:
         self._last_alert_at[alert_key] = now
         self._seen_symbols.add(symbol)
 
-        window_label = "1分钟" if window_seconds == 60 else f"{round(window_seconds / 60)}分钟"
+        window_label = (
+            "1分钟" if window_seconds == 60 else f"{round(window_seconds / 60)}分钟"
+        )
         title = f"山寨币{window_label}急涨: {symbol}"
         content = f"{symbol} 约{window_label}上涨 {change_pct:.2f}%"
         data = {
@@ -403,7 +459,9 @@ class AltcoinMomentumMonitor:
             data=data,
         )
         if sent:
-            logger.warning(f"山寨币急涨Bark提醒已发送: {symbol} {window_label} {change_pct:.2f}%")
+            logger.warning(
+                f"山寨币急涨Bark提醒已发送: {symbol} {window_label} {change_pct:.2f}%"
+            )
 
     async def _maybe_alert_kline_spike(self, signal: Dict[str, Any]):
         symbol = signal["symbol"]

@@ -36,4 +36,3 @@ class TradeProposalReview(BaseModel):
     violations: list[PolicyViolation]
     warnings: list[str]
     next_action: str
-

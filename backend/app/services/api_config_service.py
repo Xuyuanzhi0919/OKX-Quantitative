@@ -1,6 +1,7 @@
 """
 API配置服务 - 动态获取当前激活的API配置
 """
+
 from typing import Optional
 import socket
 from sqlalchemy.orm import Session
@@ -31,7 +32,9 @@ class APIConfigService:
         return None
 
     @staticmethod
-    def get_active_config(user_id: int = 1, db: Optional[Session] = None) -> Optional[APIConfig]:
+    def get_active_config(
+        user_id: int = 1, db: Optional[Session] = None
+    ) -> Optional[APIConfig]:
         """
         获取用户当前激活的API配置
 
@@ -48,10 +51,11 @@ class APIConfigService:
             should_close = True
 
         try:
-            config = db.query(APIConfig).filter(
-                APIConfig.user_id == user_id,
-                APIConfig.is_active == True
-            ).first()
+            config = (
+                db.query(APIConfig)
+                .filter(APIConfig.user_id == user_id, APIConfig.is_active == True)
+                .first()
+            )
 
             return config
         finally:
@@ -60,9 +64,7 @@ class APIConfigService:
 
     @staticmethod
     def get_config(
-        user_id: int = 1,
-        config_id: Optional[int] = None,
-        db: Optional[Session] = None
+        user_id: int = 1, config_id: Optional[int] = None, db: Optional[Session] = None
     ) -> Optional[APIConfig]:
         """
         获取指定API配置；config_id为空时回退到当前激活配置。
@@ -76,10 +78,11 @@ class APIConfigService:
             should_close = True
 
         try:
-            return db.query(APIConfig).filter(
-                APIConfig.user_id == user_id,
-                APIConfig.id == config_id
-            ).first()
+            return (
+                db.query(APIConfig)
+                .filter(APIConfig.user_id == user_id, APIConfig.id == config_id)
+                .first()
+            )
         finally:
             if should_close:
                 db.close()
@@ -102,21 +105,29 @@ class APIConfigService:
             raise Exception(f"API配置不存在或不属于用户: {config_id}")
 
         if config_id is not None and config and not config.is_valid:
-            raise Exception(f"API配置无效: {config.name} - {config.error_message or '请先验证配置'}")
+            raise Exception(
+                f"API配置无效: {config.name} - {config.error_message or '请先验证配置'}"
+            )
 
         if config and config.is_valid:
-            logger.info(f"使用数据库API配置: {config.name} ({'模拟盘' if config.is_simulated else '实盘'})")
+            logger.info(
+                f"使用数据库API配置: {config.name} ({'模拟盘' if config.is_simulated else '实盘'})"
+            )
             return OKXExchange(
                 api_key=config.api_key,
                 secret_key=config.secret_key,
                 passphrase=config.passphrase,
                 simulated=config.is_simulated,
-                proxy=APIConfigService._resolve_proxy(config.proxy)
+                proxy=APIConfigService._resolve_proxy(config.proxy),
             )
         else:
             # 回退到.env配置
             logger.info("使用.env文件API配置")
-            if not settings.OKX_API_KEY or not settings.OKX_SECRET_KEY or not settings.OKX_PASSPHRASE:
+            if (
+                not settings.OKX_API_KEY
+                or not settings.OKX_SECRET_KEY
+                or not settings.OKX_PASSPHRASE
+            ):
                 raise Exception("未找到有效的API配置,请在数据库或.env文件中配置")
 
             return OKXExchange(
@@ -124,7 +135,7 @@ class APIConfigService:
                 secret_key=settings.OKX_SECRET_KEY,
                 passphrase=settings.OKX_PASSPHRASE,
                 simulated=settings.OKX_SIMULATED,
-                proxy=APIConfigService._resolve_proxy()
+                proxy=APIConfigService._resolve_proxy(),
             )
 
 

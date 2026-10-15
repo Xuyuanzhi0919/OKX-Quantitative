@@ -13,12 +13,7 @@ import {
   Typography,
   App,
 } from 'antd'
-import {
-  Bell,
-  Check,
-  Trash2,
-  RotateCw,
-} from 'lucide-react'
+import { Bell, Check, Trash2, RotateCw } from 'lucide-react'
 import { alertApi } from '@/services/api'
 import type { Alert, AlertType, AlertSeverity } from '@/types'
 import type { ColumnsType } from 'antd/es/table'
@@ -169,9 +164,7 @@ const AlertHistory = () => {
       key: 'status',
       width: 80,
       render: (_, record) => (
-        <Tag color={record.is_read ? 'default' : 'blue'}>
-          {record.is_read ? '已读' : '未读'}
-        </Tag>
+        <Tag color={record.is_read ? 'default' : 'blue'}>{record.is_read ? '已读' : '未读'}</Tag>
       ),
     },
     {
@@ -196,12 +189,7 @@ const AlertHistory = () => {
             okText="确认"
             cancelText="取消"
           >
-            <Button
-              type="link"
-              danger
-              size="small"
-              icon={<Trash2 size={14} />}
-            >
+            <Button type="link" danger size="small" icon={<Trash2 size={14} />}>
               删除
             </Button>
           </Popconfirm>
@@ -222,11 +210,7 @@ const AlertHistory = () => {
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
-            <Statistic
-              title="总告警数"
-              value={total}
-              prefix={<Bell size={14} />}
-            />
+            <Statistic title="总告警数" value={total} prefix={<Bell size={14} />} />
           </Card>
         </Col>
         <Col span={6}>

@@ -2,6 +2,7 @@
 Server酱推送渠道
 官方文档: https://sct.ftqq.com/
 """
+
 from typing import Dict, Optional
 import httpx
 from loguru import logger
@@ -33,7 +34,9 @@ class ServerChanChannel(NotificationChannel):
             logger.warning("⚠️ Server酱配置不完整,已禁用")
             self.enabled = False
 
-    def format_message(self, title: str, content: str, data: Optional[Dict] = None) -> tuple:
+    def format_message(
+        self, title: str, content: str, data: Optional[Dict] = None
+    ) -> tuple:
         """
         格式化消息为Server酱格式
 
@@ -55,11 +58,7 @@ class ServerChanChannel(NotificationChannel):
         return formatted_title, desp
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送Server酱消息"""
         if not self.is_enabled():
@@ -72,11 +71,7 @@ class ServerChanChannel(NotificationChannel):
             )
 
             # 发送请求
-            payload = {
-                "title": formatted_title,
-                "desp": desp,
-                "channel": self.channel
-            }
+            payload = {"title": formatted_title, "desp": desp, "channel": self.channel}
 
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(self.api_url, data=payload)
@@ -102,7 +97,10 @@ class ServerChanChannel(NotificationChannel):
         try:
             payload = {
                 "title": "OKK量化交易系统 - 推送测试",
-                "desp": "✅ Server酱推送配置成功!\n\n测试时间: " + str(httpx.AsyncClient().build_request("GET", "http://httpbin.org/get"))
+                "desp": "✅ Server酱推送配置成功!\n\n测试时间: "
+                + str(
+                    httpx.AsyncClient().build_request("GET", "http://httpbin.org/get")
+                ),
             }
 
             async with httpx.AsyncClient(timeout=10.0) as client:

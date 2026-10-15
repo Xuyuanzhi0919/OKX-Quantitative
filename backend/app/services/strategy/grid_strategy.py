@@ -15,6 +15,7 @@
   - leverage:       杠杆倍数（合约，默认1）
   - stop_loss:      止损比例（价格跌破下界多少比例时全部平仓，默认5%）
 """
+
 import time
 import asyncio
 from typing import Dict, List, Optional
@@ -41,12 +42,12 @@ class GridStrategy(StrategyBase):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
 
         p = parameters or {}
-        self.price_upper:  float = float(p.get("price_upper", 0))
-        self.price_lower:  float = float(p.get("price_lower", 0))
-        self.grid_count:   int   = int(p.get("grid_count", 10))
+        self.price_upper: float = float(p.get("price_upper", 0))
+        self.price_lower: float = float(p.get("price_lower", 0))
+        self.grid_count: int = int(p.get("grid_count", 10))
         self.total_amount: float = float(p.get("total_amount", 100))
-        self.leverage:     int   = int(p.get("leverage", 1))
-        self.stop_loss:    float = float(p.get("stop_loss", 0.05))
+        self.leverage: int = int(p.get("leverage", 1))
+        self.stop_loss: float = float(p.get("stop_loss", 0.05))
 
         # 合约相关
         self._is_swap: bool = symbol.endswith("-SWAP") or symbol.endswith("-FUTURES")
@@ -56,22 +57,26 @@ class GridStrategy(StrategyBase):
         self._tick_sz: float = 0.01  # 价格精度
 
         # 网格状态
-        self._grid_prices: List[float] = []       # 每个网格的价格（升序）
-        self._grid_spacing: float = 0.0            # 网格间距
-        self._amount_per_grid: float = 0.0         # 每格投资额（USDT）
-        self._active_orders: Dict[str, dict] = {}  # {order_id: {side, price, grid_idx, amount}}
-        self._filled_grids: Dict[int, str] = {}    # {grid_idx: "buy"/"sell"} 记录每格已成交的方向
+        self._grid_prices: List[float] = []  # 每个网格的价格（升序）
+        self._grid_spacing: float = 0.0  # 网格间距
+        self._amount_per_grid: float = 0.0  # 每格投资额（USDT）
+        self._active_orders: Dict[str, dict] = (
+            {}
+        )  # {order_id: {side, price, grid_idx, amount}}
+        self._filled_grids: Dict[int, str] = (
+            {}
+        )  # {grid_idx: "buy"/"sell"} 记录每格已成交的方向
 
         # 统计
-        self.realized_pnl:    float = 0.0
-        self.total_trades:    int   = 0
-        self._win_trades:     int   = 0
-        self.win_rate:        float = 0.0
-        self._buy_count:      int   = 0
-        self._sell_count:     int   = 0
+        self.realized_pnl: float = 0.0
+        self.total_trades: int = 0
+        self._win_trades: int = 0
+        self.win_rate: float = 0.0
+        self._buy_count: int = 0
+        self._sell_count: int = 0
         self._unrealized_pnl: float = 0.0
-        self._in_position:    bool  = False
-        self._entry_price:    float = 0.0
+        self._in_position: bool = False
+        self._entry_price: float = 0.0
 
         # 控制并发
         self._placing_orders: bool = False
@@ -172,6 +177,7 @@ class GridStrategy(StrategyBase):
         except Exception as e:
             logger.error(f"[{self.symbol}] 初始下单失败: {e}")
             import traceback
+
             logger.error(traceback.format_exc())
 
         logger.info(f"策略 {self.strategy_id} [{self.symbol}] 网格策略已启动")
@@ -227,11 +233,16 @@ class GridStrategy(StrategyBase):
 
         # 超出上界提醒（不止损，只记录日志）
         if price > self.price_upper * 1.05:
-            logger.warning(f"[{self.symbol}] 价格({price:.4f})已超出网格上界({self.price_upper:.4f})")
+            logger.warning(
+                f"[{self.symbol}] 价格({price:.4f})已超出网格上界({self.price_upper:.4f})"
+            )
 
         # 定期检查订单状态并补单
         now = time.time()
-        if now - self._last_check_time >= self._check_interval and not self._placing_orders:
+        if (
+            now - self._last_check_time >= self._check_interval
+            and not self._placing_orders
+        ):
             self._last_check_time = now
             await self._check_and_replace_orders(price)
 
@@ -250,7 +261,9 @@ class GridStrategy(StrategyBase):
             grid_order = self._active_orders.pop(order_id)
             side = grid_order["side"]
             grid_idx = grid_order["grid_idx"]
-            fill_price = float(order.get("avgPx") or order.get("fillPx") or grid_order["price"])
+            fill_price = float(
+                order.get("avgPx") or order.get("fillPx") or grid_order["price"]
+            )
 
             if side == "buy":
                 self._buy_count += 1
@@ -262,7 +275,9 @@ class GridStrategy(StrategyBase):
                     await self._place_grid_order("sell", sell_price, sell_idx)
 
                     # 记录一次网格利润（预估）
-                    grid_profit = (sell_price - fill_price) * self._qty_for_price(fill_price)
+                    grid_profit = (sell_price - fill_price) * self._qty_for_price(
+                        fill_price
+                    )
                     if self._is_swap:
                         grid_profit *= self._ct_val
 
@@ -301,18 +316,18 @@ class GridStrategy(StrategyBase):
 
     async def calculate_pnl(self) -> Dict:
         return {
-            "total_pnl":      round(self.realized_pnl, 4),
-            "realized_pnl":   round(self.realized_pnl, 4),
+            "total_pnl": round(self.realized_pnl, 4),
+            "realized_pnl": round(self.realized_pnl, 4),
             "unrealized_pnl": 0,
-            "total_fee":      0,
-            "pnl_rate":       0,
-            "buy_count":      self._buy_count,
-            "sell_count":     self._sell_count,
-            "win_rate":       round(self.win_rate, 1),
-            "in_position":    self._in_position,
-            "entry_price":    self._entry_price,
-            "active_orders":  len(self._active_orders),
-            "grid_count":     self.grid_count,
+            "total_fee": 0,
+            "pnl_rate": 0,
+            "buy_count": self._buy_count,
+            "sell_count": self._sell_count,
+            "win_rate": round(self.win_rate, 1),
+            "in_position": self._in_position,
+            "entry_price": self._entry_price,
+            "active_orders": len(self._active_orders),
+            "grid_count": self.grid_count,
         }
 
     # ═══════════════════════════════════════════════════════════
@@ -341,7 +356,9 @@ class GridStrategy(StrategyBase):
         if self._is_swap:
             # 合约：名义价值 = 投入额 * 杠杆
             notional = self._amount_per_grid * self.leverage
-            contracts = notional / (price * self._ct_val) if (price * self._ct_val) > 0 else 0
+            contracts = (
+                notional / (price * self._ct_val) if (price * self._ct_val) > 0 else 0
+            )
             qty = max(self._min_sz, int(contracts / self._lot_sz) * self._lot_sz)
             return qty
         else:
@@ -389,10 +406,7 @@ class GridStrategy(StrategyBase):
                 if (buy_count + sell_count) % 5 == 0 and (buy_count + sell_count) > 0:
                     await asyncio.sleep(0.2)
 
-            logger.info(
-                f"[{self.symbol}] 初始网格挂单完成: "
-                f"买单={buy_count}"
-            )
+            logger.info(f"[{self.symbol}] 初始网格挂单完成: " f"买单={buy_count}")
 
         finally:
             self._placing_orders = False
@@ -448,8 +462,7 @@ class GridStrategy(StrategyBase):
                     break
                 try:
                     order_detail = await self.exchange.get_order(
-                        symbol=self.symbol,
-                        order_id=order_id
+                        symbol=self.symbol, order_id=order_id
                     )
                     state = order_detail.get("state", "")
 
@@ -485,9 +498,11 @@ class GridStrategy(StrategyBase):
 
             # 补充缺失的买单（当前价格以下）
             for i in range(current_grid + 1):
-                if (i not in active_buy_grids and
-                    self._grid_prices[i] < current_price and
-                    self._filled_grids.get(i) != "buy"):
+                if (
+                    i not in active_buy_grids
+                    and self._grid_prices[i] < current_price
+                    and self._filled_grids.get(i) != "buy"
+                ):
                     await self._place_grid_order("buy", self._grid_prices[i], i)
                     await asyncio.sleep(0.1)
 
@@ -501,10 +516,7 @@ class GridStrategy(StrategyBase):
         order_ids = list(self._active_orders.keys())
         for order_id in order_ids:
             try:
-                await self.exchange.cancel_order(
-                    symbol=self.symbol,
-                    order_id=order_id
-                )
+                await self.exchange.cancel_order(symbol=self.symbol, order_id=order_id)
                 logger.debug(f"[{self.symbol}] 已取消订单 {order_id}")
             except Exception as e:
                 logger.warning(f"[{self.symbol}] 取消订单 {order_id} 失败: {e}")

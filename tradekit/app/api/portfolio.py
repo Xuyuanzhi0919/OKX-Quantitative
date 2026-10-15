@@ -10,4 +10,3 @@ router = APIRouter()
 async def get_balance(settings: Settings = Depends(get_settings)) -> dict:
     cli = OkxCliAdapter(settings.okx_cli_bin, settings.command_timeout_seconds)
     return await cli.run(["account", "balance"])
-

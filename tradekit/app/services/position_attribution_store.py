@@ -22,7 +22,9 @@ class PositionAttributionStore:
         data = self._read()
         return {key: data[key] for key in position_keys if key in data}
 
-    def upsert(self, position_key: str, payload: PositionAttributionUpdate) -> dict[str, Any]:
+    def upsert(
+        self, position_key: str, payload: PositionAttributionUpdate
+    ) -> dict[str, Any]:
         data = self._read()
         now = datetime.now(timezone.utc).isoformat()
         existing = data.get(position_key, {})
@@ -49,5 +51,7 @@ class PositionAttributionStore:
     def _write(self, data: dict[str, dict[str, Any]]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = self.path.with_suffix(".tmp")
-        tmp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         tmp_path.replace(self.path)

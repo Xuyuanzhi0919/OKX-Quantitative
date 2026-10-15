@@ -2,6 +2,7 @@
 全能消息推送 Bark（Android APP）渠道
 官方文档: https://www.ggsuper.com.cn/push/api.html
 """
+
 import os
 from typing import Dict, Optional
 
@@ -31,7 +32,9 @@ class AndroidPushChannel(NotificationChannel):
             config.get("api_url")
             or "https://www.ggsuper.com.cn/push/api/v1/sendMsg3_New.php"
         )
-        self.token = str(config.get("token") or os.getenv("ANDROID_PUSH_TOKEN") or "").strip()
+        self.token = str(
+            config.get("token") or os.getenv("ANDROID_PUSH_TOKEN") or ""
+        ).strip()
         self.sender = str(config.get("sender") or "OKK")
         self.url = str(config.get("url") or "")
         self.issecure = int(config.get("issecure", 0))
@@ -41,11 +44,7 @@ class AndroidPushChannel(NotificationChannel):
             self.enabled = False
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送 Android 全能消息推送。"""
         if not self.is_enabled():

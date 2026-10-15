@@ -2,6 +2,7 @@
 PushPlus推送渠道
 官方文档: https://www.pushplus.plus/doc/
 """
+
 from typing import Dict, Optional
 import httpx
 from loguru import logger
@@ -35,7 +36,9 @@ class PushPlusChannel(NotificationChannel):
             logger.warning("⚠️ PushPlus配置不完整,已禁用")
             self.enabled = False
 
-    def format_message(self, title: str, content: str, data: Optional[Dict] = None) -> str:
+    def format_message(
+        self, title: str, content: str, data: Optional[Dict] = None
+    ) -> str:
         """格式化为HTML消息"""
         emoji = self.get_emoji(data.get("level", "info") if data else "info")
 
@@ -55,11 +58,7 @@ class PushPlusChannel(NotificationChannel):
         return html
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送PushPlus消息"""
         if not self.is_enabled():
@@ -76,7 +75,7 @@ class PushPlusChannel(NotificationChannel):
                 "token": self.token,
                 "title": f"{self.get_emoji(level)} {title}",
                 "content": formatted_content,
-                "template": self.template
+                "template": self.template,
             }
 
             # 如果指定了群组
@@ -111,7 +110,7 @@ class PushPlusChannel(NotificationChannel):
                 "token": self.token,
                 "title": "✅ OKK量化交易系统 - 推送测试",
                 "content": f"<h3>PushPlus推送配置成功!</h3><p>测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>",
-                "template": self.template
+                "template": self.template,
             }
 
             async with httpx.AsyncClient(timeout=10.0) as client:

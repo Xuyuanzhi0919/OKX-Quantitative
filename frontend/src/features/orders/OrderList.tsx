@@ -10,8 +10,8 @@ import { formatPrice, formatQuantity, formatPercent } from '@/utils/format'
 const { Option } = Select
 
 interface Order {
-  id: string  // 改为string类型以支持OKX订单ID
-  order_id: string  // OKX订单ID
+  id: string // 改为string类型以支持OKX订单ID
+  order_id: string // OKX订单ID
   strategy_id?: number
   strategy_name?: string
   symbol: string
@@ -36,7 +36,11 @@ const OrderList = () => {
   const [hideCanceled, setHideCanceled] = useState(false)
 
   // 获取订单列表
-  const { data: orders = [], isLoading, refetch } = useQuery({
+  const {
+    data: orders = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['orders', filters],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -80,7 +84,7 @@ const OrderList = () => {
   const cancelAllMutation = useMutation({
     mutationFn: async () => {
       const pendingOrders = orders.filter(
-        (o: Order) => o.status === 'pending' || o.status === 'partially_filled'
+        (o: Order) => o.status === 'pending' || o.status === 'partially_filled',
       )
 
       if (pendingOrders.length === 0) {
@@ -101,8 +105,8 @@ const OrderList = () => {
               throw new Error(error.detail || `撤销订单${order.id}失败`)
             }
             return res.json()
-          })
-        )
+          }),
+        ),
       )
 
       const failed = results.filter((r) => r.status === 'rejected')
@@ -143,9 +147,7 @@ const OrderList = () => {
       key: 'side',
       width: 70,
       render: (side: string) => (
-        <Tag color={side === 'buy' ? '#22c55e' : '#ef4444'}>
-          {side === 'buy' ? '买入' : '卖出'}
-        </Tag>
+        <Tag color={side === 'buy' ? '#22c55e' : '#ef4444'}>{side === 'buy' ? '买入' : '卖出'}</Tag>
       ),
     },
     {
@@ -153,9 +155,7 @@ const OrderList = () => {
       dataIndex: 'order_type',
       key: 'order_type',
       width: 80,
-      render: (type: string) => (
-        <Tag color="blue">{type === 'limit' ? '限价' : '市价'}</Tag>
-      ),
+      render: (type: string) => <Tag color="blue">{type === 'limit' ? '限价' : '市价'}</Tag>,
     },
     {
       title: '价格',
@@ -228,7 +228,8 @@ const OrderList = () => {
               modal.confirm({
                 title: '确认撤单',
                 content: `确定要撤销订单吗?`,
-                onOk: () => cancelOrderMutation.mutate({ orderId: record.id, symbol: record.symbol }),
+                onOk: () =>
+                  cancelOrderMutation.mutate({ orderId: record.id, symbol: record.symbol }),
               })
             }}
           >
@@ -246,7 +247,9 @@ const OrderList = () => {
   // 统计数据
   const stats = {
     total: filteredOrders.length,
-    pending: filteredOrders.filter((o: Order) => o.status === 'pending' || o.status === 'partially_filled').length,
+    pending: filteredOrders.filter(
+      (o: Order) => o.status === 'pending' || o.status === 'partially_filled',
+    ).length,
     filled: filteredOrders.filter((o: Order) => o.status === 'filled').length,
     canceled: filteredOrders.filter((o: Order) => o.status === 'canceled').length,
   }

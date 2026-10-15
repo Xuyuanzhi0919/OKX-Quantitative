@@ -2,6 +2,7 @@
 推送通知服务
 支持WebSocket、Telegram、Server酱、PushPlus、企业微信等多种推送方式
 """
+
 from typing import Dict, List, Optional
 from loguru import logger
 from datetime import datetime
@@ -19,22 +20,24 @@ from .channels import (
 
 class NotificationType:
     """通知类型"""
-    ORDER_CREATED = "order_created"      # 订单创建
-    ORDER_FILLED = "order_filled"        # 订单成交
+
+    ORDER_CREATED = "order_created"  # 订单创建
+    ORDER_FILLED = "order_filled"  # 订单成交
     POSITION_OPENED = "position_opened"  # 开仓
     POSITION_CLOSED = "position_closed"  # 平仓
     PROFIT_REALIZED = "profit_realized"  # 盈利实现
-    STOP_LOSS = "stop_loss"             # 止损
-    TAKE_PROFIT = "take_profit"         # 止盈
-    RISK_WARNING = "risk_warning"       # 风险预警
+    STOP_LOSS = "stop_loss"  # 止损
+    TAKE_PROFIT = "take_profit"  # 止盈
+    RISK_WARNING = "risk_warning"  # 风险预警
 
 
 class NotificationLevel:
     """通知级别"""
-    INFO = "info"        # 普通信息
+
+    INFO = "info"  # 普通信息
     SUCCESS = "success"  # 成功
     WARNING = "warning"  # 警告
-    ERROR = "error"      # 错误
+    ERROR = "error"  # 错误
 
 
 class NotificationService:
@@ -71,32 +74,44 @@ class NotificationService:
         # 初始化Telegram渠道
         if "telegram" in config:
             self.channels["telegram"] = TelegramChannel(config["telegram"])
-            logger.info(f"✅ Telegram渠道已配置 (启用: {self.channels['telegram'].is_enabled()})")
+            logger.info(
+                f"✅ Telegram渠道已配置 (启用: {self.channels['telegram'].is_enabled()})"
+            )
 
         # 初始化Server酱渠道
         if "serverchan" in config:
             self.channels["serverchan"] = ServerChanChannel(config["serverchan"])
-            logger.info(f"✅ Server酱渠道已配置 (启用: {self.channels['serverchan'].is_enabled()})")
+            logger.info(
+                f"✅ Server酱渠道已配置 (启用: {self.channels['serverchan'].is_enabled()})"
+            )
 
         # 初始化PushPlus渠道
         if "pushplus" in config:
             self.channels["pushplus"] = PushPlusChannel(config["pushplus"])
-            logger.info(f"✅ PushPlus渠道已配置 (启用: {self.channels['pushplus'].is_enabled()})")
+            logger.info(
+                f"✅ PushPlus渠道已配置 (启用: {self.channels['pushplus'].is_enabled()})"
+            )
 
         # 初始化企业微信渠道
         if "wecom" in config:
             self.channels["wecom"] = WeComChannel(config["wecom"])
-            logger.info(f"✅ 企业微信渠道已配置 (启用: {self.channels['wecom'].is_enabled()})")
+            logger.info(
+                f"✅ 企业微信渠道已配置 (启用: {self.channels['wecom'].is_enabled()})"
+            )
 
         # 初始化Bark渠道
         if "bark" in config:
             self.channels["bark"] = BarkChannel(config["bark"])
-            logger.info(f"✅ Bark渠道已配置 (启用: {self.channels['bark'].is_enabled()})")
+            logger.info(
+                f"✅ Bark渠道已配置 (启用: {self.channels['bark'].is_enabled()})"
+            )
 
         # 初始化Android全能消息推送渠道
         if "android_push" in config:
             self.channels["android_push"] = AndroidPushChannel(config["android_push"])
-            logger.info(f"✅ Android全能消息推送渠道已配置 (启用: {self.channels['android_push'].is_enabled()})")
+            logger.info(
+                f"✅ Android全能消息推送渠道已配置 (启用: {self.channels['android_push'].is_enabled()})"
+            )
 
         logger.success(f"📢 推送渠道配置完成,共 {len(self.channels)} 个渠道")
 
@@ -122,7 +137,7 @@ class NotificationService:
         side: str,
         order_type: str,
         price: Optional[float],
-        amount: float
+        amount: float,
     ):
         """
         订单创建通知
@@ -152,9 +167,9 @@ class NotificationService:
                 "side": side,
                 "order_type": order_type,
                 "price": price,
-                "amount": amount
+                "amount": amount,
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         await self._send_notification(user_id, message)
@@ -170,7 +185,7 @@ class NotificationService:
         entry_price: float,
         amount: float,
         leverage: int,
-        margin: float
+        margin: float,
     ):
         """
         开仓通知
@@ -201,9 +216,9 @@ class NotificationService:
                 "数量": f"{amount:.2f} 张",
                 "杠杆": f"{leverage}x",
                 "保证金": f"{margin:.2f} USDT",
-                "仓位价值": f"{amount * entry_price:.2f} USDT"
+                "仓位价值": f"{amount * entry_price:.2f} USDT",
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         await self._send_notification(user_id, message)
@@ -221,7 +236,7 @@ class NotificationService:
         amount: float,
         pnl: float,
         pnl_pct: float,
-        reason: str
+        reason: str,
     ):
         """
         平仓通知
@@ -253,7 +268,9 @@ class NotificationService:
             icon = "⚠️"
         else:
             notify_type = NotificationType.POSITION_CLOSED
-            level = NotificationLevel.SUCCESS if is_profit else NotificationLevel.WARNING
+            level = (
+                NotificationLevel.SUCCESS if is_profit else NotificationLevel.WARNING
+            )
             icon = "💰" if is_profit else "📉"
 
         pnl_text = f"+{abs(pnl):.2f}" if is_profit else f"-{abs(pnl):.2f}"
@@ -273,9 +290,9 @@ class NotificationService:
                 "数量": f"{amount:.2f} 张",
                 "盈亏金额": f"{pnl_text} USDT",
                 "盈亏比例": pnl_pct_text,
-                "平仓原因": reason
+                "平仓原因": reason,
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         await self._send_notification(user_id, message)
@@ -293,7 +310,7 @@ class NotificationService:
         strategy_name: str,
         total_profit: float,
         total_trades: int,
-        win_rate: float
+        win_rate: float,
     ):
         """
         盈利实现通知
@@ -307,20 +324,24 @@ class NotificationService:
             win_rate: 胜率
         """
         is_profit = total_profit > 0
-        profit_text = f"+{abs(total_profit):.2f}" if is_profit else f"-{abs(total_profit):.2f}"
+        profit_text = (
+            f"+{abs(total_profit):.2f}" if is_profit else f"-{abs(total_profit):.2f}"
+        )
 
         message = {
             "type": NotificationType.PROFIT_REALIZED,
-            "level": NotificationLevel.SUCCESS if is_profit else NotificationLevel.WARNING,
+            "level": (
+                NotificationLevel.SUCCESS if is_profit else NotificationLevel.WARNING
+            ),
             "title": f"💰 累计盈利统计",
             "message": f"{strategy_name} 累计 {profit_text} | 胜率 {win_rate:.1f}%",
             "data": {
                 "策略名称": strategy_name,
                 "累计盈利": f"{profit_text} USDT",
                 "总交易次数": f"{total_trades} 笔",
-                "胜率": f"{win_rate:.1f}%"
+                "胜率": f"{win_rate:.1f}%",
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         await self._send_notification(user_id, message)
@@ -334,7 +355,7 @@ class NotificationService:
         symbol: str,
         warning_type: str,
         message_text: str,
-        data: Optional[Dict] = None
+        data: Optional[Dict] = None,
     ):
         """
         风险预警通知
@@ -353,7 +374,7 @@ class NotificationService:
             "策略名称": strategy_name,
             "交易对": symbol,
             "预警类型": warning_type,
-            "预警消息": message_text
+            "预警消息": message_text,
         }
 
         # 添加额外数据(转换常见英文key为中文)
@@ -361,7 +382,7 @@ class NotificationService:
             key_mapping = {
                 "stop_loss_count": "止损次数",
                 "max_stop_loss_count": "最大止损次数",
-                "test_key": "测试键"
+                "test_key": "测试键",
             }
             for key, value in data.items():
                 chinese_key = key_mapping.get(key, key)
@@ -373,7 +394,7 @@ class NotificationService:
             "title": f"⚠️ 风险预警",
             "message": f"{strategy_name} {symbol}: {message_text}",
             "data": chinese_data,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         await self._send_notification(user_id, message)
@@ -385,7 +406,7 @@ class NotificationService:
         title: str,
         message: str,
         level: str = "info",
-        data: Optional[Dict] = None
+        data: Optional[Dict] = None,
     ):
         """
         策略通知（开仓、平仓、止损等）
@@ -403,17 +424,13 @@ class NotificationService:
             "title": title,
             "message": message,
             "data": data or {},
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         # 通知广播给所有用户（策略通知不区分user_id，user_id=1兜底）
         await self._send_notification(user_id=1, message=msg)
 
     async def send_bark_notification(
-        self,
-        title: str,
-        message: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, message: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """只通过 Bark 发送通知。"""
         bark = self.channels.get("bark")
@@ -453,11 +470,7 @@ class NotificationService:
         return await self.send_bark_notification(title, message, level, payload)
 
     async def send_android_push_notification(
-        self,
-        title: str,
-        message: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, message: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """只通过 Android 全能消息推送发送通知。"""
         android_push = self.channels.get("android_push")
@@ -513,13 +526,11 @@ class NotificationService:
         if self.websocket_manager:
             try:
                 await self.websocket_manager.send_personal_message(
-                    user_id=user_id,
-                    message={
-                        "event": "notification",
-                        "data": message
-                    }
+                    user_id=user_id, message={"event": "notification", "data": message}
                 )
-                logger.debug(f"WebSocket推送成功: user={user_id}, type={message['type']}")
+                logger.debug(
+                    f"WebSocket推送成功: user={user_id}, type={message['type']}"
+                )
             except Exception as e:
                 logger.error(f"WebSocket推送失败: {e}")
 

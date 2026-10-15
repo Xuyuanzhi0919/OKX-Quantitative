@@ -2,6 +2,7 @@
 Telegram Bot 推送渠道
 官方文档: https://core.telegram.org/bots/api
 """
+
 from typing import Dict, Optional
 import httpx
 from loguru import logger
@@ -37,7 +38,9 @@ class TelegramChannel(NotificationChannel):
             logger.warning("⚠️ Telegram配置不完整,已禁用")
             self.enabled = False
 
-    def format_message(self, title: str, content: str, data: Optional[Dict] = None) -> str:
+    def format_message(
+        self, title: str, content: str, data: Optional[Dict] = None
+    ) -> str:
         """格式化为Markdown消息"""
         emoji = self.get_emoji(data.get("level", "info") if data else "info")
 
@@ -49,17 +52,19 @@ class TelegramChannel(NotificationChannel):
             for key, value in data.items():
                 if key not in ["level", "timestamp"]:
                     # 转义Markdown特殊字符
-                    safe_value = str(value).replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+                    safe_value = (
+                        str(value)
+                        .replace("_", "\\_")
+                        .replace("*", "\\*")
+                        .replace("[", "\\[")
+                        .replace("`", "\\`")
+                    )
                     message += f"\n• `{key}`: {safe_value}"
 
         return message
 
     async def send(
-        self,
-        title: str,
-        content: str,
-        level: str = "info",
-        data: Optional[Dict] = None
+        self, title: str, content: str, level: str = "info", data: Optional[Dict] = None
     ) -> bool:
         """发送Telegram消息"""
         if not self.is_enabled():
@@ -67,7 +72,9 @@ class TelegramChannel(NotificationChannel):
 
         try:
             # 格式化消息
-            message = self.format_message(title, content, {"level": level, **(data or {})})
+            message = self.format_message(
+                title, content, {"level": level, **(data or {})}
+            )
 
             # 发送请求
             url = f"{self.api_base}/sendMessage"
@@ -75,11 +82,13 @@ class TelegramChannel(NotificationChannel):
                 "chat_id": self.chat_id,
                 "text": message,
                 "parse_mode": self.parse_mode,
-                "disable_notification": self.disable_notification
+                "disable_notification": self.disable_notification,
             }
 
             # 配置HTTP客户端
-            proxies = {"http://": self.proxy, "https://": self.proxy} if self.proxy else None
+            proxies = (
+                {"http://": self.proxy, "https://": self.proxy} if self.proxy else None
+            )
 
             async with httpx.AsyncClient(proxies=proxies, timeout=10.0) as client:
                 response = await client.post(url, json=payload)
@@ -104,7 +113,9 @@ class TelegramChannel(NotificationChannel):
         """测试Telegram连接"""
         try:
             url = f"{self.api_base}/getMe"
-            proxies = {"http://": self.proxy, "https://": self.proxy} if self.proxy else None
+            proxies = (
+                {"http://": self.proxy, "https://": self.proxy} if self.proxy else None
+            )
 
             async with httpx.AsyncClient(proxies=proxies, timeout=10.0) as client:
                 response = await client.get(url)

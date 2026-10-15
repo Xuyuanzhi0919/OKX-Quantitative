@@ -28,7 +28,7 @@ class AIMarketAnalyzer:
         entry_price: Optional[Decimal] = None,
         position_size: Optional[Decimal] = None,
         kline_data: Optional[List[Dict]] = None,
-        ticker_data: Optional[Dict] = None
+        ticker_data: Optional[Dict] = None,
     ) -> Dict:
         """
         综合分析市场状况
@@ -62,9 +62,7 @@ class AIMarketAnalyzer:
             logger.info(f"🤖 AI开始分析 {symbol} 市场...")
 
             # 1. 基础市场分析
-            market_sentiment = await self._analyze_market_sentiment(
-                ticker_data or {}
-            )
+            market_sentiment = await self._analyze_market_sentiment(ticker_data or {})
 
             # 2. 技术指标分析(如果有K线数据)
             technical_signals = await self._analyze_technical_indicators(
@@ -73,24 +71,17 @@ class AIMarketAnalyzer:
 
             # 3. 持仓分析(如果有持仓)
             position_analysis = await self._analyze_position(
-                current_price,
-                entry_price,
-                position_size
+                current_price, entry_price, position_size
             )
 
             # 4. 风险评估
             risk_assessment = await self._assess_risk(
-                market_sentiment,
-                technical_signals,
-                position_analysis
+                market_sentiment, technical_signals, position_analysis
             )
 
             # 5. 综合决策
             decision = await self._make_decision(
-                market_sentiment,
-                technical_signals,
-                position_analysis,
-                risk_assessment
+                market_sentiment, technical_signals, position_analysis, risk_assessment
             )
 
             result = {
@@ -101,16 +92,17 @@ class AIMarketAnalyzer:
                 "indicators": {
                     "sentiment": market_sentiment["score"],
                     "technical": technical_signals.get("score", 0.5),
-                    "volatility": market_sentiment["volatility"]
+                    "volatility": market_sentiment["volatility"],
                 },
-                "position_advice": decision.get("position_advice", {
-                    "action": "hold",
-                    "ratio": 0
-                }),
-                "timestamp": datetime.now().isoformat()
+                "position_advice": decision.get(
+                    "position_advice", {"action": "hold", "ratio": 0}
+                ),
+                "timestamp": datetime.now().isoformat(),
             }
 
-            logger.success(f"✅ AI分析完成: {result['action']} (信心度: {result['confidence']:.0%})")
+            logger.success(
+                f"✅ AI分析完成: {result['action']} (信心度: {result['confidence']:.0%})"
+            )
             return result
 
         except Exception as e:
@@ -121,7 +113,7 @@ class AIMarketAnalyzer:
                 "reason": f"分析失败: {str(e)}",
                 "risk_level": "unknown",
                 "indicators": {},
-                "position_advice": {"action": "hold", "ratio": 0}
+                "position_advice": {"action": "hold", "ratio": 0},
             }
 
     async def _analyze_market_sentiment(self, ticker_data: Dict) -> Dict:
@@ -193,7 +185,11 @@ class AIMarketAnalyzer:
                 "score": sentiment_score,
                 "volatility": volatility_level,
                 "signals": signals,
-                "trend": "bullish" if sentiment_score > 0.6 else "bearish" if sentiment_score < 0.4 else "neutral"
+                "trend": (
+                    "bullish"
+                    if sentiment_score > 0.6
+                    else "bearish" if sentiment_score < 0.4 else "neutral"
+                ),
             }
 
         except Exception as e:
@@ -202,7 +198,7 @@ class AIMarketAnalyzer:
                 "score": 0.5,
                 "volatility": "unknown",
                 "signals": [],
-                "trend": "neutral"
+                "trend": "neutral",
             }
 
     async def _analyze_technical_indicators(self, kline_data: List[Dict]) -> Dict:
@@ -217,19 +213,12 @@ class AIMarketAnalyzer:
         TODO: 后续可以接入专业的技术分析库(如 TA-Lib)
         """
         if not kline_data or len(kline_data) < 14:
-            return {
-                "score": 0.5,
-                "signals": ["K线数据不足,跳过技术分析"]
-            }
+            return {"score": 0.5, "signals": ["K线数据不足,跳过技术分析"]}
 
         try:
             # 简化版RSI计算(实际应该用专业库)
             # 这里先返回中性评分
-            return {
-                "score": 0.5,
-                "rsi": None,
-                "signals": ["技术分析功能待完善"]
-            }
+            return {"score": 0.5, "rsi": None, "signals": ["技术分析功能待完善"]}
 
         except Exception as e:
             logger.error(f"技术指标分析失败: {e}")
@@ -239,7 +228,7 @@ class AIMarketAnalyzer:
         self,
         current_price: Decimal,
         entry_price: Optional[Decimal],
-        position_size: Optional[Decimal]
+        position_size: Optional[Decimal],
     ) -> Dict:
         """
         持仓分析
@@ -247,11 +236,7 @@ class AIMarketAnalyzer:
         分析当前持仓状况,给出加仓/减仓建议
         """
         if not entry_price or not position_size:
-            return {
-                "has_position": False,
-                "profit_pct": 0,
-                "risk_level": "none"
-            }
+            return {"has_position": False, "profit_pct": 0, "risk_level": "none"}
 
         try:
             # 计算盈亏
@@ -278,7 +263,7 @@ class AIMarketAnalyzer:
                 "has_position": True,
                 "profit_pct": float(profit_pct),
                 "risk_level": risk_level,
-                "suggestion": suggestion
+                "suggestion": suggestion,
             }
 
         except Exception as e:
@@ -286,10 +271,7 @@ class AIMarketAnalyzer:
             return {"has_position": True, "profit_pct": 0, "risk_level": "unknown"}
 
     async def _assess_risk(
-        self,
-        market_sentiment: Dict,
-        technical_signals: Dict,
-        position_analysis: Dict
+        self, market_sentiment: Dict, technical_signals: Dict, position_analysis: Dict
     ) -> Dict:
         """
         综合风险评估
@@ -334,8 +316,8 @@ class AIMarketAnalyzer:
             "factors": [
                 f"市场波动: {volatility}",
                 f"市场情绪: {market_sentiment.get('trend', 'neutral')}",
-                f"持仓状态: {position_analysis.get('suggestion', 'N/A')}"
-            ]
+                f"持仓状态: {position_analysis.get('suggestion', 'N/A')}",
+            ],
         }
 
     async def _make_decision(
@@ -343,7 +325,7 @@ class AIMarketAnalyzer:
         market_sentiment: Dict,
         technical_signals: Dict,
         position_analysis: Dict,
-        risk_assessment: Dict
+        risk_assessment: Dict,
     ) -> Dict:
         """
         综合决策引擎
@@ -434,7 +416,7 @@ class AIMarketAnalyzer:
             "action": action,
             "confidence": confidence,
             "reason": reason,
-            "position_advice": position_advice
+            "position_advice": position_advice,
         }
 
 

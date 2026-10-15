@@ -41,13 +41,13 @@ export interface TradesData {
 
 export interface KlineData {
   symbol: string
-  bar: string  // K线周期: 1m, 5m, 15m, 1H, 4H, 1D
-  ts: string   // 开始时间(毫秒时间戳)
-  o: string    // 开盘价
-  h: string    // 最高价
-  l: string    // 最低价
-  c: string    // 收盘价
-  vol: string  // 成交量(张)
+  bar: string // K线周期: 1m, 5m, 15m, 1H, 4H, 1D
+  ts: string // 开始时间(毫秒时间戳)
+  o: string // 开盘价
+  h: string // 最高价
+  l: string // 最低价
+  c: string // 收盘价
+  vol: string // 成交量(张)
   volCcy: string // 成交量(币)
   confirm: string // 0:未确认 1:已确认
 }
@@ -145,7 +145,7 @@ export interface PositionsUpdateData {
     liquidation_price?: number
     leverage: number
     inst_type: string
-    notional_usd?: number  // OKX返回的持仓美元价值（准确值）
+    notional_usd?: number // OKX返回的持仓美元价值（准确值）
   }>
   total_positions: number
   total_unrealized_pnl: number
@@ -205,7 +205,7 @@ class WebSocketService {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,
-      path: '/socket.io/' // 明确指定路径
+      path: '/socket.io/', // 明确指定路径
     })
 
     this.setupEventListeners()

@@ -1,6 +1,7 @@
 """
 回测性能指标计算
 """
+
 from typing import List, Dict
 import numpy as np
 from datetime import datetime
@@ -27,9 +28,7 @@ class BacktestMetrics:
 
     @staticmethod
     def calculate_annualized_return(
-        total_return: float,
-        start_timestamp: int,
-        end_timestamp: int
+        total_return: float, start_timestamp: int, end_timestamp: int
     ) -> float:
         """
         计算年化收益率
@@ -68,7 +67,7 @@ class BacktestMetrics:
         if not equity_curve:
             return 0.0
 
-        equities = [point['equity'] for point in equity_curve]
+        equities = [point["equity"] for point in equity_curve]
 
         max_drawdown = 0.0
         peak = equities[0]
@@ -87,8 +86,7 @@ class BacktestMetrics:
 
     @staticmethod
     def calculate_sharpe_ratio(
-        equity_curve: List[Dict],
-        risk_free_rate: float = 0.02
+        equity_curve: List[Dict], risk_free_rate: float = 0.02
     ) -> float:
         """
         计算夏普比率
@@ -104,7 +102,7 @@ class BacktestMetrics:
             return 0.0
 
         # 计算日收益率
-        equities = [point['equity'] for point in equity_curve]
+        equities = [point["equity"] for point in equity_curve]
         returns = []
 
         for i in range(1, len(equities)):
@@ -148,12 +146,12 @@ class BacktestMetrics:
             return 0.0
 
         # 只统计已平仓交易；多单平仓通常是 sell，空单平仓通常是 buy。
-        sell_trades = [t for t in trades if t.get('pnl', 0) != 0]
+        sell_trades = [t for t in trades if t.get("pnl", 0) != 0]
 
         if not sell_trades:
             return 0.0
 
-        winning_trades = sum(1 for t in sell_trades if t.get('pnl', 0) > 0)
+        winning_trades = sum(1 for t in sell_trades if t.get("pnl", 0) > 0)
 
         return winning_trades / len(sell_trades)
 
@@ -172,16 +170,18 @@ class BacktestMetrics:
             return 0.0
 
         # 只统计已平仓交易；多空策略里空单平仓是 buy，不能只看 sell。
-        sell_trades = [t for t in trades if t.get('pnl', 0) != 0]
+        sell_trades = [t for t in trades if t.get("pnl", 0) != 0]
 
         if not sell_trades:
             return 0.0
 
-        total_profit = sum(t.get('pnl', 0) for t in sell_trades if t.get('pnl', 0) > 0)
-        total_loss = abs(sum(t.get('pnl', 0) for t in sell_trades if t.get('pnl', 0) < 0))
+        total_profit = sum(t.get("pnl", 0) for t in sell_trades if t.get("pnl", 0) > 0)
+        total_loss = abs(
+            sum(t.get("pnl", 0) for t in sell_trades if t.get("pnl", 0) < 0)
+        )
 
         if total_loss == 0:
-            return float('inf') if total_profit > 0 else 0.0
+            return float("inf") if total_profit > 0 else 0.0
 
         return total_profit / total_loss
 
@@ -192,7 +192,7 @@ class BacktestMetrics:
         equity_curve: List[Dict],
         trades: List[Dict],
         start_timestamp: int,
-        end_timestamp: int
+        end_timestamp: int,
     ) -> Dict:
         """
         计算所有性能指标
@@ -225,9 +225,9 @@ class BacktestMetrics:
         sharpe_ratio = BacktestMetrics.calculate_sharpe_ratio(equity_curve)
 
         # 交易统计
-        sell_trades = [t for t in trades if t.get('side') == 'sell']
-        winning_trades = sum(1 for t in sell_trades if t.get('pnl', 0) > 0)
-        losing_trades = sum(1 for t in sell_trades if t.get('pnl', 0) <= 0)
+        sell_trades = [t for t in trades if t.get("side") == "sell"]
+        winning_trades = sum(1 for t in sell_trades if t.get("pnl", 0) > 0)
+        losing_trades = sum(1 for t in sell_trades if t.get("pnl", 0) <= 0)
 
         # 胜率
         win_rate = BacktestMetrics.calculate_win_rate(trades)
@@ -236,7 +236,7 @@ class BacktestMetrics:
         profit_factor = BacktestMetrics.calculate_profit_factor(trades)
 
         # 总手续费
-        total_fee = sum(t.get('fee', 0) for t in trades)
+        total_fee = sum(t.get("fee", 0) for t in trades)
 
         return {
             "total_return": total_return,
@@ -248,5 +248,5 @@ class BacktestMetrics:
             "losing_trades": losing_trades,
             "win_rate": win_rate,
             "profit_factor": profit_factor,
-            "total_fee": total_fee
+            "total_fee": total_fee,
         }

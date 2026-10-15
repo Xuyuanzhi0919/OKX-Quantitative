@@ -1,18 +1,31 @@
 """
 风控配置模型
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Text
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Float,
+    Boolean,
+    ForeignKey,
+    Text,
+)
 from sqlalchemy.sql import func
 from app.core.database import Base
 
 
 class RiskControl(Base):
     """风控配置表"""
+
     __tablename__ = "risk_controls"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=True, index=True)
+    strategy_id = Column(
+        Integer, ForeignKey("strategies.id"), nullable=True, index=True
+    )
 
     # 风控级别: global(全局), strategy(策略级), order(订单级)
     level = Column(String(20), nullable=False, default="strategy", index=True)
@@ -78,9 +91,13 @@ class RiskControl(Base):
     last_trigger_at = Column(DateTime(timezone=True), nullable=True)
 
     # 创建时间
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     # 更新时间
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     def __repr__(self):
         return f"<RiskControl(id={self.id}, level={self.level}, type={self.risk_type}, enabled={self.is_enabled})>"
@@ -88,12 +105,17 @@ class RiskControl(Base):
 
 class RiskAction(Base):
     """风控动作日志表"""
+
     __tablename__ = "risk_actions"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=True, index=True)
-    risk_control_id = Column(Integer, ForeignKey("risk_controls.id"), nullable=True, index=True)
+    strategy_id = Column(
+        Integer, ForeignKey("strategies.id"), nullable=True, index=True
+    )
+    risk_control_id = Column(
+        Integer, ForeignKey("risk_controls.id"), nullable=True, index=True
+    )
 
     # 风控动作类型: warn, limit, pause, close, resume
     action_type = Column(String(20), nullable=False, index=True)
@@ -111,7 +133,9 @@ class RiskAction(Base):
     execution_details = Column(Text, nullable=True)
 
     # 创建时间
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
     def __repr__(self):
         return f"<RiskAction(id={self.id}, type={self.action_type}, status={self.execution_status})>"

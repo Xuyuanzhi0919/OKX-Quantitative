@@ -170,7 +170,10 @@ export const formatQuantityDisplay = (quantity: number | string | undefined): st
  * formatPercent(50.123, 2) => "50.12"
  * formatPercent(0.5, 1) => "0.5"
  */
-export const formatPercent = (percent: number | string | undefined, decimals: number = 2): string => {
+export const formatPercent = (
+  percent: number | string | undefined,
+  decimals: number = 2,
+): string => {
   if (percent === undefined || percent === null || percent === '') return '--'
   const num = typeof percent === 'string' ? parseFloat(percent) : percent
   if (isNaN(num)) return '--'
@@ -187,7 +190,10 @@ export const formatPercent = (percent: number | string | undefined, decimals: nu
  * formatPercentDisplay(50.123) => "50.12%"
  * formatPercentDisplay(0.5, 1) => "0.5%"
  */
-export const formatPercentDisplay = (percent: number | string | undefined, decimals: number = 2): string => {
+export const formatPercentDisplay = (
+  percent: number | string | undefined,
+  decimals: number = 2,
+): string => {
   const formatted = formatPercent(percent, decimals)
   return formatted === '--' ? '--' : `${formatted}%`
 }
@@ -204,7 +210,10 @@ export const formatPercentDisplay = (percent: number | string | undefined, decim
  * formatFeeDisplay(0.641037968) => "0.641"
  * formatFeeDisplay(0.0001234) => "0.000123"
  */
-export const formatFeeDisplay = (fee: number | string | undefined, decimals: number = 4): string => {
+export const formatFeeDisplay = (
+  fee: number | string | undefined,
+  decimals: number = 4,
+): string => {
   if (fee === undefined || fee === null || fee === '') return '--'
   const num = typeof fee === 'string' ? parseFloat(fee) : fee
   if (isNaN(num)) return '--'

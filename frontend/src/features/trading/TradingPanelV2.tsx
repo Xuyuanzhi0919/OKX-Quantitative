@@ -1,7 +1,7 @@
 /**
  * 优化版交易面板组件 - 更符合用户购买逻辑
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 import {
   Card,
   Tabs,
@@ -15,112 +15,108 @@ import {
   Col,
   Switch,
   App,
-} from 'antd';
-import {
-  ShoppingCart,
-  DollarSign,
-  Info,
-} from 'lucide-react';
-import { orderApi, marketApi, accountApi } from '@/services/api';
-import { formatAmount, formatQuantityDisplay, formatPriceDisplay } from '@/utils/format';
+} from 'antd'
+import { ShoppingCart, DollarSign, Info } from 'lucide-react'
+import { orderApi, marketApi, accountApi } from '@/services/api'
+import { formatAmount, formatQuantityDisplay, formatPriceDisplay } from '@/utils/format'
 
 interface TradingPanelV2Props {
-  defaultSymbol?: string;
-  onOrderCreated?: (order: any) => void;
+  defaultSymbol?: string
+  onOrderCreated?: (order: any) => void
 }
 
 export default function TradingPanelV2({
   defaultSymbol = 'BTC-USDT',
   onOrderCreated,
 }: TradingPanelV2Props) {
-  const { message } = App.useApp();
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
-  const [currentPrice, setCurrentPrice] = useState(0);
-  const [balance, setBalance] = useState<any>(null);
-  const [useMarketPrice, setUseMarketPrice] = useState(true);
+  const { message } = App.useApp()
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy')
+  const [currentPrice, setCurrentPrice] = useState(0)
+  const [balance, setBalance] = useState<any>(null)
+  const [useMarketPrice, setUseMarketPrice] = useState(true)
 
   // 获取当前价格
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        const ticker = await marketApi.getTicker(defaultSymbol);
-        const price = parseFloat((ticker as any)?.last || '0');
-        setCurrentPrice(price);
+        const ticker = await marketApi.getTicker(defaultSymbol)
+        const price = parseFloat((ticker as any)?.last || '0')
+        setCurrentPrice(price)
 
         if (useMarketPrice) {
-          form.setFieldsValue({ price });
+          form.setFieldsValue({ price })
         }
       } catch (error) {
         // 价格获取失败
       }
-    };
+    }
 
-    fetchPrice();
-    const timer = setInterval(fetchPrice, 3000);
-    return () => clearInterval(timer);
-  }, [defaultSymbol, useMarketPrice]);
+    fetchPrice()
+    const timer = setInterval(fetchPrice, 3000)
+    return () => clearInterval(timer)
+  }, [defaultSymbol, useMarketPrice])
 
   // 获取账户余额
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const data = await accountApi.getBalance();
-        setBalance(data);
+        const data = await accountApi.getBalance()
+        setBalance(data)
       } catch (error) {
         // 余额获取失败
       }
-    };
+    }
 
-    fetchBalance();
-  }, []);
+    fetchBalance()
+  }, [])
 
   // 计算预计花费 / 预计获得
   const calculateTotal = () => {
-    const amount = form.getFieldValue('amount') || 0;
-    const price = form.getFieldValue('price') || currentPrice;
-    return formatAmount(amount * price);
-  };
+    const amount = form.getFieldValue('amount') || 0
+    const price = form.getFieldValue('price') || currentPrice
+    return formatAmount(amount * price)
+  }
 
   // 计算可用余额
   const getAvailableBalance = () => {
-    if (!balance) return 0;
+    if (!balance) return 0
 
     if (activeTab === 'buy') {
       // 买入时显示 USDT 余额
-      const details = balance.details || [];
-      const usdtBalance = details.find((d: any) => d.ccy === 'USDT');
-      return parseFloat(usdtBalance?.availBal || '0');
+      const details = balance.details || []
+      const usdtBalance = details.find((d: any) => d.ccy === 'USDT')
+      return parseFloat(usdtBalance?.availBal || '0')
     } else {
       // 卖出时显示 BTC 余额
-      const coin = defaultSymbol.split('-')[0]; // BTC-USDT => BTC
-      const details = balance.details || [];
-      const coinBalance = details.find((d: any) => d.ccy === coin);
-      return parseFloat(coinBalance?.availBal || '0');
+      const coin = defaultSymbol.split('-')[0] // BTC-USDT => BTC
+      const details = balance.details || []
+      const coinBalance = details.find((d: any) => d.ccy === coin)
+      return parseFloat(coinBalance?.availBal || '0')
     }
-  };
+  }
 
   // 快速填充数量 (按可用余额的百分比)
   const quickFill = (percent: number) => {
-    const available = getAvailableBalance();
-    const price = form.getFieldValue('price') || currentPrice;
+    const available = getAvailableBalance()
+    const price = form.getFieldValue('price') || currentPrice
 
-    let amount = 0;
+    let amount = 0
     if (activeTab === 'buy') {
       // 买入: 可用余额 * 百分比 / 价格
-      amount = (available * percent / 100) / price;
+      amount = (available * percent) / 100 / price
     } else {
       // 卖出: 可用余额 * 百分比
-      amount = available * percent / 100;
+      amount = (available * percent) / 100
     }
 
-    form.setFieldsValue({ amount: formatQuantityDisplay(amount) });
-  };
+    form.setFieldsValue({ amount: formatQuantityDisplay(amount) })
+  }
 
   const handleSubmit = async (values: any) => {
     try {
-      setLoading(true);
+      setLoading(true)
 
       const orderData = {
         symbol: defaultSymbol,
@@ -130,22 +126,22 @@ export default function TradingPanelV2({
         price: useMarketPrice ? undefined : values.price,
         td_mode: 'cash' as 'cash',
         tgt_ccy: useMarketPrice ? ('quote_ccy' as 'quote_ccy') : undefined,
-      };
+      }
 
-      const result = await orderApi.create(orderData);
+      const result = await orderApi.create(orderData)
 
-      message.success(`${activeTab === 'buy' ? '买入' : '卖出'}订单创建成功!`);
-      form.resetFields(['amount']);
+      message.success(`${activeTab === 'buy' ? '买入' : '卖出'}订单创建成功!`)
+      form.resetFields(['amount'])
 
       if (onOrderCreated) {
-        onOrderCreated(result);
+        onOrderCreated(result)
       }
     } catch (error) {
-      message.error((error as Error).message || '创建订单失败');
+      message.error((error as Error).message || '创建订单失败')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const tabItems = [
     {
@@ -175,9 +171,7 @@ export default function TradingPanelV2({
           {/* 当前价格 */}
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={18}>
-              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>
-                当前价格
-              </div>
+              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>当前价格</div>
               <div style={{ fontSize: 24, fontWeight: 'bold', color: '#e5e7eb' }}>
                 ${formatPriceDisplay(currentPrice)}
               </div>
@@ -313,9 +307,7 @@ export default function TradingPanelV2({
           {/* 当前价格 */}
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={18}>
-              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>
-                当前价格
-              </div>
+              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>当前价格</div>
               <div style={{ fontSize: 24, fontWeight: 'bold', color: '#e5e7eb' }}>
                 ${formatPriceDisplay(currentPrice)}
               </div>
@@ -424,7 +416,7 @@ export default function TradingPanelV2({
         </Form>
       ),
     },
-  ];
+  ]
 
   return (
     <Card
@@ -435,9 +427,7 @@ export default function TradingPanelV2({
         </Space>
       }
       extra={
-        <span style={{ fontSize: 14, fontWeight: 600, color: '#3b82f6' }}>
-          {defaultSymbol}
-        </span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#3b82f6' }}>{defaultSymbol}</span>
       }
     >
       <Tabs
@@ -457,5 +447,5 @@ export default function TradingPanelV2({
         style={{ marginTop: 16, fontSize: 12 }}
       />
     </Card>
-  );
+  )
 }

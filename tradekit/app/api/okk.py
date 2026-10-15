@@ -20,7 +20,9 @@ def get_bridge(settings: Settings = Depends(get_settings)) -> StrategyBridge:
     return StrategyBridge(client, attribution_store)
 
 
-def get_attribution_store(settings: Settings = Depends(get_settings)) -> PositionAttributionStore:
+def get_attribution_store(
+    settings: Settings = Depends(get_settings),
+) -> PositionAttributionStore:
     return PositionAttributionStore(settings.attribution_file)
 
 
@@ -35,12 +37,16 @@ async def get_okk_overview(bridge: StrategyBridge = Depends(get_bridge)) -> dict
 
 
 @router.get("/strategies/{strategy_id}/advice")
-async def get_strategy_advice(strategy_id: int, bridge: StrategyBridge = Depends(get_bridge)) -> dict:
+async def get_strategy_advice(
+    strategy_id: int, bridge: StrategyBridge = Depends(get_bridge)
+) -> dict:
     return await bridge.strategy_advice(strategy_id)
 
 
 @router.get("/position-attributions")
-async def list_position_attributions(store: PositionAttributionStore = Depends(get_attribution_store)) -> dict:
+async def list_position_attributions(
+    store: PositionAttributionStore = Depends(get_attribution_store),
+) -> dict:
     return {"items": store.list()}
 
 
@@ -52,4 +58,3 @@ async def update_position_attribution(
 ) -> dict:
     attribution = store.upsert(position_key, payload)
     return {"item": attribution}
-

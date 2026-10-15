@@ -64,6 +64,7 @@ services:
       - CORS_ORIGINS=["https://${DOMAIN}", "https://www.${DOMAIN}"]
     volumes:
       - ./backend/logs:/app/logs
+      - ./backend/notification_config.json:/app/notification_config.json:ro
     ports:
       - "8000:8000"
     networks:

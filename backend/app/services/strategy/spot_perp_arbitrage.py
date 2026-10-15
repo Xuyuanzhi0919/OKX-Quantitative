@@ -10,6 +10,7 @@ First version:
 This is intentionally not a millisecond HFT engine yet. It gives the system a
 real arbitrage execution path that can be upgraded to WebSocket market data.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -26,17 +27,30 @@ from app.services.strategy.base import StrategyBase
 class SpotPerpArbitrageStrategy(StrategyBase):
     """Buy spot and short perp when the perp premium is large enough."""
 
-    def __init__(self, strategy_id: int, exchange, symbol: str, parameters: Dict, user_id: int = 1):
+    def __init__(
+        self,
+        strategy_id: int,
+        exchange,
+        symbol: str,
+        parameters: Dict,
+        user_id: int = 1,
+    ):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
 
         p = parameters or {}
-        self.perp_symbol = str(p.get("perp_symbol") or self._infer_perp_symbol(symbol)).upper()
-        self.spot_symbol = str(p.get("spot_symbol") or self._infer_spot_symbol(symbol)).upper()
+        self.perp_symbol = str(
+            p.get("perp_symbol") or self._infer_perp_symbol(symbol)
+        ).upper()
+        self.spot_symbol = str(
+            p.get("spot_symbol") or self._infer_spot_symbol(symbol)
+        ).upper()
         self.margin_mode = str(p.get("margin_mode", "isolated")).lower()
         self.leverage = int(p.get("leverage", 1))
 
         self.target_notional_usd = float(p.get("target_notional_usd", 100))
-        self.max_notional_usd = float(p.get("max_notional_usd", self.target_notional_usd))
+        self.max_notional_usd = float(
+            p.get("max_notional_usd", self.target_notional_usd)
+        )
         self.open_edge_threshold = float(p.get("open_edge_threshold", 0.003))
         self.close_edge_threshold = float(p.get("close_edge_threshold", 0.0008))
         self.min_net_edge = float(p.get("min_net_edge", 0.0015))
@@ -188,7 +202,10 @@ class SpotPerpArbitrageStrategy(StrategyBase):
         }
 
         if not self._in_position:
-            if open_edge >= self.open_edge_threshold and net_open_edge >= self.min_net_edge:
+            if (
+                open_edge >= self.open_edge_threshold
+                and net_open_edge >= self.min_net_edge
+            ):
                 await self._open_pair(spot_ask, perp_bid, open_edge, net_open_edge)
             return
 
@@ -211,25 +228,34 @@ class SpotPerpArbitrageStrategy(StrategyBase):
     def _plain(self, value: Decimal) -> str:
         return format(value.normalize(), "f")
 
-    def _calc_sizes(self, spot_price: float, perp_price: float) -> tuple[Decimal, Decimal]:
+    def _calc_sizes(
+        self, spot_price: float, perp_price: float
+    ) -> tuple[Decimal, Decimal]:
         notional = Decimal(str(min(self.target_notional_usd, self.max_notional_usd)))
-        spot_qty = self._floor_to_step(notional / Decimal(str(spot_price)), self._spot_lot_sz)
+        spot_qty = self._floor_to_step(
+            notional / Decimal(str(spot_price)), self._spot_lot_sz
+        )
         if spot_qty < self._spot_min_sz:
             return Decimal("0"), Decimal("0")
 
         perp_contracts = self._floor_to_step(
-            (spot_qty * Decimal(str(perp_price))) / (self._perp_ct_val * Decimal(str(perp_price))),
+            (spot_qty * Decimal(str(perp_price)))
+            / (self._perp_ct_val * Decimal(str(perp_price))),
             self._perp_lot_sz,
         )
         if perp_contracts < self._perp_min_sz:
             return Decimal("0"), Decimal("0")
 
-        hedged_spot_qty = self._floor_to_step(perp_contracts * self._perp_ct_val, self._spot_lot_sz)
+        hedged_spot_qty = self._floor_to_step(
+            perp_contracts * self._perp_ct_val, self._spot_lot_sz
+        )
         if hedged_spot_qty < self._spot_min_sz:
             return Decimal("0"), Decimal("0")
         return hedged_spot_qty, perp_contracts
 
-    async def _open_pair(self, spot_ask: float, perp_bid: float, edge: float, net_edge: float):
+    async def _open_pair(
+        self, spot_ask: float, perp_bid: float, edge: float, net_edge: float
+    ):
         if self._busy:
             return
         self._busy = True
@@ -294,27 +320,33 @@ class SpotPerpArbitrageStrategy(StrategyBase):
     ):
         tasks = []
         if spot_ok and not perp_ok:
-            tasks.append(self.exchange.create_order(
-                symbol=self.spot_symbol,
-                side="sell",
-                order_type="market",
-                amount=spot_qty,
-                td_mode="cash",
-            ))
+            tasks.append(
+                self.exchange.create_order(
+                    symbol=self.spot_symbol,
+                    side="sell",
+                    order_type="market",
+                    amount=spot_qty,
+                    td_mode="cash",
+                )
+            )
         if perp_ok and not spot_ok:
-            tasks.append(self.exchange.create_order(
-                symbol=self.perp_symbol,
-                side="buy",
-                order_type="market",
-                amount=perp_qty,
-                td_mode=self.margin_mode,
-                pos_side="short" if self._use_pos_side else None,
-                reduce_only=not self._use_pos_side,
-            ))
+            tasks.append(
+                self.exchange.create_order(
+                    symbol=self.perp_symbol,
+                    side="buy",
+                    order_type="market",
+                    amount=perp_qty,
+                    td_mode=self.margin_mode,
+                    pos_side="short" if self._use_pos_side else None,
+                    reduce_only=not self._use_pos_side,
+                )
+            )
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             logger.warning(f"[{self.strategy_id}] compensation results: {results}")
-            compensation_failed = any(isinstance(result, Exception) for result in results)
+            compensation_failed = any(
+                isinstance(result, Exception) for result in results
+            )
             if compensation_failed:
                 self._in_position = True
                 self._spot_qty = spot_qty if spot_ok and not perp_ok else Decimal("0")
@@ -379,9 +411,13 @@ class SpotPerpArbitrageStrategy(StrategyBase):
             self._busy = False
             return
 
-        approx_pnl = (self._entry_edge - self._last_prices.get("close_edge", self._entry_edge))
+        approx_pnl = self._entry_edge - self._last_prices.get(
+            "close_edge", self._entry_edge
+        )
         approx_pnl -= self.fee_buffer + self.slippage_buffer
-        approx_usd = approx_pnl * float(self._spot_qty) * self._last_prices.get("spot_bid", 0)
+        approx_usd = (
+            approx_pnl * float(self._spot_qty) * self._last_prices.get("spot_bid", 0)
+        )
         self.realized_pnl += approx_usd
         self.total_trades += 1
         self.record_trade_result(approx_usd)
@@ -390,7 +426,9 @@ class SpotPerpArbitrageStrategy(StrategyBase):
         self._spot_qty = Decimal("0")
         self._perp_qty = Decimal("0")
         self._entry_edge = 0.0
-        logger.success(f"[{self.strategy_id}] arbitrage pair closed, approx_pnl={approx_usd:.4f} USDT")
+        logger.success(
+            f"[{self.strategy_id}] arbitrage pair closed, approx_pnl={approx_usd:.4f} USDT"
+        )
         self._busy = False
 
     def get_signal_status(self) -> Dict:

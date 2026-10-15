@@ -1,6 +1,7 @@
 """
 风控管理API端点
 """
+
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
@@ -23,11 +24,15 @@ router = APIRouter()
 
 # ========== Pydantic 模型 ==========
 
+
 class RiskControlCreate(BaseModel):
     """创建风控规则"""
+
     strategy_id: Optional[int] = Field(None, description="策略ID，None表示全局风控")
     level: str = Field("strategy", description="风控级别: global, strategy")
-    risk_type: str = Field(..., description="风控类型: capital, position, loss, drawdown, frequency")
+    risk_type: str = Field(
+        ..., description="风控类型: capital, position, loss, drawdown, frequency"
+    )
     name: str = Field(..., description="规则名称")
     description: Optional[str] = None
     is_enabled: bool = Field(True, description="是否启用")
@@ -52,13 +57,16 @@ class RiskControlCreate(BaseModel):
     period_seconds: Optional[int] = None
 
     # 风控动作
-    action_on_trigger: str = Field("warn", description="触发动作: warn, limit, pause, close")
+    action_on_trigger: str = Field(
+        "warn", description="触发动作: warn, limit, pause, close"
+    )
     warning_threshold: Optional[float] = Field(0.8, description="警告阈值")
     auto_resume: bool = Field(False, description="自动恢复")
 
 
 class RiskControlUpdate(BaseModel):
     """更新风控规则"""
+
     is_enabled: Optional[bool] = None
     min_available_balance: Optional[float] = None
     max_position_value: Optional[float] = None
@@ -78,6 +86,7 @@ class RiskControlUpdate(BaseModel):
 
 class RiskControlResponse(BaseModel):
     """风控规则响应"""
+
     id: int
     user_id: int
     strategy_id: Optional[int]
@@ -96,14 +105,22 @@ class RiskControlResponse(BaseModel):
 
 class EmergencyStopRequest(BaseModel):
     """紧急停止请求"""
-    action: str = Field(..., description="动作: pause_all(暂停所有), close_all(平仓所有)")
-    strategy_ids: Optional[List[int]] = Field(None, description="策略ID列表，None表示所有策略")
+
+    action: str = Field(
+        ..., description="动作: pause_all(暂停所有), close_all(平仓所有)"
+    )
+    strategy_ids: Optional[List[int]] = Field(
+        None, description="策略ID列表，None表示所有策略"
+    )
     cancel_orders: bool = Field(True, description="是否撤销相关未成交订单")
-    close_positions: bool = Field(False, description="是否市价平仓；action=close_all 时强制为 true")
+    close_positions: bool = Field(
+        False, description="是否市价平仓；action=close_all 时强制为 true"
+    )
 
 
 class EmergencyStopResponse(BaseModel):
     """紧急停止响应"""
+
     success: bool
     message: str
     affected_strategies: List[int]
@@ -112,7 +129,10 @@ class EmergencyStopResponse(BaseModel):
 
 # ========== API 端点 ==========
 
-@router.post("/rules", response_model=RiskControlResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/rules", response_model=RiskControlResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_risk_rule(
     rule_data: RiskControlCreate,
     db: Session = Depends(get_db),
@@ -127,10 +147,7 @@ async def create_risk_rule(
     """
     try:
         # 创建风控规则
-        risk_rule = RiskControl(
-            user_id=user_id,
-            **rule_data.model_dump()
-        )
+        risk_rule = RiskControl(user_id=user_id, **rule_data.model_dump())
 
         db.add(risk_rule)
         db.commit()
@@ -145,7 +162,7 @@ async def create_risk_rule(
         logger.error(f"创建风控规则失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"创建风控规则失败: {str(e)}"
+            detail=f"创建风控规则失败: {str(e)}",
         )
 
 
@@ -186,7 +203,7 @@ async def list_risk_rules(
         logger.error(f"查询风控规则失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"查询风控规则失败: {str(e)}"
+            detail=f"查询风控规则失败: {str(e)}",
         )
 
 
@@ -198,15 +215,15 @@ async def get_risk_rule(
 ):
     """获取单个风控规则详情"""
     try:
-        rule = db.query(RiskControl).filter(
-            RiskControl.id == rule_id,
-            RiskControl.user_id == user_id
-        ).first()
+        rule = (
+            db.query(RiskControl)
+            .filter(RiskControl.id == rule_id, RiskControl.user_id == user_id)
+            .first()
+        )
 
         if not rule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="风控规则不存在"
+                status_code=status.HTTP_404_NOT_FOUND, detail="风控规则不存在"
             )
 
         return rule
@@ -217,7 +234,7 @@ async def get_risk_rule(
         logger.error(f"获取风控规则失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取风控规则失败: {str(e)}"
+            detail=f"获取风控规则失败: {str(e)}",
         )
 
 
@@ -230,15 +247,15 @@ async def update_risk_rule(
 ):
     """更新风控规则"""
     try:
-        rule = db.query(RiskControl).filter(
-            RiskControl.id == rule_id,
-            RiskControl.user_id == user_id
-        ).first()
+        rule = (
+            db.query(RiskControl)
+            .filter(RiskControl.id == rule_id, RiskControl.user_id == user_id)
+            .first()
+        )
 
         if not rule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="风控规则不存在"
+                status_code=status.HTTP_404_NOT_FOUND, detail="风控规则不存在"
             )
 
         # 更新字段
@@ -260,7 +277,7 @@ async def update_risk_rule(
         logger.error(f"更新风控规则失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"更新风控规则失败: {str(e)}"
+            detail=f"更新风控规则失败: {str(e)}",
         )
 
 
@@ -272,15 +289,15 @@ async def delete_risk_rule(
 ):
     """删除风控规则"""
     try:
-        rule = db.query(RiskControl).filter(
-            RiskControl.id == rule_id,
-            RiskControl.user_id == user_id
-        ).first()
+        rule = (
+            db.query(RiskControl)
+            .filter(RiskControl.id == rule_id, RiskControl.user_id == user_id)
+            .first()
+        )
 
         if not rule:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="风控规则不存在"
+                status_code=status.HTTP_404_NOT_FOUND, detail="风控规则不存在"
             )
 
         db.delete(rule)
@@ -297,7 +314,7 @@ async def delete_risk_rule(
         logger.error(f"删除风控规则失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"删除风控规则失败: {str(e)}"
+            detail=f"删除风控规则失败: {str(e)}",
         )
 
 
@@ -326,14 +343,14 @@ async def check_strategy_risk(
             "strategy_id": strategy_id,
             "has_risk": len(triggered_rules) > 0,
             "triggered_count": len(triggered_rules),
-            "triggered_rules": triggered_rules
+            "triggered_rules": triggered_rules,
         }
 
     except Exception as e:
         logger.error(f"检查策略风控失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"检查策略风控失败: {str(e)}"
+            detail=f"检查策略风控失败: {str(e)}",
         )
 
 
@@ -367,7 +384,7 @@ async def emergency_stop(
                 success=True,
                 message="没有需要停止的策略",
                 affected_strategies=[],
-                details={}
+                details={},
             )
 
         success_count = 0
@@ -388,13 +405,21 @@ async def emergency_stop(
                     db.commit()
                     cancel_detail = {}
                     if request.cancel_orders:
-                        cancel_detail = await cancel_exchange_orders_for_strategy(strategy, user_id)
+                        cancel_detail = await cancel_exchange_orders_for_strategy(
+                            strategy, user_id
+                        )
                     if success:
                         success_count += 1
-                        details[strategy.id] = {"status": "已暂停", "cancel": cancel_detail}
+                        details[strategy.id] = {
+                            "status": "已暂停",
+                            "cancel": cancel_detail,
+                        }
                     else:
                         success_count += 1
-                        details[strategy.id] = {"status": "策略未在内存运行，数据库已标记暂停", "cancel": cancel_detail}
+                        details[strategy.id] = {
+                            "status": "策略未在内存运行，数据库已标记暂停",
+                            "cancel": cancel_detail,
+                        }
                 except Exception as e:
                     failed_count += 1
                     details[strategy.id] = f"暂停失败: {str(e)}"
@@ -410,16 +435,24 @@ async def emergency_stop(
                         cancel_orders=request.cancel_orders,
                         close_position=True,
                     )
-                    close_detail = await close_exchange_position_for_strategy(strategy, user_id)
+                    close_detail = await close_exchange_position_for_strategy(
+                        strategy, user_id
+                    )
                     strategy.status = "paused"
                     strategy.stopped_at = datetime.utcnow()
                     db.commit()
                     if success:
                         success_count += 1
-                        details[strategy.id] = {"status": "已暂停并尝试平仓", "close": close_detail}
+                        details[strategy.id] = {
+                            "status": "已暂停并尝试平仓",
+                            "close": close_detail,
+                        }
                     else:
                         success_count += 1
-                        details[strategy.id] = {"status": "策略未在内存运行，已尝试按交易所持仓平仓", "close": close_detail}
+                        details[strategy.id] = {
+                            "status": "策略未在内存运行，已尝试按交易所持仓平仓",
+                            "close": close_detail,
+                        }
                 except Exception as e:
                     failed_count += 1
                     details[strategy.id] = f"处理失败: {str(e)}"
@@ -429,7 +462,7 @@ async def emergency_stop(
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"不支持的操作: {request.action}"
+                detail=f"不支持的操作: {request.action}",
             )
 
         logger.warning(f"紧急停止: {message}, 策略: {affected_ids}")
@@ -438,7 +471,7 @@ async def emergency_stop(
             success=failed_count == 0,
             message=message,
             affected_strategies=affected_ids,
-            details=details
+            details=details,
         )
 
     except HTTPException:
@@ -447,21 +480,29 @@ async def emergency_stop(
         logger.error(f"紧急停止失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"紧急停止失败: {str(e)}"
+            detail=f"紧急停止失败: {str(e)}",
         )
 
 
-async def close_exchange_position_for_strategy(strategy: Strategy, user_id: int) -> dict:
+async def close_exchange_position_for_strategy(
+    strategy: Strategy, user_id: int
+) -> dict:
     """按交易所真实持仓尝试平仓，作为急停兜底。"""
-    exchange = api_config_service.get_exchange(user_id=user_id, config_id=strategy.api_config_id)
+    exchange = api_config_service.get_exchange(
+        user_id=user_id, config_id=strategy.api_config_id
+    )
     closed = []
     canceled = []
     try:
         try:
-            pending_orders = await exchange.get_orders_pending(inst_type="SWAP", inst_id=strategy.symbol)
+            pending_orders = await exchange.get_orders_pending(
+                inst_type="SWAP", inst_id=strategy.symbol
+            )
             for order in pending_orders:
                 try:
-                    result = await exchange.cancel_order(strategy.symbol, order_id=order.get("ordId"))
+                    result = await exchange.cancel_order(
+                        strategy.symbol, order_id=order.get("ordId")
+                    )
                     canceled.append({"ord_id": order.get("ordId"), "result": result})
                 except Exception as exc:
                     canceled.append({"ord_id": order.get("ordId"), "error": str(exc)})
@@ -478,7 +519,11 @@ async def close_exchange_position_for_strategy(strategy: Strategy, user_id: int)
                 continue
 
             pos_side = pos.get("posSide") or "net"
-            logical_side = pos_side if pos_side in ("long", "short") else ("long" if qty > 0 else "short")
+            logical_side = (
+                pos_side
+                if pos_side in ("long", "short")
+                else ("long" if qty > 0 else "short")
+            )
             order_side = "sell" if logical_side == "long" else "buy"
             result = await exchange.create_order(
                 symbol=strategy.symbol,
@@ -489,12 +534,14 @@ async def close_exchange_position_for_strategy(strategy: Strategy, user_id: int)
                 pos_side=pos_side if pos_side in ("long", "short") else "net",
                 reduce_only=True,
             )
-            closed.append({
-                "pos_side": pos_side,
-                "size": qty,
-                "order_side": order_side,
-                "result": result,
-            })
+            closed.append(
+                {
+                    "pos_side": pos_side,
+                    "size": qty,
+                    "order_side": order_side,
+                    "result": result,
+                }
+            )
     finally:
         await exchange.close()
 
@@ -503,13 +550,19 @@ async def close_exchange_position_for_strategy(strategy: Strategy, user_id: int)
 
 async def cancel_exchange_orders_for_strategy(strategy: Strategy, user_id: int) -> dict:
     """撤销策略交易对的 OKX 未成交订单。"""
-    exchange = api_config_service.get_exchange(user_id=user_id, config_id=strategy.api_config_id)
+    exchange = api_config_service.get_exchange(
+        user_id=user_id, config_id=strategy.api_config_id
+    )
     canceled = []
     try:
-        pending_orders = await exchange.get_orders_pending(inst_type="SWAP", inst_id=strategy.symbol)
+        pending_orders = await exchange.get_orders_pending(
+            inst_type="SWAP", inst_id=strategy.symbol
+        )
         for order in pending_orders:
             try:
-                result = await exchange.cancel_order(strategy.symbol, order_id=order.get("ordId"))
+                result = await exchange.cancel_order(
+                    strategy.symbol, order_id=order.get("ordId")
+                )
                 canceled.append({"ord_id": order.get("ordId"), "result": result})
             except Exception as exc:
                 canceled.append({"ord_id": order.get("ordId"), "error": str(exc)})
@@ -551,7 +604,9 @@ async def list_risk_actions(
                 "action_type": action.action_type,
                 "trigger_reason": action.trigger_reason,
                 "execution_status": action.execution_status,
-                "created_at": action.created_at.isoformat() if action.created_at else None
+                "created_at": (
+                    action.created_at.isoformat() if action.created_at else None
+                ),
             }
             for action in actions
         ]
@@ -560,5 +615,5 @@ async def list_risk_actions(
         logger.error(f"查询风控动作日志失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"查询风控动作日志失败: {str(e)}"
+            detail=f"查询风控动作日志失败: {str(e)}",
         )

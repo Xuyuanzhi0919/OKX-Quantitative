@@ -19,6 +19,7 @@
 - 交易冷却期
 - 连续亏损保护
 """
+
 import time
 import asyncio
 from typing import Dict, List, Optional, Tuple
@@ -30,16 +31,16 @@ from app.services.strategy.base import StrategyBase, InsufficientBalanceError
 
 
 # ── 默认参数 ─────────────────────────────────────────────────────────
-_DEFAULT_IMBALANCE_THRESHOLD = 0.25    # 订单簿不平衡阈值 (25%)
-_DEFAULT_MIN_DEPTH = 15                # 分析的订单簿深度
-_DEFAULT_STOP_LOSS = 0.003             # 止损 0.3%
-_DEFAULT_TAKE_PROFIT = 0.006           # 止盈 0.6%
-_DEFAULT_HOLDING_SECONDS = 60          # 最长持仓时间(秒)
-_DEFAULT_COOLDOWN_SECONDS = 20         # 交易冷却期(秒)
-_DEFAULT_POSITION_RATIO = 0.2          # 仓位比例 (20%)
-_DEFAULT_LEVERAGE = 10                 # 默认杠杆
-_DEFAULT_MIN_IMBALANCE_COUNT = 2       # 最小连续不平衡信号次数
-_DEFAULT_VOLUME_SPIKE_MULT = 1.5       # 成交量突增倍数
+_DEFAULT_IMBALANCE_THRESHOLD = 0.25  # 订单簿不平衡阈值 (25%)
+_DEFAULT_MIN_DEPTH = 15  # 分析的订单簿深度
+_DEFAULT_STOP_LOSS = 0.003  # 止损 0.3%
+_DEFAULT_TAKE_PROFIT = 0.006  # 止盈 0.6%
+_DEFAULT_HOLDING_SECONDS = 60  # 最长持仓时间(秒)
+_DEFAULT_COOLDOWN_SECONDS = 20  # 交易冷却期(秒)
+_DEFAULT_POSITION_RATIO = 0.2  # 仓位比例 (20%)
+_DEFAULT_LEVERAGE = 10  # 默认杠杆
+_DEFAULT_MIN_IMBALANCE_COUNT = 2  # 最小连续不平衡信号次数
+_DEFAULT_VOLUME_SPIKE_MULT = 1.5  # 成交量突增倍数
 
 
 class OrderBookImbalanceStrategy(StrategyBase):
@@ -72,16 +73,26 @@ class OrderBookImbalanceStrategy(StrategyBase):
         p = parameters or {}
 
         # 策略参数
-        self.imbalance_threshold: float = float(p.get("imbalance_threshold", _DEFAULT_IMBALANCE_THRESHOLD))
+        self.imbalance_threshold: float = float(
+            p.get("imbalance_threshold", _DEFAULT_IMBALANCE_THRESHOLD)
+        )
         self.min_depth: int = int(p.get("min_depth", _DEFAULT_MIN_DEPTH))
         self.stop_loss: float = float(p.get("stop_loss", _DEFAULT_STOP_LOSS))
         self.take_profit: float = float(p.get("take_profit", _DEFAULT_TAKE_PROFIT))
-        self.holding_seconds: int = int(p.get("holding_seconds", _DEFAULT_HOLDING_SECONDS))
-        self.cooldown_seconds: int = int(p.get("cooldown_seconds", _DEFAULT_COOLDOWN_SECONDS))
+        self.holding_seconds: int = int(
+            p.get("holding_seconds", _DEFAULT_HOLDING_SECONDS)
+        )
+        self.cooldown_seconds: int = int(
+            p.get("cooldown_seconds", _DEFAULT_COOLDOWN_SECONDS)
+        )
         self.pos_ratio: float = float(p.get("position_ratio", _DEFAULT_POSITION_RATIO))
         self.leverage: int = int(p.get("leverage", _DEFAULT_LEVERAGE))
-        self.min_imbalance_count: int = int(p.get("min_imbalance_count", _DEFAULT_MIN_IMBALANCE_COUNT))
-        self.volume_spike_mult: float = float(p.get("volume_spike_mult", _DEFAULT_VOLUME_SPIKE_MULT))
+        self.min_imbalance_count: int = int(
+            p.get("min_imbalance_count", _DEFAULT_MIN_IMBALANCE_COUNT)
+        )
+        self.volume_spike_mult: float = float(
+            p.get("volume_spike_mult", _DEFAULT_VOLUME_SPIKE_MULT)
+        )
 
         # 合约规格
         self._ct_val: float = 0.1
@@ -158,7 +169,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
                     mgn_mode=margin_mode,
                     inst_id=self.symbol,
                 )
-                logger.info(f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({margin_mode})")
+                logger.info(
+                    f"[{self.symbol}] 杠杆已设置为 {self.leverage}x ({margin_mode})"
+                )
             except Exception as e:
                 logger.warning(f"[{self.symbol}] 设置杠杆失败: {e}")
 
@@ -178,7 +191,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
         # 平掉当前持仓
         if self._in_position:
             await self._close_position("策略停止")
-        
+
         logger.info(f"[{self.symbol}] 订单簿不平衡策略已停止")
 
     async def on_tick(self, ticker: Dict):
@@ -192,9 +205,13 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         # 更新未实现盈亏
         if self._position_side == "long":
-            self._unrealized_pnl = (current_price - self._entry_price) / self._entry_price
+            self._unrealized_pnl = (
+                current_price - self._entry_price
+            ) / self._entry_price
         else:
-            self._unrealized_pnl = (self._entry_price - current_price) / self._entry_price
+            self._unrealized_pnl = (
+                self._entry_price - current_price
+            ) / self._entry_price
 
         # 检查止损止盈
         await self._check_stop_loss_take_profit(current_price)
@@ -211,7 +228,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
         """处理订单更新"""
         ordId = order.get("ordId")
         state = order.get("state")
-        
+
         logger.info(f"[{self.symbol}] 订单更新: ordId={ordId}, state={state}")
 
         # 订单完全成交
@@ -219,7 +236,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
             fillPx = float(order.get("fillPx", order.get("avgPx", 0)))
             fillSz = float(order.get("fillSz", order.get("accFillSz", 0)))
             side = order.get("side")
-            
+
             if side == "buy" and not self._in_position:
                 # 开多仓
                 self._in_position = True
@@ -227,8 +244,10 @@ class OrderBookImbalanceStrategy(StrategyBase):
                 self._entry_price = fillPx
                 self._position_qty = fillSz
                 self._open_time = time.time()
-                logger.info(f"[{self.symbol}] 📈 开多仓成功: price={fillPx}, qty={fillSz}")
-                
+                logger.info(
+                    f"[{self.symbol}] 📈 开多仓成功: price={fillPx}, qty={fillSz}"
+                )
+
             elif side == "sell" and not self._in_position:
                 # 开空仓
                 self._in_position = True
@@ -236,14 +255,19 @@ class OrderBookImbalanceStrategy(StrategyBase):
                 self._entry_price = fillPx
                 self._position_qty = fillSz
                 self._open_time = time.time()
-                logger.info(f"[{self.symbol}] 📉 开空仓成功: price={fillPx}, qty={fillSz}")
-                
-            elif (side == "sell" and self._position_side == "long") or \
-                 (side == "buy" and self._position_side == "short"):
+                logger.info(
+                    f"[{self.symbol}] 📉 开空仓成功: price={fillPx}, qty={fillSz}"
+                )
+
+            elif (side == "sell" and self._position_side == "long") or (
+                side == "buy" and self._position_side == "short"
+            ):
                 # 平仓
                 pnl = self._unrealized_pnl
                 self._close_position_record(pnl, fillPx)
-                logger.info(f"[{self.symbol}] ✅ 平仓成功: price={fillPx}, pnl={pnl*100:.2f}%")
+                logger.info(
+                    f"[{self.symbol}] ✅ 平仓成功: price={fillPx}, pnl={pnl*100:.2f}%"
+                )
 
     # ═══════════════════════════════════════════════════════════
     # 核心策略逻辑
@@ -254,12 +278,14 @@ class OrderBookImbalanceStrategy(StrategyBase):
         while self.is_running:
             try:
                 # 获取订单簿
-                orderbook = await self.exchange.get_orderbook(self.symbol, self.min_depth)
+                orderbook = await self.exchange.get_orderbook(
+                    self.symbol, self.min_depth
+                )
                 self._last_orderbook = orderbook
 
                 # 计算订单簿不平衡度
                 imbalance = self._calculate_imbalance(orderbook)
-                
+
                 # 记录历史
                 self._imbalance_history.append(imbalance)
                 if len(self._imbalance_history) > 10:
@@ -283,7 +309,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
     def _calculate_imbalance(self, orderbook: Dict) -> float:
         """
         计算订单簿不平衡度
-        
+
         不平衡度 = (买盘总量 - 卖盘总量) / (买盘总量 + 卖盘总量)
         范围: [-1, 1]
         - 正值表示买盘强势
@@ -297,12 +323,12 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         # 计算买盘总量（按金额加权）
         bid_volume = 0.0
-        for i, (price, amount) in enumerate(bids[:self.min_depth]):
+        for i, (price, amount) in enumerate(bids[: self.min_depth]):
             bid_volume += float(price) * float(amount)
 
         # 计算卖盘总量
         ask_volume = 0.0
-        for i, (price, amount) in enumerate(asks[:self.min_depth]):
+        for i, (price, amount) in enumerate(asks[: self.min_depth]):
             ask_volume += float(price) * float(amount)
 
         total_volume = bid_volume + ask_volume
@@ -310,10 +336,12 @@ class OrderBookImbalanceStrategy(StrategyBase):
             return 0.0
 
         imbalance = (bid_volume - ask_volume) / total_volume
-        
-        logger.debug(f"[{self.symbol}] 订单簿不平衡度: {imbalance:.4f} "
-                    f"(买盘={bid_volume:.2f}, 卖盘={ask_volume:.2f})")
-        
+
+        logger.debug(
+            f"[{self.symbol}] 订单簿不平衡度: {imbalance:.4f} "
+            f"(买盘={bid_volume:.2f}, 卖盘={ask_volume:.2f})"
+        )
+
         return imbalance
 
     def _is_cooldown_over(self) -> bool:
@@ -323,10 +351,10 @@ class OrderBookImbalanceStrategy(StrategyBase):
     def _is_signal_confirmed(self, signal: float) -> bool:
         """
         检查信号是否确认（连续多次同向信号）
-        
+
         Args:
             signal: 当前信号方向 (1=做多, -1=做空)
-        
+
         Returns:
             是否确认
         """
@@ -334,8 +362,8 @@ class OrderBookImbalanceStrategy(StrategyBase):
             return False
 
         # 检查最近N次信号是否同向
-        recent = self._imbalance_history[-self.min_imbalance_count:]
-        
+        recent = self._imbalance_history[-self.min_imbalance_count :]
+
         if signal > 0:
             # 做多信号：最近N次不平衡度都应大于阈值
             return all(imb > self.imbalance_threshold for imb in recent)
@@ -357,7 +385,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         # 检查信号确认
         if not self._is_signal_confirmed(signal):
-            logger.debug(f"[{self.symbol}] 信号未确认: signal={signal}, imbalance={imbalance:.4f}")
+            logger.debug(
+                f"[{self.symbol}] 信号未确认: signal={signal}, imbalance={imbalance:.4f}"
+            )
             return
 
         # 获取当前价格
@@ -368,7 +398,10 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         # 成交量确认（可选）
         volume_24h = float(ticker.get("vol24h", 0))
-        if self._avg_volume > 0 and volume_24h < self._avg_volume * self.volume_spike_mult:
+        if (
+            self._avg_volume > 0
+            and volume_24h < self._avg_volume * self.volume_spike_mult
+        ):
             logger.debug(f"[{self.symbol}] 成交量不足，跳过信号")
             return
 
@@ -380,7 +413,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
     async def _open_long(self, price: float, imbalance: float):
         """开多仓"""
-        logger.info(f"[{self.symbol}] 🔔 做多信号: price={price}, imbalance={imbalance:.4f}")
+        logger.info(
+            f"[{self.symbol}] 🔔 做多信号: price={price}, imbalance={imbalance:.4f}"
+        )
 
         try:
             # 计算仓位大小
@@ -395,7 +430,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
                 side="buy",
                 order_type="market",
                 amount=Decimal(str(amount)),
-                price=None
+                price=None,
             )
 
             self._last_trade_time = time.time()
@@ -408,7 +443,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
     async def _open_short(self, price: float, imbalance: float):
         """开空仓"""
-        logger.info(f"[{self.symbol}] 🔔 做空信号: price={price}, imbalance={imbalance:.4f}")
+        logger.info(
+            f"[{self.symbol}] 🔔 做空信号: price={price}, imbalance={imbalance:.4f}"
+        )
 
         try:
             # 计算仓位大小
@@ -423,7 +460,7 @@ class OrderBookImbalanceStrategy(StrategyBase):
                 side="sell",
                 order_type="market",
                 amount=Decimal(str(amount)),
-                price=None
+                price=None,
             )
 
             self._last_trade_time = time.time()
@@ -443,17 +480,19 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         try:
             side = "sell" if self._position_side == "long" else "buy"
-            
+
             order = await self.exchange.create_order(
                 symbol=self.symbol,
                 side=side,
                 order_type="market",
                 amount=Decimal(str(self._position_qty)),
-                price=None
+                price=None,
             )
 
             self._last_trade_time = time.time()
-            logger.info(f"[{self.symbol}] 📤 平仓单已提交: side={side}, qty={self._position_qty}")
+            logger.info(
+                f"[{self.symbol}] 📤 平仓单已提交: side={side}, qty={self._position_qty}"
+            )
 
         except Exception as e:
             logger.error(f"[{self.symbol}] 平仓失败: {e}")
@@ -468,7 +507,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
         if pnl > 0:
             self._win_trades += 1
 
-        self.win_rate = self._win_trades / self.total_trades if self.total_trades > 0 else 0
+        self.win_rate = (
+            self._win_trades / self.total_trades if self.total_trades > 0 else 0
+        )
         self._unrealized_pnl = 0
         self._entry_price = 0
         self._position_qty = 0
@@ -500,14 +541,16 @@ class OrderBookImbalanceStrategy(StrategyBase):
 
         holding_time = time.time() - self._open_time
         if holding_time >= self.holding_seconds:
-            logger.info(f"[{self.symbol}] ⏰ 持仓超时: {holding_time:.0f}s >= {self.holding_seconds}s")
+            logger.info(
+                f"[{self.symbol}] ⏰ 持仓超时: {holding_time:.0f}s >= {self.holding_seconds}s"
+            )
             await self._close_position("持仓超时")
 
     async def _calculate_position_size(self, price: float) -> float:
         """计算仓位大小"""
         try:
             balance_info = await self.exchange.get_balance()
-            
+
             # 获取可用USDT
             available = 0.0
             for item in balance_info:
@@ -542,7 +585,9 @@ class OrderBookImbalanceStrategy(StrategyBase):
         """初始化平均成交量"""
         try:
             ticker = await self.exchange.get_ticker(self.symbol)
-            self._avg_volume = float(ticker.get("vol24h", 0)) / 1440  # 粗略估算每分钟成交量
+            self._avg_volume = (
+                float(ticker.get("vol24h", 0)) / 1440
+            )  # 粗略估算每分钟成交量
             logger.info(f"[{self.symbol}] 初始化平均成交量: {self._avg_volume:.2f}")
         except Exception as e:
             logger.warning(f"[{self.symbol}] 初始化平均成交量失败: {e}")
@@ -563,6 +608,8 @@ class OrderBookImbalanceStrategy(StrategyBase):
             "total_trades": self.total_trades,
             "win_rate": self.win_rate,
             "consecutive_losses": self.consecutive_losses,
-            "last_imbalance": self._imbalance_history[-1] if self._imbalance_history else 0,
+            "last_imbalance": (
+                self._imbalance_history[-1] if self._imbalance_history else 0
+            ),
             "holding_time": time.time() - self._open_time if self._in_position else 0,
         }

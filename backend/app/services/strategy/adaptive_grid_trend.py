@@ -7,6 +7,7 @@
 - 趋势过滤通过后，只在回撤到 EMA 附近时入场
 - 单仓位运行，不无限补仓，不马丁
 """
+
 from __future__ import annotations
 
 import math
@@ -19,14 +20,23 @@ from loguru import logger
 from app.core.database import SessionLocal
 from app.models.strategy import Strategy as DBStrategy, StrategyEvent
 from app.services.notification.notification_service import notification_service
-from app.services.strategy.adaptive_grid_trend_config import normalize_adaptive_grid_trend_params
+from app.services.strategy.adaptive_grid_trend_config import (
+    normalize_adaptive_grid_trend_params,
+)
 from app.services.strategy.base import StrategyBase
 
 
 class AdaptiveGridTrendStrategy(StrategyBase):
     """趋势过滤 + ATR 回撤入场 + 固定风险仓位的保守策略。"""
 
-    def __init__(self, strategy_id: int, exchange, symbol: str, parameters: Dict, user_id: int = 1):
+    def __init__(
+        self,
+        strategy_id: int,
+        exchange,
+        symbol: str,
+        parameters: Dict,
+        user_id: int = 1,
+    ):
         super().__init__(strategy_id, exchange, symbol, parameters, user_id)
 
         p = normalize_adaptive_grid_trend_params(parameters)
@@ -38,7 +48,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         self.atr_period: int = int(p.get("atr_period", 14))
         self.entry_atr_multiple: float = float(p.get("entry_atr_multiple", 0.6))
         self.stop_atr_multiple: float = float(p.get("stop_atr_multiple", 2.8))
-        self.take_profit_atr_multiple: float = float(p.get("take_profit_atr_multiple", 3.2))
+        self.take_profit_atr_multiple: float = float(
+            p.get("take_profit_atr_multiple", 3.2)
+        )
         self.risk_per_trade: float = float(p.get("risk_per_trade", 0.02))
         self.max_position_usd: float = float(p.get("max_position_usd", 800))
         self.leverage: int = int(p.get("leverage", 5))
@@ -47,9 +59,13 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         self.min_seconds_between_trades: int = int(p.get("cooldown_seconds", 60 * 60))
         self.notify_near_trigger: bool = bool(p.get("notify_near_trigger", True))
         self.near_trigger_pct: float = float(p.get("near_trigger_pct", 0.003))
-        self.near_trigger_cooldown_seconds: int = int(p.get("near_trigger_cooldown_seconds", 10 * 60))
+        self.near_trigger_cooldown_seconds: int = int(
+            p.get("near_trigger_cooldown_seconds", 10 * 60)
+        )
 
-        self._is_derivative = symbol.endswith("-SWAP") or self._looks_like_futures(symbol)
+        self._is_derivative = symbol.endswith("-SWAP") or self._looks_like_futures(
+            symbol
+        )
         self._ct_val = 1.0
         self._lot_sz = 1.0
         self._min_sz = 1.0
@@ -118,7 +134,10 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             return
 
         if time.time() - self._last_trade_time < self.min_seconds_between_trades:
-            remaining = max(0, self.min_seconds_between_trades - (time.time() - self._last_trade_time))
+            remaining = max(
+                0,
+                self.min_seconds_between_trades - (time.time() - self._last_trade_time),
+            )
             self._signal_status = {
                 "trend": "cooldown",
                 "waiting_for": "cooldown",
@@ -171,11 +190,20 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             message = "上升趋势中等待回撤到快线附近，不追高"
             if price <= trigger_price:
                 self._signal_status = self._build_signal_status(
-                    trend, waiting_for, price, trigger_price, distance_pct, metrics,
-                    "多头入场条件已触发，准备开多"
+                    trend,
+                    waiting_for,
+                    price,
+                    trigger_price,
+                    distance_pct,
+                    metrics,
+                    "多头入场条件已触发，准备开多",
                 )
                 await self._open_position("long", price, atr)
-        elif trend == "bear" and self._is_derivative and self.direction in ("short", "both"):
+        elif (
+            trend == "bear"
+            and self._is_derivative
+            and self.direction in ("short", "both")
+        ):
             # 下降趋势中反弹到快线附近，不在低位追空。
             waiting_for = "short"
             trigger_price = short_trigger
@@ -183,8 +211,13 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             message = "下跌趋势中等待反弹到快线附近，不追空"
             if price >= trigger_price:
                 self._signal_status = self._build_signal_status(
-                    trend, waiting_for, price, trigger_price, distance_pct, metrics,
-                    "空头入场条件已触发，准备开空"
+                    trend,
+                    waiting_for,
+                    price,
+                    trigger_price,
+                    distance_pct,
+                    metrics,
+                    "空头入场条件已触发，准备开空",
                 )
                 await self._open_position("short", price, atr)
         else:
@@ -221,8 +254,12 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             "trend": trend,
             "waiting_for": waiting_for,
             "current_price": round(price, 8),
-            "trigger_price": round(trigger_price, 8) if trigger_price is not None else None,
-            "distance_pct": round(distance_pct, 4) if distance_pct is not None else None,
+            "trigger_price": (
+                round(trigger_price, 8) if trigger_price is not None else None
+            ),
+            "distance_pct": (
+                round(distance_pct, 4) if distance_pct is not None else None
+            ),
             "ema_fast": round(metrics.get("ema_fast", 0), 8),
             "ema_slow": round(metrics.get("ema_slow", 0), 8),
             "atr": round(metrics.get("atr", 0), 8),
@@ -246,16 +283,20 @@ class AdaptiveGridTrendStrategy(StrategyBase):
     ) -> None:
         db = SessionLocal()
         try:
-            db.add(StrategyEvent(
-                strategy_id=self.strategy_id,
-                user_id=self.user_id,
-                event_type=event_type,
-                level=level,
-                title=title,
-                message=message,
-                data=data or {},
-                parameter_snapshot=self.parameters if isinstance(self.parameters, dict) else None,
-            ))
+            db.add(
+                StrategyEvent(
+                    strategy_id=self.strategy_id,
+                    user_id=self.user_id,
+                    event_type=event_type,
+                    level=level,
+                    title=title,
+                    message=message,
+                    data=data or {},
+                    parameter_snapshot=(
+                        self.parameters if isinstance(self.parameters, dict) else None
+                    ),
+                )
+            )
             db.commit()
         except Exception as exc:
             db.rollback()
@@ -264,7 +305,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             db.close()
 
     def _log_signal_event(self, status: Dict) -> None:
-        key = f"{status.get('trend')}|{status.get('waiting_for')}|{status.get('message')}"
+        key = (
+            f"{status.get('trend')}|{status.get('waiting_for')}|{status.get('message')}"
+        )
         now = time.time()
         if key == self._last_event_key and now - self._last_event_time < 15 * 60:
             return
@@ -280,7 +323,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
     async def _restore_position_state(self):
         db = SessionLocal()
         try:
-            db_s = db.query(DBStrategy).filter(DBStrategy.id == self.strategy_id).first()
+            db_s = (
+                db.query(DBStrategy).filter(DBStrategy.id == self.strategy_id).first()
+            )
             if db_s and db_s.position_in_position:
                 self._position_side = db_s.position_side or ""
                 self._entry_price = float(db_s.position_entry_price or 0)
@@ -336,14 +381,18 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             config = await self.exchange.get_account_config()
             self._position_mode = config.get("posMode") or "net_mode"
         except Exception as exc:
-            logger.warning(f"[{self.symbol}] 获取持仓模式失败，按 net_mode 兼容下单: {exc}")
+            logger.warning(
+                f"[{self.symbol}] 获取持仓模式失败，按 net_mode 兼容下单: {exc}"
+            )
             self._position_mode = "net_mode"
 
         if self._position_mode != "long_short_mode":
             try:
                 await self.exchange.set_position_mode("long_short_mode")
                 self._position_mode = "long_short_mode"
-                logger.info(f"[{self.symbol}] 持仓模式已设置为双向持仓 (long_short_mode)")
+                logger.info(
+                    f"[{self.symbol}] 持仓模式已设置为双向持仓 (long_short_mode)"
+                )
             except Exception as exc:
                 logger.warning(
                     f"[{self.symbol}] 无法切换双向持仓，使用当前 net_mode 下单；"
@@ -384,14 +433,18 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         return ema
 
     @staticmethod
-    def _atr(highs: List[float], lows: List[float], closes: List[float], period: int) -> float:
+    def _atr(
+        highs: List[float], lows: List[float], closes: List[float], period: int
+    ) -> float:
         true_ranges = []
         for i in range(1, len(closes)):
-            true_ranges.append(max(
-                highs[i] - lows[i],
-                abs(highs[i] - closes[i - 1]),
-                abs(lows[i] - closes[i - 1]),
-            ))
+            true_ranges.append(
+                max(
+                    highs[i] - lows[i],
+                    abs(highs[i] - closes[i - 1]),
+                    abs(lows[i] - closes[i - 1]),
+                )
+            )
         recent = true_ranges[-period:]
         return sum(recent) / len(recent) if recent else 0.0
 
@@ -429,7 +482,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             qty_by_risk = risk_capital / (stop_distance * self._ct_val)
             qty_by_cap = self.max_position_usd / (price * self._ct_val)
             usable_margin = max(0.0, available_usdt * self.margin_usage_ratio)
-            qty_by_margin = (usable_margin * max(self.leverage, 1)) / (price * self._ct_val)
+            qty_by_margin = (usable_margin * max(self.leverage, 1)) / (
+                price * self._ct_val
+            )
             qty = self._round_qty(min(qty_by_risk, qty_by_cap, qty_by_margin))
             if qty <= 0:
                 logger.warning(
@@ -465,7 +520,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         order_detail = await self._load_order_detail(order)
         fill_price = float(order_detail.get("avgPx") or price)
 
-        await self._save_order_to_db(order_detail, order_side, "market", None, Decimal(str(qty)))
+        await self._save_order_to_db(
+            order_detail, order_side, "market", None, Decimal(str(qty))
+        )
 
         self._position_side = side
         self._entry_price = fill_price
@@ -504,7 +561,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
     async def _manage_position(self, price: float):
         if self._stop_px <= 0 or self._take_profit_px <= 0:
             if not await self._rebuild_risk_levels():
-                logger.warning(f"[{self.symbol}] 持仓风控价缺失且无法重建，暂停本轮管理")
+                logger.warning(
+                    f"[{self.symbol}] 持仓风控价缺失且无法重建，暂停本轮管理"
+                )
                 return
 
         if self._position_side == "long":
@@ -608,10 +667,14 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         atr = metrics["atr"]
         if self._position_side == "long":
             self._stop_px = self._entry_price - atr * self.stop_atr_multiple
-            self._take_profit_px = self._entry_price + atr * self.take_profit_atr_multiple
+            self._take_profit_px = (
+                self._entry_price + atr * self.take_profit_atr_multiple
+            )
         else:
             self._stop_px = self._entry_price + atr * self.stop_atr_multiple
-            self._take_profit_px = self._entry_price - atr * self.take_profit_atr_multiple
+            self._take_profit_px = (
+                self._entry_price - atr * self.take_profit_atr_multiple
+            )
 
         logger.warning(
             f"[{self.symbol}] 重建持仓风控价: side={self._position_side} "
@@ -636,7 +699,11 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         order_detail = await self._load_order_detail(order)
         exit_price = float(order_detail.get("avgPx") or 0)
         if exit_price <= 0:
-            exit_price = self._take_profit_px if reason.endswith("take_profit") else self._stop_px
+            exit_price = (
+                self._take_profit_px
+                if reason.endswith("take_profit")
+                else self._stop_px
+            )
 
         pnl = (exit_price - self._entry_price) * self._position_qty
         if self._position_side == "short":
@@ -644,15 +711,21 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         if self._is_derivative:
             pnl *= self._ct_val
 
-        await self._save_order_to_db(order_detail, side, "market", None, Decimal(str(self._position_qty)))
+        await self._save_order_to_db(
+            order_detail, side, "market", None, Decimal(str(self._position_qty))
+        )
         self.realized_pnl += pnl
         self.total_trades += 1
         if pnl > 0:
             self._win_trades += 1
-        self.win_rate = self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        self.win_rate = (
+            self._win_trades / self.total_trades * 100 if self.total_trades else 0
+        )
         self.record_trade_result(pnl)
 
-        logger.info(f"[{self.symbol}] 平仓({reason}): exit={exit_price:.6f} pnl={pnl:.4f}")
+        logger.info(
+            f"[{self.symbol}] 平仓({reason}): exit={exit_price:.6f} pnl={pnl:.4f}"
+        )
         self._log_event(
             event_type="close_position",
             level="success" if pnl >= 0 else "warning",
@@ -691,6 +764,7 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             return order
         try:
             import asyncio
+
             await asyncio.sleep(0.8)
             return await self.exchange.get_order(self.symbol, order_id=order_id)
         except Exception as exc:
@@ -730,7 +804,9 @@ class AdaptiveGridTrendStrategy(StrategyBase):
         try:
             positions = await self.exchange.get_positions(inst_id=self.symbol)
         except Exception as exc:
-            logger.debug(f"[{self.symbol}] 获取交易所持仓盈亏失败，使用策略内存估算: {exc}")
+            logger.debug(
+                f"[{self.symbol}] 获取交易所持仓盈亏失败，使用策略内存估算: {exc}"
+            )
             return None
 
         def as_float(value, default=0.0) -> float:
@@ -747,7 +823,11 @@ class AdaptiveGridTrendStrategy(StrategyBase):
             if qty == 0:
                 continue
             pos_side = pos.get("posSide") or "net"
-            side = pos_side if pos_side in ("long", "short") else ("long" if qty > 0 else "short")
+            side = (
+                pos_side
+                if pos_side in ("long", "short")
+                else ("long" if qty > 0 else "short")
+            )
             if expected_side and side != expected_side:
                 continue
 

@@ -81,7 +81,11 @@ export default function TradingPanel({
   return (
     <div>
       <Card
-        title={<div className="pro-card-header" style={{ margin: 0 }}>{t('trading.tradingPanel').toUpperCase()}</div>}
+        title={
+          <div className="pro-card-header" style={{ margin: 0 }}>
+            {t('trading.tradingPanel').toUpperCase()}
+          </div>
+        }
         variant="borderless"
         size="small"
       >
@@ -130,7 +134,10 @@ export default function TradingPanel({
           </Row>
 
           {/* 买卖方向 */}
-          <Form.Item label={<span className="pro-card-header">{t('trading.side').toUpperCase()}</span>} style={{ marginBottom: 16 }}>
+          <Form.Item
+            label={<span className="pro-card-header">{t('trading.side').toUpperCase()}</span>}
+            style={{ marginBottom: 16 }}
+          >
             <Radio.Group
               value={side}
               onChange={(e) => setSide(e.target.value)}
@@ -194,7 +201,9 @@ export default function TradingPanel({
             {orderType !== 'market' && (
               <Col span={12}>
                 <Form.Item
-                  label={<span className="pro-card-header">{t('trading.price').toUpperCase()}</span>}
+                  label={
+                    <span className="pro-card-header">{t('trading.price').toUpperCase()}</span>
+                  }
                   name="price"
                   rules={[
                     { required: true, message: t('message.required') },
@@ -210,7 +219,7 @@ export default function TradingPanel({
                     precision={8}
                     step={0.00000001}
                     formatter={(value) => removeTrailingZeros(value)}
-                    parser={(value) => value ? parseFloat(value) : 0}
+                    parser={(value) => (value ? parseFloat(value) : 0)}
                   />
                 </Form.Item>
               </Col>
@@ -261,9 +270,16 @@ export default function TradingPanel({
                 marginBottom: 16,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#a3a3a3', fontSize: 12, fontWeight: 600 }}>{t('trading.total').toUpperCase()}</span>
-                <span className="font-mono" style={{ fontSize: 18, fontWeight: 700, color: '#1890ff' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span style={{ color: '#a3a3a3', fontSize: 12, fontWeight: 600 }}>
+                  {t('trading.total').toUpperCase()}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{ fontSize: 18, fontWeight: 700, color: '#1890ff' }}
+                >
                   {calculateTotal()} USDT
                 </span>
               </div>
@@ -289,7 +305,9 @@ export default function TradingPanel({
                 textTransform: 'uppercase',
               }}
             >
-              {loading ? t('trading.submitting').toUpperCase() : `${(isBuy ? t('trading.buy') : t('trading.sell')).toUpperCase()} ${form.getFieldValue('symbol')}`}
+              {loading
+                ? t('trading.submitting').toUpperCase()
+                : `${(isBuy ? t('trading.buy') : t('trading.sell')).toUpperCase()} ${form.getFieldValue('symbol')}`}
             </Button>
           </Form.Item>
         </Form>

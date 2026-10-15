@@ -5,4 +5,9 @@ dist
 *.log
 .env
 .env.local
+.env.*
+!.env.example
+!.env.*.example
+dist.zip
+*.tsbuildinfo
 .DS_Store

@@ -1,6 +1,7 @@
 """
 策略管理API
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -35,9 +36,16 @@ router = APIRouter()
 get_current_user_id = require_current_user_id
 
 
-SUPPORTED_STRATEGY_TYPES = {"adaptive_grid_trend", "arbitrage", "top_gainers_momentum", "explosive_momentum_chaser"}
+SUPPORTED_STRATEGY_TYPES = {
+    "adaptive_grid_trend",
+    "arbitrage",
+    "top_gainers_momentum",
+    "explosive_momentum_chaser",
+}
 ANALYSIS_ONLY_STRATEGY_TYPES = set()
-SUPPORTED_STRATEGY_TYPE_LABEL = "自适应趋势网格策略、现货-永续套利策略、涨幅榜前三15m动量策略和爆量急拉追涨策略"
+SUPPORTED_STRATEGY_TYPE_LABEL = (
+    "自适应趋势网格策略、现货-永续套利策略、涨幅榜前三15m动量策略和爆量急拉追涨策略"
+)
 
 
 def _summarize_close_events(events) -> dict:
@@ -45,7 +53,11 @@ def _summarize_close_events(events) -> dict:
     pnls = []
     completed_trade_pnls = []
     for event in events:
-        data = event[0] if isinstance(event, (tuple, list)) else getattr(event, "data", event)
+        data = (
+            event[0]
+            if isinstance(event, (tuple, list))
+            else getattr(event, "data", event)
+        )
         if not isinstance(data, dict) or data.get("pnl") is None:
             continue
         try:
@@ -89,7 +101,9 @@ def _safe_float(value, default: float = 0.0) -> float:
 async def _get_exchange_position_status(strategy_id: int) -> dict | None:
     """Return exact OKX merged positions for symbols managed by this strategy."""
     strategy_instance = strategy_manager.get_strategy(strategy_id)
-    if not strategy_instance or not hasattr(strategy_instance.exchange, "get_positions"):
+    if not strategy_instance or not hasattr(
+        strategy_instance.exchange, "get_positions"
+    ):
         return None
 
     tracked = getattr(strategy_instance, "positions", None)
@@ -106,9 +120,13 @@ async def _get_exchange_position_status(strategy_id: int) -> dict | None:
         }
 
     try:
-        exchange_positions = await strategy_instance.exchange.get_positions(inst_type="SWAP")
+        exchange_positions = await strategy_instance.exchange.get_positions(
+            inst_type="SWAP"
+        )
     except Exception as exc:
-        logger.warning(f"策略 {strategy_id} 获取交易所真实持仓失败，回退内存状态: {exc}")
+        logger.warning(
+            f"策略 {strategy_id} 获取交易所真实持仓失败，回退内存状态: {exc}"
+        )
         return None
 
     items = []
@@ -118,7 +136,11 @@ async def _get_exchange_position_status(strategy_id: int) -> dict | None:
         if symbol not in tracked_symbols or raw_qty == 0:
             continue
         pos_side = str(raw.get("posSide") or "net").lower()
-        side = pos_side if pos_side in {"long", "short"} else ("long" if raw_qty > 0 else "short")
+        side = (
+            pos_side
+            if pos_side in {"long", "short"}
+            else ("long" if raw_qty > 0 else "short")
+        )
         qty = abs(raw_qty)
         entry = _safe_float(raw.get("avgPx"))
         current = _safe_float(raw.get("markPx") or raw.get("last"), entry)
@@ -137,8 +159,15 @@ async def _get_exchange_position_status(strategy_id: int) -> dict | None:
             "current_price": current,
             "stop_px": stop_px,
             "take_profit_px": take_profit_px or None,
-            "open_time": opened_ms / 1000 if opened_ms > 0 else _safe_float(getattr(local, "open_time", 0)),
-            "leverage": _safe_float(raw.get("lever"), _safe_float(getattr(strategy_instance, "max_leverage", 0))),
+            "open_time": (
+                opened_ms / 1000
+                if opened_ms > 0
+                else _safe_float(getattr(local, "open_time", 0))
+            ),
+            "leverage": _safe_float(
+                raw.get("lever"),
+                _safe_float(getattr(strategy_instance, "max_leverage", 0)),
+            ),
             "notional_usd": notional,
             "unrealized_pnl": unrealized,
             "unrealized_pnl_pct": unrealized_pct,
@@ -200,7 +229,11 @@ async def _get_account_position_status(strategy: Strategy) -> dict | None:
             continue
         symbol = str(raw.get("instId") or "")
         pos_side = str(raw.get("posSide") or "net").lower()
-        side = pos_side if pos_side in {"long", "short"} else ("long" if raw_qty > 0 else "short")
+        side = (
+            pos_side
+            if pos_side in {"long", "short"}
+            else ("long" if raw_qty > 0 else "short")
+        )
         entry = _safe_float(raw.get("avgPx"))
         current = _safe_float(raw.get("markPx") or raw.get("last"), entry)
         local = tracked.get(symbol)
@@ -312,7 +345,9 @@ async def _build_strategy_pnl(
         position_status = await _get_exchange_position_status(strategy.id)
     if position_status is not None:
         live_positions = position_status.get("positions", [])
-        unrealized = sum(_safe_float(item.get("unrealized_pnl")) for item in live_positions)
+        unrealized = sum(
+            _safe_float(item.get("unrealized_pnl")) for item in live_positions
+        )
         open_positions = len(live_positions)
     else:
         unrealized = float(runtime.get("unrealized_pnl", 0) or 0)
@@ -320,18 +355,20 @@ async def _build_strategy_pnl(
     realized = float(persisted["realized_pnl"])
     total_trades = int(persisted["total_trades"])
     result = dict(runtime)
-    result.update({
-        "total_pnl": realized + unrealized,
-        "realized_pnl": realized,
-        "unrealized_pnl": unrealized,
-        "total_trades": total_trades,
-        "win_rate": float(persisted["win_rate"]),
-        "open_positions": open_positions,
-        "buy_count": int(runtime.get("buy_count", total_trades) or 0),
-        "sell_count": int(runtime.get("sell_count", total_trades) or 0),
-        "total_fee": float(runtime.get("total_fee", 0) or 0),
-        "pnl_rate": float(runtime.get("pnl_rate", 0) or 0),
-    })
+    result.update(
+        {
+            "total_pnl": realized + unrealized,
+            "realized_pnl": realized,
+            "unrealized_pnl": unrealized,
+            "total_trades": total_trades,
+            "win_rate": float(persisted["win_rate"]),
+            "open_positions": open_positions,
+            "buy_count": int(runtime.get("buy_count", total_trades) or 0),
+            "sell_count": int(runtime.get("sell_count", total_trades) or 0),
+            "total_fee": float(runtime.get("total_fee", 0) or 0),
+            "pnl_rate": float(runtime.get("pnl_rate", 0) or 0),
+        }
+    )
     return result
 
 
@@ -341,10 +378,14 @@ def _build_strategy_stats(
     position_status: dict | None = None,
 ) -> dict:
     runtime = strategy_manager.get_strategy_stats(strategy.id)
-    stats = dict(runtime) if runtime else {
-        "strategy_id": strategy.id,
-        "is_running": False,
-    }
+    stats = (
+        dict(runtime)
+        if runtime
+        else {
+            "strategy_id": strategy.id,
+            "is_running": False,
+        }
+    )
     stats["realized_pnl"] = float(persisted["realized_pnl"])
     stats["total_trades"] = int(persisted["total_trades"])
     if position_status is not None:
@@ -381,7 +422,9 @@ async def _build_mobile_snapshot(db: Session, strategy: Strategy) -> dict:
     account = await _get_account_summary(strategy)
     if account_position_status is not None:
         live_positions = account_position_status.get("positions", [])
-        live_notional = sum(_safe_float(item.get("notional_usd")) for item in live_positions)
+        live_notional = sum(
+            _safe_float(item.get("notional_usd")) for item in live_positions
+        )
         live_margin = sum(
             _safe_float(item.get("notional_usd"))
             / max(_safe_float(item.get("leverage"), 1.0), 1.0)
@@ -415,7 +458,7 @@ async def _build_mobile_snapshot(db: Session, strategy: Strategy) -> dict:
 
 @router.get("/adaptive-grid-trend/recommendation")
 async def get_adaptive_grid_trend_recommendation(
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取1000U稳健实盘配置和候选币推荐。"""
     exchange = OKXExchange(
@@ -457,7 +500,7 @@ async def get_current_strategy_mobile_snapshot(
 
 @router.get("/adaptive-grid-trend/recommendation")
 async def get_adaptive_grid_trend_recommendation(
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取1000U稳健实盘配置和候选币推荐。"""
     exchange = OKXExchange(
@@ -487,7 +530,7 @@ async def list_strategies(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略列表"""
     try:
@@ -520,37 +563,34 @@ async def list_strategies(
 
             # 创建响应对象并更新统计数据
             strategy_dict = {
-                'id': strategy.id,
-                'user_id': strategy.user_id,
-                'api_config_id': strategy.api_config_id,
-                'name': strategy.name,
-                'type': strategy.type,
-                'symbol': strategy.symbol,
-                'timeframe': strategy.timeframe,
-                'status': strategy.status,
-                'parameters': strategy.parameters,
-                'description': strategy.description,
-                'total_profit': total_profit,
-                'total_trades': total_trades,
-                'win_rate': round(win_rate, 2),
-                'created_at': strategy.created_at,
-                'updated_at': strategy.updated_at,
-                'started_at': strategy.started_at,
-                'stopped_at': strategy.stopped_at,
+                "id": strategy.id,
+                "user_id": strategy.user_id,
+                "api_config_id": strategy.api_config_id,
+                "name": strategy.name,
+                "type": strategy.type,
+                "symbol": strategy.symbol,
+                "timeframe": strategy.timeframe,
+                "status": strategy.status,
+                "parameters": strategy.parameters,
+                "description": strategy.description,
+                "total_profit": total_profit,
+                "total_trades": total_trades,
+                "win_rate": round(win_rate, 2),
+                "created_at": strategy.created_at,
+                "updated_at": strategy.updated_at,
+                "started_at": strategy.started_at,
+                "stopped_at": strategy.stopped_at,
             }
 
             strategy_responses.append(StrategyResponse(**strategy_dict))
 
-        return StrategyListResponse(
-            total=total,
-            items=strategy_responses
-        )
+        return StrategyListResponse(total=total, items=strategy_responses)
 
     except Exception as e:
         logger.error(f"获取策略列表失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取策略列表失败: {str(e)}"
+            detail=f"获取策略列表失败: {str(e)}",
         )
 
 
@@ -558,7 +598,7 @@ async def list_strategies(
 async def create_strategy(
     strategy_data: StrategyCreate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """创建策略"""
     try:
@@ -567,14 +607,18 @@ async def create_strategy(
             strategy_type_value = strategy_data.type
         else:
             # 如果是枚举对象，获取其value属性
-            strategy_type_value = strategy_data.type.value if hasattr(strategy_data.type, 'value') else str(strategy_data.type).split('.')[-1].lower()
+            strategy_type_value = (
+                strategy_data.type.value
+                if hasattr(strategy_data.type, "value")
+                else str(strategy_data.type).split(".")[-1].lower()
+            )
 
         logger.debug(f"策略类型转换: {strategy_data.type} -> {strategy_type_value}")
 
         if strategy_type_value not in SUPPORTED_STRATEGY_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"后端当前仅支持{SUPPORTED_STRATEGY_TYPE_LABEL}"
+                detail=f"后端当前仅支持{SUPPORTED_STRATEGY_TYPE_LABEL}",
             )
 
         parameters = strategy_data.parameters or {}
@@ -591,12 +635,12 @@ async def create_strategy(
             if not bound_api_config:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="绑定的API配置不存在"
+                    detail="绑定的API配置不存在",
                 )
             if not bound_api_config.is_valid:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"绑定的API配置无效: {bound_api_config.error_message or '请先验证配置'}"
+                    detail=f"绑定的API配置无效: {bound_api_config.error_message or '请先验证配置'}",
                 )
 
         db_strategy = Strategy(
@@ -608,7 +652,7 @@ async def create_strategy(
             timeframe=strategy_data.timeframe,
             parameters=parameters,
             description=strategy_data.description,
-            status='stopped',  # 直接使用小写字符串
+            status="stopped",  # 直接使用小写字符串
         )
 
         db.add(db_strategy)
@@ -628,7 +672,7 @@ async def create_strategy(
         logger.error(f"创建策略失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"创建策略失败: {str(e)}"
+            detail=f"创建策略失败: {str(e)}",
         )
 
 
@@ -636,7 +680,7 @@ async def create_strategy(
 async def get_strategy(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略详情"""
     strategy = (
@@ -647,8 +691,7 @@ async def get_strategy(
 
     if not strategy:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"策略 {strategy_id} 不存在"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"策略 {strategy_id} 不存在"
         )
 
     return StrategyResponse.model_validate(strategy)
@@ -659,7 +702,7 @@ async def update_strategy(
     strategy_id: int,
     strategy_data: StrategyUpdate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """更新策略"""
     try:
@@ -673,14 +716,16 @@ async def update_strategy(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         # 检查策略是否在运行
-        if strategy.status == StrategyStatus.RUNNING.value or strategy.status == 'running':
+        if (
+            strategy.status == StrategyStatus.RUNNING.value
+            or strategy.status == "running"
+        ):
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="策略正在运行，无法修改"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="策略正在运行，无法修改"
             )
 
         # 更新字段
@@ -704,7 +749,7 @@ async def update_strategy(
         logger.error(f"更新策略失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"更新策略失败: {str(e)}"
+            detail=f"更新策略失败: {str(e)}",
         )
 
 
@@ -712,7 +757,7 @@ async def update_strategy(
 async def delete_strategy(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """删除策略（会自动撤销所有未成交订单）"""
     from app.models.order import Order, OrderStatus as OS
@@ -730,22 +775,31 @@ async def delete_strategy(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         # 若策略正在运行，先停止并平仓，再执行删除
-        if strategy.status == StrategyStatus.RUNNING.value or strategy.status == 'running':
+        if (
+            strategy.status == StrategyStatus.RUNNING.value
+            or strategy.status == "running"
+        ):
             logger.info(f"删除前自动停止并平仓策略 {strategy_id}")
             try:
-                await strategy_manager.stop_strategy(strategy_id, cancel_orders=True, close_position=True)
+                await strategy_manager.stop_strategy(
+                    strategy_id, cancel_orders=True, close_position=True
+                )
             except Exception as e:
                 logger.warning(f"删除时停止策略 {strategy_id} 失败（继续删除）: {e}")
 
         # 删除前先撤销所有未成交订单（安全措施）
-        pending_orders = db.query(Order).filter(
-            Order.strategy_id == strategy_id,
-            Order.status.in_([OS.PENDING, OS.SUBMITTED, OS.PARTIAL_FILLED])
-        ).all()
+        pending_orders = (
+            db.query(Order)
+            .filter(
+                Order.strategy_id == strategy_id,
+                Order.status.in_([OS.PENDING, OS.SUBMITTED, OS.PARTIAL_FILLED]),
+            )
+            .all()
+        )
 
         cancel_count = 0
         if pending_orders:
@@ -760,8 +814,7 @@ async def delete_strategy(
             for order in pending_orders:
                 try:
                     await exchange.cancel_order(
-                        symbol=order.symbol,
-                        order_id=order.order_id
+                        symbol=order.symbol, order_id=order.order_id
                     )
                     order.status = OS.CANCELED
                     order.canceled_at = datetime.now(timezone.utc)
@@ -786,7 +839,7 @@ async def delete_strategy(
         logger.error(f"删除策略失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"删除策略失败: {str(e)}"
+            detail=f"删除策略失败: {str(e)}",
         )
 
 
@@ -795,7 +848,7 @@ async def start_strategy(
     strategy_id: int,
     force_start: bool = False,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """启动策略"""
     try:
@@ -809,21 +862,27 @@ async def start_strategy(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         # 检查策略状态
-        if strategy.status == StrategyStatus.RUNNING.value or strategy.status == 'running':
+        if (
+            strategy.status == StrategyStatus.RUNNING.value
+            or strategy.status == "running"
+        ):
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="策略已在运行中"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="策略已在运行中"
             )
 
-        strategy_type_value = strategy.type.value if hasattr(strategy.type, 'value') else str(strategy.type)
+        strategy_type_value = (
+            strategy.type.value
+            if hasattr(strategy.type, "value")
+            else str(strategy.type)
+        )
         if strategy_type_value not in SUPPORTED_STRATEGY_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"后端当前仅支持启动{SUPPORTED_STRATEGY_TYPE_LABEL}"
+                detail=f"后端当前仅支持启动{SUPPORTED_STRATEGY_TYPE_LABEL}",
             )
 
         preflight = await build_strategy_start_preflight(strategy, user_id, db)
@@ -834,7 +893,7 @@ async def start_strategy(
                     "message": "策略启动前检查未通过，请确认风险后重试",
                     "preflight": preflight,
                     "require_force_start": True,
-                }
+                },
             )
 
         # 获取交易所实例（优先使用数据库配置，否则使用.env配置）
@@ -849,7 +908,7 @@ async def start_strategy(
             exchange = strategy_manager.get_exchange(
                 api_key=settings.OKX_API_KEY,
                 secret_key=settings.OKX_SECRET_KEY,
-                passphrase=settings.OKX_PASSPHRASE
+                passphrase=settings.OKX_PASSPHRASE,
             )
 
         # 启动策略
@@ -859,17 +918,16 @@ async def start_strategy(
             symbol=strategy.symbol,
             parameters=strategy.parameters or {},
             exchange=exchange,
-            user_id=user_id
+            user_id=user_id,
         )
 
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="启动策略失败"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="启动策略失败"
             )
 
         # 更新策略状态
-        strategy.status = 'running'  # 直接使用字符串
+        strategy.status = "running"  # 直接使用字符串
         strategy.started_at = datetime.now()
         db.commit()
         db.refresh(strategy)
@@ -885,7 +943,7 @@ async def start_strategy(
         logger.error(f"启动策略失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"启动策略失败: {str(e)}"
+            detail=f"启动策略失败: {str(e)}",
         )
 
 
@@ -893,7 +951,7 @@ async def start_strategy(
 async def start_strategy_preflight(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """策略启动前安全检查。"""
     strategy = (
@@ -903,30 +961,37 @@ async def start_strategy_preflight(
     )
     if not strategy:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"策略 {strategy_id} 不存在"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"策略 {strategy_id} 不存在"
         )
 
     return {
         "code": 0,
         "msg": "success",
-        "data": await build_strategy_start_preflight(strategy, user_id, db)
+        "data": await build_strategy_start_preflight(strategy, user_id, db),
     }
 
 
-async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: Session) -> dict:
+async def build_strategy_start_preflight(
+    strategy: Strategy, user_id: int, db: Session
+) -> dict:
     """构建策略启动前安全检查报告。"""
     warnings = []
     blockers = []
     checks = {}
 
-    strategy_type_value = strategy.type.value if hasattr(strategy.type, 'value') else str(strategy.type)
+    strategy_type_value = (
+        strategy.type.value if hasattr(strategy.type, "value") else str(strategy.type)
+    )
     if strategy_type_value not in SUPPORTED_STRATEGY_TYPES:
         blockers.append(f"后端当前仅支持{SUPPORTED_STRATEGY_TYPE_LABEL}")
     if strategy_type_value in ANALYSIS_ONLY_STRATEGY_TYPES:
-        blockers.append("涨幅榜前三15m动量策略当前为分析/监控配置，暂未接入自动下单执行器")
+        blockers.append(
+            "涨幅榜前三15m动量策略当前为分析/监控配置，暂未接入自动下单执行器"
+        )
 
-    api_config = api_config_service.get_config(user_id=user_id, config_id=strategy.api_config_id, db=db)
+    api_config = api_config_service.get_config(
+        user_id=user_id, config_id=strategy.api_config_id, db=db
+    )
     if not api_config:
         blockers.append("未找到策略绑定的 API 配置")
     else:
@@ -937,7 +1002,9 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
             "is_valid": api_config.is_valid,
         }
         if not api_config.is_valid:
-            blockers.append(f"API 配置无效: {api_config.error_message or '请先验证配置'}")
+            blockers.append(
+                f"API 配置无效: {api_config.error_message or '请先验证配置'}"
+            )
         if not api_config.is_simulated:
             warnings.append(f"当前策略绑定实盘 API: {api_config.name}")
 
@@ -952,14 +1019,21 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
         .all()
     )
     if same_symbol_running:
-        warnings.append(f"{strategy.symbol} 已有 {len(same_symbol_running)} 个运行中策略")
+        warnings.append(
+            f"{strategy.symbol} 已有 {len(same_symbol_running)} 个运行中策略"
+        )
     checks["same_symbol_running_strategy_ids"] = [s.id for s in same_symbol_running]
 
     params = strategy.parameters or {}
-    is_dynamic_universe_strategy = strategy_type_value in {"top_gainers_momentum", "explosive_momentum_chaser"}
+    is_dynamic_universe_strategy = strategy_type_value in {
+        "top_gainers_momentum",
+        "explosive_momentum_chaser",
+    }
     checks["parameters"] = {
         "symbol": strategy.symbol,
-        "timeframe": params.get("trend_timeframe") or params.get("timeframe") or strategy.timeframe,
+        "timeframe": params.get("trend_timeframe")
+        or params.get("timeframe")
+        or strategy.timeframe,
         "leverage": params.get("leverage") or params.get("max_leverage"),
         "max_position_usd": params.get("max_position_usd"),
         "max_total_position_usd": params.get("max_total_position_usd"),
@@ -970,17 +1044,25 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
     if api_config and api_config.is_valid:
         exchange = None
         try:
-            exchange = api_config_service.get_exchange(user_id=user_id, config_id=strategy.api_config_id)
+            exchange = api_config_service.get_exchange(
+                user_id=user_id, config_id=strategy.api_config_id
+            )
 
             balance = await exchange.get_balance()
             total_eq = float(balance.get("totalEq") or 0)
             max_position_usd = float(params.get("max_position_usd") or 0)
             leverage = float(params.get("leverage") or params.get("max_leverage") or 1)
-            estimated_margin = max_position_usd / leverage if leverage > 0 else max_position_usd
+            estimated_margin = (
+                max_position_usd / leverage if leverage > 0 else max_position_usd
+            )
             checks["account"] = {
                 "total_equity": total_eq,
                 "estimated_strategy_margin": round(estimated_margin, 4),
-                "estimated_margin_pct": round(estimated_margin / total_eq * 100, 2) if total_eq > 0 else None,
+                "estimated_margin_pct": (
+                    round(estimated_margin / total_eq * 100, 2)
+                    if total_eq > 0
+                    else None
+                ),
             }
             if total_eq > 0 and estimated_margin / total_eq > 0.3:
                 warnings.append(
@@ -996,21 +1078,27 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
                     except (TypeError, ValueError):
                         size = 0
                     if size != 0:
-                        active_positions.append({
-                            "inst_id": pos.get("instId"),
-                            "pos_side": pos.get("posSide"),
-                            "size": size,
-                            "avg_price": pos.get("avgPx"),
-                            "upl": pos.get("upl"),
-                            "notional_usd": pos.get("notionalUsd"),
-                            "leverage": pos.get("lever"),
-                        })
+                        active_positions.append(
+                            {
+                                "inst_id": pos.get("instId"),
+                                "pos_side": pos.get("posSide"),
+                                "size": size,
+                                "avg_price": pos.get("avgPx"),
+                                "upl": pos.get("upl"),
+                                "notional_usd": pos.get("notionalUsd"),
+                                "leverage": pos.get("lever"),
+                            }
+                        )
                 checks["existing_positions"] = active_positions
                 if active_positions:
-                    warnings.append(f"检测到 {strategy.symbol} 已有交易所持仓，请确认是否让策略接管")
+                    warnings.append(
+                        f"检测到 {strategy.symbol} 已有交易所持仓，请确认是否让策略接管"
+                    )
             else:
                 checks["existing_positions"] = []
-                warnings.append("动态币池策略会自动选择OKX USDT永续币种，启动后可能在山寨币上自动市价开平仓")
+                warnings.append(
+                    "动态币池策略会自动选择OKX USDT永续币种，启动后可能在山寨币上自动市价开平仓"
+                )
 
             all_positions = await exchange.get_positions(inst_type="SWAP")
             active_all_positions = []
@@ -1027,17 +1115,23 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
                 except (TypeError, ValueError):
                     notional = 0.0
                 total_position_notional += notional
-                active_all_positions.append({
-                    "inst_id": pos.get("instId"),
-                    "pos_side": pos.get("posSide"),
-                    "size": size,
-                    "notional_usd": notional,
-                    "upl": pos.get("upl"),
-                })
+                active_all_positions.append(
+                    {
+                        "inst_id": pos.get("instId"),
+                        "pos_side": pos.get("posSide"),
+                        "size": size,
+                        "notional_usd": notional,
+                        "upl": pos.get("upl"),
+                    }
+                )
             checks["account"]["active_swap_positions"] = active_all_positions
-            checks["account"]["total_position_notional_usd"] = round(total_position_notional, 4)
+            checks["account"]["total_position_notional_usd"] = round(
+                total_position_notional, 4
+            )
             checks["account"]["total_position_notional_pct"] = (
-                round(total_position_notional / total_eq * 100, 2) if total_eq > 0 else None
+                round(total_position_notional / total_eq * 100, 2)
+                if total_eq > 0
+                else None
             )
             if total_eq > 0 and total_position_notional / total_eq > 2:
                 warnings.append(
@@ -1045,9 +1139,11 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
                 )
             if is_dynamic_universe_strategy and active_all_positions:
                 alt_positions = [
-                    pos for pos in active_all_positions
+                    pos
+                    for pos in active_all_positions
                     if str(pos.get("inst_id") or "").endswith("-USDT-SWAP")
-                    and str(pos.get("inst_id") or "") not in {"BTC-USDT-SWAP", "ETH-USDT-SWAP"}
+                    and str(pos.get("inst_id") or "")
+                    not in {"BTC-USDT-SWAP", "ETH-USDT-SWAP"}
                 ]
                 if alt_positions:
                     warnings.append(
@@ -1056,7 +1152,9 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
                     )
 
             if not is_dynamic_universe_strategy:
-                pending_orders = await exchange.get_orders_pending(inst_type="SWAP", inst_id=strategy.symbol)
+                pending_orders = await exchange.get_orders_pending(
+                    inst_type="SWAP", inst_id=strategy.symbol
+                )
                 checks["pending_orders"] = [
                     {
                         "ord_id": order.get("ordId"),
@@ -1070,7 +1168,9 @@ async def build_strategy_start_preflight(strategy: Strategy, user_id: int, db: S
                     for order in pending_orders
                 ]
                 if pending_orders:
-                    warnings.append(f"检测到 {len(pending_orders)} 个未成交订单，启动前建议确认或撤销")
+                    warnings.append(
+                        f"检测到 {len(pending_orders)} 个未成交订单，启动前建议确认或撤销"
+                    )
             else:
                 checks["pending_orders"] = []
 
@@ -1095,7 +1195,7 @@ async def stop_strategy(
     cancel_orders: bool = True,
     close_position: bool = True,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     停止策略
@@ -1116,14 +1216,16 @@ async def stop_strategy(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         # 检查策略状态
-        if strategy.status != StrategyStatus.RUNNING.value and strategy.status != 'running':
+        if (
+            strategy.status != StrategyStatus.RUNNING.value
+            and strategy.status != "running"
+        ):
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="策略未在运行"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="策略未在运行"
             )
 
         # 停止策略（传递 cancel_orders / close_position 参数）
@@ -1135,10 +1237,12 @@ async def stop_strategy(
             # 监控循环异常退出时，管理器会清理内存实例，但数据库中的
             # running 状态可能尚未来得及同步。没有持仓状态时允许把这类
             # 残留记录收敛为 stopped，避免用户永远无法停止策略。
-            if close_position and bool(getattr(strategy, "position_in_position", False)):
+            if close_position and bool(
+                getattr(strategy, "position_in_position", False)
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="策略运行实例已不存在，但数据库仍记录持仓；请先核对并平仓"
+                    detail="策略运行实例已不存在，但数据库仍记录持仓；请先核对并平仓",
                 )
             logger.warning(
                 f"策略 {strategy_id} 运行实例不存在，按残留状态修正为 stopped"
@@ -1162,7 +1266,7 @@ async def stop_strategy(
             )
 
         # 更新策略状态
-        strategy.status = 'stopped'  # 直接使用字符串
+        strategy.status = "stopped"  # 直接使用字符串
         strategy.stopped_at = datetime.now()
         db.commit()
         db.refresh(strategy)
@@ -1178,7 +1282,7 @@ async def stop_strategy(
         logger.error(f"停止策略失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"停止策略失败: {str(e)}"
+            detail=f"停止策略失败: {str(e)}",
         )
 
 
@@ -1186,7 +1290,7 @@ async def stop_strategy(
 async def get_strategy_stats(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略实时统计信息"""
     try:
@@ -1200,12 +1304,14 @@ async def get_strategy_stats(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         persisted = _get_persistent_strategy_pnl(db, strategy_id)
         position_status = await _get_exchange_position_status(strategy_id)
-        return StrategyStatsResponse(**_build_strategy_stats(strategy, persisted, position_status))
+        return StrategyStatsResponse(
+            **_build_strategy_stats(strategy, persisted, position_status)
+        )
 
     except HTTPException:
         raise
@@ -1213,7 +1319,7 @@ async def get_strategy_stats(
         logger.error(f"获取策略统计失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取策略统计失败: {str(e)}"
+            detail=f"获取策略统计失败: {str(e)}",
         )
 
 
@@ -1223,7 +1329,7 @@ async def get_strategy_orders(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略的交易历史记录"""
     try:
@@ -1239,7 +1345,7 @@ async def get_strategy_orders(
         if not strategy:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"策略 {strategy_id} 不存在"
+                detail=f"策略 {strategy_id} 不存在",
             )
 
         # 查询订单总数
@@ -1258,33 +1364,50 @@ async def get_strategy_orders(
         # 转换为字典格式
         order_list = []
         for order in orders:
-            order_list.append({
-                "id": order.id,
-                "order_id": order.order_id,
-                "symbol": order.symbol,
-                "side": order.side.value if hasattr(order.side, 'value') else order.side,
-                "order_type": order.order_type.value if hasattr(order.order_type, 'value') else order.order_type,
-                "status": order.status.value if hasattr(order.status, 'value') else order.status,
-                "price": order.price,
-                "amount": order.amount,
-                "filled_amount": order.filled_amount,
-                "avg_price": order.avg_price,
-                "fee": order.fee,
-                "fee_currency": order.fee_currency,
-                "created_at": order.created_at.isoformat() if order.created_at else None,
-                "submitted_at": order.submitted_at.isoformat() if order.submitted_at else None,
-                "filled_at": order.filled_at.isoformat() if order.filled_at else None,
-                "canceled_at": order.canceled_at.isoformat() if order.canceled_at else None,
-                "note": order.note,
-            })
+            order_list.append(
+                {
+                    "id": order.id,
+                    "order_id": order.order_id,
+                    "symbol": order.symbol,
+                    "side": (
+                        order.side.value if hasattr(order.side, "value") else order.side
+                    ),
+                    "order_type": (
+                        order.order_type.value
+                        if hasattr(order.order_type, "value")
+                        else order.order_type
+                    ),
+                    "status": (
+                        order.status.value
+                        if hasattr(order.status, "value")
+                        else order.status
+                    ),
+                    "price": order.price,
+                    "amount": order.amount,
+                    "filled_amount": order.filled_amount,
+                    "avg_price": order.avg_price,
+                    "fee": order.fee,
+                    "fee_currency": order.fee_currency,
+                    "created_at": (
+                        order.created_at.isoformat() if order.created_at else None
+                    ),
+                    "submitted_at": (
+                        order.submitted_at.isoformat() if order.submitted_at else None
+                    ),
+                    "filled_at": (
+                        order.filled_at.isoformat() if order.filled_at else None
+                    ),
+                    "canceled_at": (
+                        order.canceled_at.isoformat() if order.canceled_at else None
+                    ),
+                    "note": order.note,
+                }
+            )
 
         return {
             "code": 0,
             "msg": "success",
-            "data": {
-                "total": total,
-                "items": order_list
-            }
+            "data": {"total": total, "items": order_list},
         }
 
     except HTTPException:
@@ -1293,7 +1416,7 @@ async def get_strategy_orders(
         logger.error(f"获取策略交易历史失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取策略交易历史失败: {str(e)}"
+            detail=f"获取策略交易历史失败: {str(e)}",
         )
 
 
@@ -1303,7 +1426,7 @@ async def get_strategy_events(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略运行事件时间线"""
     strategy = (
@@ -1313,11 +1436,12 @@ async def get_strategy_events(
     )
     if not strategy:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"策略 {strategy_id} 不存在"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"策略 {strategy_id} 不存在"
         )
 
-    total = db.query(StrategyEvent).filter(StrategyEvent.strategy_id == strategy_id).count()
+    total = (
+        db.query(StrategyEvent).filter(StrategyEvent.strategy_id == strategy_id).count()
+    )
     events = (
         db.query(StrategyEvent)
         .filter(StrategyEvent.strategy_id == strategy_id)
@@ -1342,11 +1466,13 @@ async def get_strategy_events(
                     "message": event.message,
                     "data": event.data or {},
                     "parameter_snapshot": event.parameter_snapshot or {},
-                    "created_at": event.created_at.isoformat() if event.created_at else None,
+                    "created_at": (
+                        event.created_at.isoformat() if event.created_at else None
+                    ),
                 }
                 for event in events
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -1354,7 +1480,7 @@ async def get_strategy_events(
 async def get_strategy_performance(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """获取策略性能统计(优化版:使用策略实例的calculate_pnl)"""
     from app.models.order import Order, OrderStatus, OrderSide
@@ -1362,21 +1488,19 @@ async def get_strategy_performance(
     from decimal import Decimal
 
     # 验证策略所有权
-    strategy = db.query(Strategy).filter(
-        Strategy.id == strategy_id,
-        Strategy.user_id == user_id
-    ).first()
+    strategy = (
+        db.query(Strategy)
+        .filter(Strategy.id == strategy_id, Strategy.user_id == user_id)
+        .first()
+    )
 
     if not strategy:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="策略不存在"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="策略不存在")
 
     # 优先使用策略实例的calculate_pnl获取准确数据
     try:
         strategy_instance = strategy_manager.get_strategy(strategy_id)
-        if strategy_instance and hasattr(strategy_instance, 'calculate_pnl'):
+        if strategy_instance and hasattr(strategy_instance, "calculate_pnl"):
             pnl_data = await strategy_instance.calculate_pnl()
 
             # 使用策略实例的盈亏数据
@@ -1393,20 +1517,33 @@ async def get_strategy_performance(
             total_trades = int(pnl_data.get("total_trades", buy_count + sell_count))
             total_orders = int(pnl_data.get("total_orders", buy_count + sell_count))
             if strategy.parameters:
-                base_amount = Decimal(str(
-                    strategy.parameters.get("initial_amount")
-                    or strategy.parameters.get("risk_base_usd")
-                    or strategy.parameters.get("max_position_usd")
-                    or 0
-                ))
-                total_profit_rate = (Decimal(str(total_profit)) / base_amount * 100) if base_amount > 0 else Decimal('0')
+                base_amount = Decimal(
+                    str(
+                        strategy.parameters.get("initial_amount")
+                        or strategy.parameters.get("risk_base_usd")
+                        or strategy.parameters.get("max_position_usd")
+                        or 0
+                    )
+                )
+                total_profit_rate = (
+                    (Decimal(str(total_profit)) / base_amount * 100)
+                    if base_amount > 0
+                    else Decimal("0")
+                )
             else:
-                total_profit_rate = Decimal('0')
+                total_profit_rate = Decimal("0")
 
             # 简化胜率计算
-            win_rate = float(pnl_data.get("win_rate", 100.0 if realized_profit > 0 else 0.0 if total_trades > 0 else 0.0))
+            win_rate = float(
+                pnl_data.get(
+                    "win_rate",
+                    100.0 if realized_profit > 0 else 0.0 if total_trades > 0 else 0.0,
+                )
+            )
 
-            logger.info(f"使用策略实例计算性能: total_pnl={total_profit}, realized={realized_profit}, unrealized={unrealized_profit}")
+            logger.info(
+                f"使用策略实例计算性能: total_pnl={total_profit}, realized={realized_profit}, unrealized={unrealized_profit}"
+            )
 
             return {
                 "code": 0,
@@ -1427,8 +1564,8 @@ async def get_strategy_performance(
                     "total_fee": float(total_fee),
                     "max_drawdown": 0,
                     "profit_history": [],
-                    "daily_profits": []
-                }
+                    "daily_profits": [],
+                },
             }
     except Exception as e:
         logger.warning(f"使用策略实例计算失败,回退到订单计算: {e}")
@@ -1436,10 +1573,14 @@ async def get_strategy_performance(
     # 回退方案:从订单计算(保留原有逻辑)
 
     # 获取所有已成交订单
-    filled_orders = db.query(Order).filter(
-        Order.strategy_id == strategy_id,
-        Order.status == OrderStatus.FILLED.value
-    ).order_by(Order.filled_at).all()
+    filled_orders = (
+        db.query(Order)
+        .filter(
+            Order.strategy_id == strategy_id, Order.status == OrderStatus.FILLED.value
+        )
+        .order_by(Order.filled_at)
+        .all()
+    )
 
     if not filled_orders:
         return {
@@ -1458,18 +1599,18 @@ async def get_strategy_performance(
                 "total_fee": 0,
                 "max_drawdown": 0,
                 "profit_history": [],
-                "daily_profits": []
-            }
+                "daily_profits": [],
+            },
         }
 
     # 计算已实现盈亏 (配对买卖单)
     buy_orders = [o for o in filled_orders if o.side == OrderSide.BUY.value]
     sell_orders = [o for o in filled_orders if o.side == OrderSide.SELL.value]
 
-    realized_profit = Decimal('0')
+    realized_profit = Decimal("0")
     successful_trades = 0
     failed_trades = 0
-    total_fee = Decimal('0')
+    total_fee = Decimal("0")
 
     # 简单配对: 按时间顺序配对买卖单
     paired_count = min(len(buy_orders), len(sell_orders))
@@ -1477,13 +1618,19 @@ async def get_strategy_performance(
         buy_order = buy_orders[i]
         sell_order = sell_orders[i]
 
-        buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(str(buy_order.filled_amount))
-        sell_income = Decimal(str(sell_order.avg_price or sell_order.price)) * Decimal(str(sell_order.filled_amount))
+        buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(
+            str(buy_order.filled_amount)
+        )
+        sell_income = Decimal(str(sell_order.avg_price or sell_order.price)) * Decimal(
+            str(sell_order.filled_amount)
+        )
 
         profit = sell_income - buy_cost
         realized_profit += profit
 
-        total_fee += Decimal(str(buy_order.fee or 0)) + Decimal(str(sell_order.fee or 0))
+        total_fee += Decimal(str(buy_order.fee or 0)) + Decimal(
+            str(sell_order.fee or 0)
+        )
 
         if profit > 0:
             successful_trades += 1
@@ -1491,13 +1638,14 @@ async def get_strategy_performance(
             failed_trades += 1
 
     # 计算未实现盈亏 (未配对的订单)
-    unrealized_profit = Decimal('0')
+    unrealized_profit = Decimal("0")
     unpaired_buy = len(buy_orders) - paired_count
     unpaired_sell = len(sell_orders) - paired_count
 
     # 获取当前价格估算未实现盈亏
     try:
         from app.api.endpoints.market import get_public_okx_exchange
+
         exchange = get_public_okx_exchange()
         ticker = await exchange.get_ticker(strategy.symbol)
         current_price = Decimal(str(ticker.get("last", 0)))
@@ -1506,9 +1654,11 @@ async def get_strategy_performance(
         # 多余的买单(持仓),用当前价格估值
         for i in range(paired_count, len(buy_orders)):
             buy_order = buy_orders[i]
-            buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(str(buy_order.filled_amount))
+            buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(
+                str(buy_order.filled_amount)
+            )
             current_value = current_price * Decimal(str(buy_order.filled_amount))
-            unrealized_profit += (current_value - buy_cost)
+            unrealized_profit += current_value - buy_cost
     except Exception as e:
         logger.warning(f"获取当前价格失败,未实现盈亏设为0: {e}")
 
@@ -1516,11 +1666,13 @@ async def get_strategy_performance(
     total_profit = realized_profit + unrealized_profit - total_fee
 
     # 计算收益率 (基于策略投资金额)
-    if strategy.parameters and 'total_amount' in strategy.parameters:
-        total_amount = Decimal(str(strategy.parameters['total_amount']))
-        total_profit_rate = (total_profit / total_amount * 100) if total_amount > 0 else Decimal('0')
+    if strategy.parameters and "total_amount" in strategy.parameters:
+        total_amount = Decimal(str(strategy.parameters["total_amount"]))
+        total_profit_rate = (
+            (total_profit / total_amount * 100) if total_amount > 0 else Decimal("0")
+        )
     else:
-        total_profit_rate = Decimal('0')
+        total_profit_rate = Decimal("0")
 
     # 胜率
     total_completed = successful_trades + failed_trades
@@ -1528,23 +1680,31 @@ async def get_strategy_performance(
 
     # 盈亏历史 (累计盈亏曲线)
     profit_history = []
-    cumulative_profit = Decimal('0')
+    cumulative_profit = Decimal("0")
 
     for i in range(paired_count):
         buy_order = buy_orders[i]
         sell_order = sell_orders[i]
 
-        buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(str(buy_order.filled_amount))
-        sell_income = Decimal(str(sell_order.avg_price or sell_order.price)) * Decimal(str(sell_order.filled_amount))
+        buy_cost = Decimal(str(buy_order.avg_price or buy_order.price)) * Decimal(
+            str(buy_order.filled_amount)
+        )
+        sell_income = Decimal(str(sell_order.avg_price or sell_order.price)) * Decimal(
+            str(sell_order.filled_amount)
+        )
         profit = sell_income - buy_cost
 
         cumulative_profit += profit
 
-        profit_history.append({
-            "timestamp": sell_order.filled_at.isoformat() if sell_order.filled_at else None,
-            "profit": float(profit),
-            "cumulative_profit": float(cumulative_profit)
-        })
+        profit_history.append(
+            {
+                "timestamp": (
+                    sell_order.filled_at.isoformat() if sell_order.filled_at else None
+                ),
+                "profit": float(profit),
+                "cumulative_profit": float(cumulative_profit),
+            }
+        )
 
     # 按日统计盈亏
     daily_profits = {}
@@ -1561,8 +1721,8 @@ async def get_strategy_performance(
     ]
 
     # 计算最大回撤
-    max_drawdown = Decimal('0')
-    peak = Decimal('0')
+    max_drawdown = Decimal("0")
+    peak = Decimal("0")
     for record in profit_history:
         current = Decimal(str(record["cumulative_profit"]))
         if current > peak:
@@ -1587,8 +1747,8 @@ async def get_strategy_performance(
             "total_fee": float(total_fee),
             "max_drawdown": float(max_drawdown),
             "profit_history": profit_history,
-            "daily_profits": daily_profits_list
-        }
+            "daily_profits": daily_profits_list,
+        },
     }
 
 
@@ -1596,7 +1756,7 @@ async def get_strategy_performance(
 async def get_strategy_pnl(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """
     获取策略的实时盈亏统计
@@ -1615,15 +1775,15 @@ async def get_strategy_pnl(
     """
     try:
         # 检查策略是否存在且属于当前用户
-        strategy = db.query(Strategy).filter(
-            Strategy.id == strategy_id,
-            Strategy.user_id == user_id
-        ).first()
+        strategy = (
+            db.query(Strategy)
+            .filter(Strategy.id == strategy_id, Strategy.user_id == user_id)
+            .first()
+        )
 
         if not strategy:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="策略不存在"
+                status_code=status.HTTP_404_NOT_FOUND, detail="策略不存在"
             )
 
         return await _build_strategy_pnl(db, strategy)
@@ -1634,7 +1794,7 @@ async def get_strategy_pnl(
         logger.error(f"获取策略盈亏失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取盈亏数据失败: {str(e)}"
+            detail=f"获取盈亏数据失败: {str(e)}",
         )
 
 
@@ -1645,10 +1805,14 @@ async def get_strategy_mobile_snapshot(
     user_id: int = Depends(require_mobile_read_user_id),
 ):
     """Return an atomic, scoped read-only snapshot for the iOS app."""
-    strategy = db.query(Strategy).filter(
-        Strategy.id == strategy_id,
-        Strategy.user_id == user_id,
-    ).first()
+    strategy = (
+        db.query(Strategy)
+        .filter(
+            Strategy.id == strategy_id,
+            Strategy.user_id == user_id,
+        )
+        .first()
+    )
     if not strategy:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1661,11 +1825,10 @@ async def get_strategy_mobile_snapshot(
 async def backtest_strategy(
     strategy_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     """回测策略"""
     # TODO: 实现回测逻辑
     raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="回测功能尚未实现"
+        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="回测功能尚未实现"
     )

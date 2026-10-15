@@ -1,5 +1,19 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Descriptions, Statistic, Row, Col, Table, Button, Tag, Spin, Empty, Space, App, Alert } from 'antd'
+import {
+  Card,
+  Descriptions,
+  Statistic,
+  Row,
+  Col,
+  Table,
+  Button,
+  Tag,
+  Spin,
+  Empty,
+  Space,
+  App,
+  Alert,
+} from 'antd'
 import { ArrowLeft, Rocket } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -8,7 +22,12 @@ import type { ColumnsType } from 'antd/es/table'
 import EquityCurve from './components/EquityCurve'
 import StrategyCreateModal from '@/features/strategy/StrategyCreateModal'
 import { BACKTEST_API } from '@/config/api'
-import { formatAmount, formatQuantityDisplay, formatFeeDisplay, formatPercent } from '@/utils/format'
+import {
+  formatAmount,
+  formatQuantityDisplay,
+  formatFeeDisplay,
+  formatPercent,
+} from '@/utils/format'
 
 interface BacktestDetail {
   id: number
@@ -87,9 +106,7 @@ const BacktestDetail = () => {
       dataIndex: 'side',
       key: 'side',
       render: (side: string) => (
-        <Tag color={side === 'buy' ? 'green' : 'red'}>
-          {side === 'buy' ? '买入' : '卖出'}
-        </Tag>
+        <Tag color={side === 'buy' ? 'green' : 'red'}>{side === 'buy' ? '买入' : '卖出'}</Tag>
       ),
     },
     {
@@ -153,10 +170,7 @@ const BacktestDetail = () => {
   return (
     <div style={{ padding: '24px' }}>
       <Space style={{ marginBottom: 16 }}>
-        <Button
-          icon={<ArrowLeft size={14} />}
-          onClick={() => navigate('/backtest')}
-        >
+        <Button icon={<ArrowLeft size={14} />} onClick={() => navigate('/backtest')}>
           返回列表
         </Button>
         {backtest.status === 'completed' && (
@@ -177,11 +191,11 @@ const BacktestDetail = () => {
           <Descriptions.Item label="策略类型">
             {(() => {
               const names: Record<string, string> = {
-                'grid': '网格策略',
-                'grid_mm': '网格做市',
-                'ma_cross': '均线交叉',
-                'dual_ma_cross': '双均线(多空)',
-                'adaptive_grid_trend': '自适应趋势网格'
+                grid: '网格策略',
+                grid_mm: '网格做市',
+                ma_cross: '均线交叉',
+                dual_ma_cross: '双均线(多空)',
+                adaptive_grid_trend: '自适应趋势网格',
               }
               return names[backtest.strategy_type] || backtest.strategy_type
             })()}
@@ -198,14 +212,24 @@ const BacktestDetail = () => {
             {formatAmount(backtest.initial_capital) || '0'} USDT
           </Descriptions.Item>
           <Descriptions.Item label="状态">
-            <Tag color={
-              backtest.status === 'completed' ? 'success' :
-              backtest.status === 'failed' ? 'error' :
-              backtest.status === 'running' ? 'processing' : 'default'
-            }>
-              {backtest.status === 'completed' ? '已完成' :
-               backtest.status === 'failed' ? '失败' :
-               backtest.status === 'running' ? '运行中' : backtest.status}
+            <Tag
+              color={
+                backtest.status === 'completed'
+                  ? 'success'
+                  : backtest.status === 'failed'
+                    ? 'error'
+                    : backtest.status === 'running'
+                      ? 'processing'
+                      : 'default'
+              }
+            >
+              {backtest.status === 'completed'
+                ? '已完成'
+                : backtest.status === 'failed'
+                  ? '失败'
+                  : backtest.status === 'running'
+                    ? '运行中'
+                    : backtest.status}
             </Tag>
           </Descriptions.Item>
           {backtest.description && (
@@ -298,12 +322,7 @@ const BacktestDetail = () => {
               <Statistic title="亏损次数" value={backtest.losing_trades} />
             </Col>
             <Col span={6}>
-              <Statistic
-                title="总手续费"
-                value={backtest.total_fee}
-                precision={4}
-                suffix="USDT"
-              />
+              <Statistic title="总手续费" value={backtest.total_fee} precision={4} suffix="USDT" />
             </Col>
           </Row>
         </Card>
@@ -342,12 +361,16 @@ const BacktestDetail = () => {
           message.success('策略创建成功，请前往策略列表启动')
           navigate('/strategy')
         }}
-        backtestData={backtest ? {
-          strategy_type: backtest.strategy_type,
-          symbol: backtest.symbol,
-          name: `${backtest.name}-实盘`,
-          parameters: backtest.parameters || {}
-        } : null}
+        backtestData={
+          backtest
+            ? {
+                strategy_type: backtest.strategy_type,
+                symbol: backtest.symbol,
+                name: `${backtest.name}-实盘`,
+                parameters: backtest.parameters || {},
+              }
+            : null
+        }
       />
     </div>
   )

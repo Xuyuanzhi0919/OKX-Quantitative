@@ -3,6 +3,7 @@
 说明：这是交易所接口的抽象层，定义了所有交易所需要实现的标准接口
 等拿到OKX API文档后，会创建具体的OKX实现类
 """
+
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 from decimal import Decimal
@@ -46,10 +47,7 @@ class ExchangeBase(ABC):
 
     @abstractmethod
     async def get_kline(
-        self,
-        symbol: str,
-        timeframe: str = "1m",
-        limit: int = 100
+        self, symbol: str, timeframe: str = "1m", limit: int = 100
     ) -> List[Dict]:
         """
         获取K线数据

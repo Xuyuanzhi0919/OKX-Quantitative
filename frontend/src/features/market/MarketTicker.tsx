@@ -4,7 +4,12 @@ import { TrendingUp, TrendingDown, RotateCw } from 'lucide-react'
 import { wsService } from '@/services/websocket'
 import type { TickerData } from '@/services/websocket'
 import { useTranslation } from 'react-i18next'
-import { formatPrice, formatPriceDisplay, formatPercentDisplay, formatQuantityDisplay } from '@/utils/format'
+import {
+  formatPrice,
+  formatPriceDisplay,
+  formatPercentDisplay,
+  formatQuantityDisplay,
+} from '@/utils/format'
 
 interface MarketTickerProps {
   symbol: string
@@ -94,7 +99,9 @@ export default function MarketTicker({ symbol }: MarketTickerProps) {
                   animation: 'pulse 2s infinite',
                 }}
               />
-              <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 600 }}>{t('trading.live').toUpperCase()}</span>
+              <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 600 }}>
+                {t('trading.live').toUpperCase()}
+              </span>
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#737373', fontFamily: 'monospace' }}>
@@ -179,13 +186,25 @@ export default function MarketTicker({ symbol }: MarketTickerProps) {
       {/* 详细数据网格 */}
       <Row gutter={[16, 12]}>
         <Col xs={12} sm={8} md={6}>
-          <DataItem label={t('trading.24hHigh').toUpperCase()} value={`$${formatPrice(ticker.high24h)}`} color="#22c55e" />
+          <DataItem
+            label={t('trading.24hHigh').toUpperCase()}
+            value={`$${formatPrice(ticker.high24h)}`}
+            color="#22c55e"
+          />
         </Col>
         <Col xs={12} sm={8} md={6}>
-          <DataItem label={t('trading.24hLow').toUpperCase()} value={`$${formatPrice(ticker.low24h)}`} color="#ef4444" />
+          <DataItem
+            label={t('trading.24hLow').toUpperCase()}
+            value={`$${formatPrice(ticker.low24h)}`}
+            color="#ef4444"
+          />
         </Col>
         <Col xs={12} sm={8} md={6}>
-          <DataItem label={t('trading.24hOpen').toUpperCase()} value={`$${formatPrice(ticker.open24h)}`} color="#a3a3a3" />
+          <DataItem
+            label={t('trading.24hOpen').toUpperCase()}
+            value={`$${formatPrice(ticker.open24h)}`}
+            color="#a3a3a3"
+          />
         </Col>
         <Col xs={12} sm={8} md={6}>
           <DataItem

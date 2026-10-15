@@ -1,0 +1,16 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+extend-exclude = '''
+/(
+    \.cache
+  | \.dev-windows
+  | \.run
+  | \.workbuddy
+  | venv[^/]*
+  | \.venv
+  | node_modules
+  | backtest_data
+  | backtest_results
+)/
+'''

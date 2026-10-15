@@ -1,6 +1,7 @@
 """
 FastAPI主应用
 """
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
@@ -34,7 +35,7 @@ async def root():
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "status": "running"
+        "status": "running",
     }
 
 
@@ -59,6 +60,7 @@ async def startup_event():
     # 自动创建新增的 account_snapshots 表（checkfirst=True 保证幂等）
     try:
         from app.models.account_snapshot import AccountSnapshot
+
         AccountSnapshot.__table__.create(bind=engine, checkfirst=True)
         logger.info("✅ account_snapshots 表已就绪")
     except Exception as e:
@@ -72,7 +74,10 @@ async def startup_event():
     from app.services.account_monitor import account_monitor
     import app.websocket as websocket_module
 
-    if not settings.DEBUG and settings.SECRET_KEY == "your-secret-key-change-in-production-please":
+    if (
+        not settings.DEBUG
+        and settings.SECRET_KEY == "your-secret-key-change-in-production-please"
+    ):
         raise RuntimeError("生产环境必须修改 SECRET_KEY")
 
     # 注入WebSocket管理器到通知服务
@@ -82,7 +87,10 @@ async def startup_event():
     # 加载推送渠道配置
     import json
     import os
-    config_path = os.path.join(os.path.dirname(__file__), "..", "notification_config.json")
+
+    config_path = os.path.join(
+        os.path.dirname(__file__), "..", "notification_config.json"
+    )
     if os.path.exists(config_path):
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -107,9 +115,7 @@ async def startup_event():
     # 尝试获取用户的API配置,用于Private WebSocket认证
     try:
         db = SessionLocal()
-        api_config = db.query(APIConfig).filter(
-            APIConfig.is_active == True
-        ).first()
+        api_config = db.query(APIConfig).filter(APIConfig.is_active == True).first()
         db.close()
 
         if api_config:
@@ -119,10 +125,10 @@ async def startup_event():
                 api_key=api_config.api_key,
                 secret_key=api_config.secret_key,
                 passphrase=api_config.passphrase,
-                simulated=api_config.is_simulated
+                simulated=api_config.is_simulated,
             )
             # 更新全局引用
-            globals()['okx_ws_client'] = websocket_module.okx_ws_client
+            globals()["okx_ws_client"] = websocket_module.okx_ws_client
         else:
             logger.warning("⚠️ 未找到API配置,Private WebSocket将不可用")
     except Exception as e:
@@ -153,9 +159,9 @@ async def startup_event():
     # 自动恢复运行中的策略
     try:
         db = SessionLocal()
-        running_strategies = db.query(Strategy).filter(
-            Strategy.status == StrategyStatus.RUNNING
-        ).all()
+        running_strategies = (
+            db.query(Strategy).filter(Strategy.status == StrategyStatus.RUNNING).all()
+        )
 
         if running_strategies:
             logger.warning(
@@ -168,7 +174,9 @@ async def startup_event():
 
             for strategy in running_strategies:
                 try:
-                    logger.info(f"正在恢复策略: {strategy.id} ({strategy.name}) - {strategy.symbol}")
+                    logger.info(
+                        f"正在恢复策略: {strategy.id} ({strategy.name}) - {strategy.symbol}"
+                    )
 
                     # 获取用户的API配置和交易所实例
                     from app.services.api_config_service import APIConfigService
@@ -182,7 +190,11 @@ async def startup_event():
                         raise Exception(f"用户 {strategy.user_id} 没有有效的API配置")
 
                     # 解析策略参数
-                    parameters = json.loads(strategy.parameters) if isinstance(strategy.parameters, str) else strategy.parameters
+                    parameters = (
+                        json.loads(strategy.parameters)
+                        if isinstance(strategy.parameters, str)
+                        else strategy.parameters
+                    )
 
                     # 调用策略管理器启动策略
                     await strategy_manager.start_strategy(
@@ -191,7 +203,7 @@ async def startup_event():
                         symbol=strategy.symbol,
                         parameters=parameters,
                         exchange=exchange,
-                        user_id=strategy.user_id
+                        user_id=strategy.user_id,
                     )
 
                     success_count += 1
@@ -203,16 +215,14 @@ async def startup_event():
 
                     # 恢复失败时,将策略标记为停止状态
                     try:
-                        strategy.status = 'stopped'
+                        strategy.status = "stopped"
                         db.commit()
                         logger.warning(f"已将策略 {strategy.name} 标记为停止状态")
                     except Exception as commit_error:
                         logger.error(f"更新策略状态失败: {commit_error}")
                         db.rollback()
 
-            logger.info(
-                f"策略恢复完成: 成功 {success_count} 个, 失败 {fail_count} 个"
-            )
+            logger.info(f"策略恢复完成: 成功 {success_count} 个, 失败 {fail_count} 个")
         else:
             logger.info("✅ 没有需要恢复的策略")
 
@@ -220,6 +230,7 @@ async def startup_event():
     except Exception as e:
         logger.error(f"策略恢复过程出错: {e}")
         import traceback
+
         logger.error(traceback.format_exc())
 
 
@@ -249,7 +260,9 @@ async def shutdown_event():
             for strategy_id in running_strategy_ids:
                 try:
                     # close_position=False：后端重启只停止监控，不平仓，重启后从交易所恢复持仓
-                    await strategy_manager.stop_strategy(strategy_id, close_position=False)
+                    await strategy_manager.stop_strategy(
+                        strategy_id, close_position=False
+                    )
                     logger.info(f"已停止策略 {strategy_id}")
                 except Exception as e:
                     logger.error(f"停止策略 {strategy_id} 失败: {e}")
@@ -273,18 +286,17 @@ async def shutdown_event():
 
     # 关闭OKX WebSocket客户端
     import app.websocket as websocket_module
+
     await websocket_module.okx_ws_client.disconnect()
 
 
 # 创建Socket.IO ASGI应用 - 必须在所有路由定义之后
-socket_app = socketio.ASGIApp(
-    sio,
-    other_asgi_app=app
-)
+socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
 if __name__ == "__main__":
     import uvicorn
+
     # from app.core.process_lock import ProcessLock
 
     # 获取进程锁，防止多实例启动（临时禁用）

@@ -4,7 +4,9 @@
  */
 
 // API基础URL - 生产环境使用相对路径，开发环境使用localhost
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || ((import.meta as any).env?.DEV ? 'http://localhost:8000' : '')
+export const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  ((import.meta as any).env?.DEV ? 'http://localhost:8000' : '')
 
 // API版本前缀
 const API_V1 = `${API_BASE_URL}/api/v1`
@@ -24,7 +26,7 @@ export const BACKTEST_API = {
   // 策略类型
   strategyTypes: `${API_V1}/backtest/strategy-types`,
   topGainersMomentum: `${API_V1}/backtest/top-gainers-momentum/analyze`,
-  
+
   // 交易对列表
   symbols: `${API_V1}/backtest/symbols`,
   symbolsDetail: `${API_V1}/backtest/symbols/detail`,

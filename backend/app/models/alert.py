@@ -1,18 +1,31 @@
 """
 告警记录模型
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean, ForeignKey
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    Float,
+    Boolean,
+    ForeignKey,
+)
 from sqlalchemy.sql import func
 from app.core.database import Base
 
 
 class Alert(Base):
     """告警记录表"""
+
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=True, index=True)
+    strategy_id = Column(
+        Integer, ForeignKey("strategies.id"), nullable=True, index=True
+    )
 
     # 告警类型: stop_loss(止损), take_profit(止盈), risk_warning(风险警告), system_error(系统错误)
     alert_type = Column(String(50), nullable=False, index=True)
@@ -36,7 +49,9 @@ class Alert(Base):
     is_handled = Column(Boolean, default=False)
 
     # 创建时间
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
     # 处理时间
     handled_at = Column(DateTime(timezone=True), nullable=True)

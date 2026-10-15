@@ -56,6 +56,7 @@ export function getAdaptiveGridTrendPresetForBacktest(symbol?: string) {
     takeProfit: preset.takeProfit,
     cooldownSeconds: preset.cooldownMinutes * 60,
     riskPerTrade: (preset.riskPercent ?? DEFAULT_ADAPTIVE_GRID_TREND_PRESET.riskPercent ?? 2) / 100,
-    maxPositionUsd: preset.maxPositionUsd ?? DEFAULT_ADAPTIVE_GRID_TREND_PRESET.maxPositionUsd ?? 800,
+    maxPositionUsd:
+      preset.maxPositionUsd ?? DEFAULT_ADAPTIVE_GRID_TREND_PRESET.maxPositionUsd ?? 800,
   }
 }

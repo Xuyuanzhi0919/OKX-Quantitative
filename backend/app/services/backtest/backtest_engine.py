@@ -2,6 +2,7 @@
 回测引擎基类
 提供回测执行的核心功能：订单撮合、资金管理、持仓管理等
 """
+
 from typing import Dict, List, Optional, Callable
 from decimal import Decimal
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from loguru import logger
 @dataclass
 class Trade:
     """交易记录"""
+
     timestamp: int  # 交易时间戳(毫秒)
     side: str  # 方向：buy/sell
     price: float  # 成交价格
@@ -31,6 +33,7 @@ class Trade:
 @dataclass
 class Position:
     """持仓信息"""
+
     amount: float = 0.0  # 持仓数量（正数做多，负数做空）
     avg_price: float = 0.0  # 平均成本价
     unrealized_pnl: float = 0.0  # 未实现盈亏
@@ -41,6 +44,7 @@ class Position:
 @dataclass
 class MarginAccount:
     """保证金账户"""
+
     balance: float  # 保证金余额
     leverage: int = 1  # 杠杆倍数
     margin_used: float = 0.0  # 已用保证金
@@ -84,7 +88,7 @@ class BacktestEngine:
         self.margin_account = MarginAccount(
             balance=initial_capital,
             leverage=self.leverage,
-            margin_call_ratio=margin_call_ratio
+            margin_call_ratio=margin_call_ratio,
         )
 
         # 交易记录
@@ -108,7 +112,7 @@ class BacktestEngine:
         self.margin_account = MarginAccount(
             balance=self.initial_capital,
             leverage=self.leverage,
-            margin_call_ratio=self.margin_call_ratio
+            margin_call_ratio=self.margin_call_ratio,
         )
         self.trades = []
         self.equity_curve = []
@@ -147,7 +151,9 @@ class BacktestEngine:
         # 更新持仓（加权平均成本）
         if self.position.amount > 0:
             total_amount = self.position.amount + amount
-            total_cost_basis = (self.position.avg_price * self.position.amount) + position_value
+            total_cost_basis = (
+                self.position.avg_price * self.position.amount
+            ) + position_value
             self.position.avg_price = total_cost_basis / total_amount
         else:
             self.position.avg_price = price
@@ -179,11 +185,13 @@ class BacktestEngine:
             pnl_percent=0.0,
             direction="long",
             leverage=self.leverage,
-            margin_used=margin_required
+            margin_used=margin_required,
         )
 
         self.trades.append(trade)
-        logger.debug(f"买入: {amount:.8f} @ {price:.2f}, 保证金: {margin_required:.2f}, 杠杆: {self.leverage}x, 剩余资金: {self.capital:.2f}")
+        logger.debug(
+            f"买入: {amount:.8f} @ {price:.2f}, 保证金: {margin_required:.2f}, 杠杆: {self.leverage}x, 剩余资金: {self.capital:.2f}"
+        )
 
         return trade
 
@@ -201,18 +209,20 @@ class BacktestEngine:
         """
         # 检查持仓是否足够
         if amount > self.position.amount:
-            logger.warning(f"持仓不足: 需要 {amount:.8f}, 可用 {self.position.amount:.8f}")
+            logger.warning(
+                f"持仓不足: 需要 {amount:.8f}, 可用 {self.position.amount:.8f}"
+            )
             return None
 
         # 计算收益（杠杆模式下）
         position_value = price * amount
         fee = position_value * self.fee_rate
-        
+
         # 计算盈亏（基于价格变化，杠杆效应已体现在价格变化上）
         price_pnl = price - self.position.avg_price
         gross_pnl = price_pnl * amount
         net_pnl = gross_pnl - fee
-        
+
         # 计算收益率（相对于保证金）
         margin_used = position_value / self.leverage
         pnl_percent = (net_pnl / margin_used) * 100 if margin_used > 0 else 0.0
@@ -231,7 +241,7 @@ class BacktestEngine:
             self.position.avg_price = 0
             self.position.direction = "flat"
             self.position.margin_used = 0
-        
+
         self.margin_account.margin_used = self.position.margin_used
 
         # 记录交易后状态
@@ -252,11 +262,13 @@ class BacktestEngine:
             pnl=net_pnl,
             pnl_percent=pnl_percent,
             direction="long",
-            leverage=self.leverage
+            leverage=self.leverage,
         )
 
         self.trades.append(trade)
-        logger.debug(f"卖出: {amount:.8f} @ {price:.2f}, 盈亏: {net_pnl:.2f} ({pnl_percent:.2f}%), 剩余资金: {self.capital:.2f}")
+        logger.debug(
+            f"卖出: {amount:.8f} @ {price:.2f}, 盈亏: {net_pnl:.2f} ({pnl_percent:.2f}%), 剩余资金: {self.capital:.2f}"
+        )
 
         return trade
 
@@ -284,7 +296,9 @@ class BacktestEngine:
 
         # 检查资金是否足够
         if total_required > self.capital:
-            logger.warning(f"保证金不足: 需要 {total_required:.2f}, 可用 {self.capital:.2f}")
+            logger.warning(
+                f"保证金不足: 需要 {total_required:.2f}, 可用 {self.capital:.2f}"
+            )
             return None
 
         # 记录交易前状态
@@ -295,7 +309,9 @@ class BacktestEngine:
         if self.position.amount < 0:
             # 加仓做空
             total_amount = abs(self.position.amount) + amount
-            total_cost_basis = (abs(self.position.amount) * self.position.avg_price) + position_value
+            total_cost_basis = (
+                abs(self.position.amount) * self.position.avg_price
+            ) + position_value
             self.position.avg_price = total_cost_basis / total_amount
             self.position.amount = -total_amount
         else:
@@ -329,11 +345,13 @@ class BacktestEngine:
             pnl_percent=0.0,
             direction="short",
             leverage=self.leverage,
-            margin_used=margin_required
+            margin_used=margin_required,
         )
 
         self.trades.append(trade)
-        logger.debug(f"做空开仓: {amount:.8f} @ {price:.2f}, 保证金: {margin_required:.2f}, 杠杆: {self.leverage}x")
+        logger.debug(
+            f"做空开仓: {amount:.8f} @ {price:.2f}, 保证金: {margin_required:.2f}, 杠杆: {self.leverage}x"
+        )
 
         return trade
 
@@ -355,7 +373,9 @@ class BacktestEngine:
             return None
 
         if amount > abs(self.position.amount):
-            logger.warning(f"空仓不足: 需要 {amount:.8f}, 可用 {abs(self.position.amount):.8f}")
+            logger.warning(
+                f"空仓不足: 需要 {amount:.8f}, 可用 {abs(self.position.amount):.8f}"
+            )
             return None
 
         # 计算平仓成本和盈亏
@@ -366,11 +386,11 @@ class BacktestEngine:
         price_pnl = self.position.avg_price - price  # 做空：价格下跌盈利
         gross_pnl = price_pnl * amount
         net_pnl = gross_pnl - fee
-        
+
         # 计算收益率（相对于开仓时的保证金）
         open_margin = (self.position.avg_price * amount) / self.leverage
         pnl_percent = (net_pnl / open_margin) * 100 if open_margin > 0 else 0.0
-        
+
         # 释放的保证金（基于开仓价格）
         margin_released = open_margin
 
@@ -386,7 +406,9 @@ class BacktestEngine:
             self.position.direction = "flat"
             self.position.margin_used = 0
         else:
-            self.position.margin_used = abs(self.position.amount) * self.position.avg_price / self.leverage
+            self.position.margin_used = (
+                abs(self.position.amount) * self.position.avg_price / self.leverage
+            )
 
         # 更新资金（返还保证金 + 盈亏）
         self.capital += margin_released + net_pnl
@@ -411,11 +433,13 @@ class BacktestEngine:
             pnl_percent=pnl_percent,
             direction="short",
             leverage=self.leverage,
-            margin_used=margin_released
+            margin_used=margin_released,
         )
 
         self.trades.append(trade)
-        logger.debug(f"平空仓: {amount:.8f} @ {price:.2f}, 盈亏: {net_pnl:.2f} ({pnl_percent:.2f}%)")
+        logger.debug(
+            f"平空仓: {amount:.8f} @ {price:.2f}, 盈亏: {net_pnl:.2f} ({pnl_percent:.2f}%)"
+        )
 
         return trade
 
@@ -433,24 +457,34 @@ class BacktestEngine:
             return False
 
         position_value = abs(self.position.amount) * current_price
-        
+
         # 计算未实现盈亏
         if self.position.direction == "long":
-            unrealized_pnl = (current_price - self.position.avg_price) * self.position.amount
+            unrealized_pnl = (
+                current_price - self.position.avg_price
+            ) * self.position.amount
         elif self.position.direction == "short":
-            unrealized_pnl = (self.position.avg_price - current_price) * abs(self.position.amount)
+            unrealized_pnl = (self.position.avg_price - current_price) * abs(
+                self.position.amount
+            )
         else:
             return False
 
         # 计算保证金率
-        margin_ratio = (self.position.margin_used + unrealized_pnl) / position_value if position_value > 0 else 0
+        margin_ratio = (
+            (self.position.margin_used + unrealized_pnl) / position_value
+            if position_value > 0
+            else 0
+        )
 
         # 强平阈值
         liquidation_threshold = 1 / self.leverage * (1 - self.margin_call_ratio)
 
         return margin_ratio < liquidation_threshold
 
-    def execute_liquidation(self, current_price: float, timestamp: int) -> Optional[Trade]:
+    def execute_liquidation(
+        self, current_price: float, timestamp: int
+    ) -> Optional[Trade]:
         """
         执行强平
 
@@ -464,7 +498,9 @@ class BacktestEngine:
         if self.position.amount == 0:
             return None
 
-        logger.warning(f"触发强平! 当前价格: {current_price}, 持仓: {self.position.amount}")
+        logger.warning(
+            f"触发强平! 当前价格: {current_price}, 持仓: {self.position.amount}"
+        )
 
         # 强平所有持仓
         if self.position.direction == "long":
@@ -511,15 +547,17 @@ class BacktestEngine:
         total_equity = self.capital + self.position.unrealized_pnl
 
         # 记录到资金曲线
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "equity": total_equity,
-            "capital": self.capital,
-            "position_value": position_value,
-            "unrealized_pnl": self.position.unrealized_pnl,
-            "position_direction": self.position.direction,
-            "leverage": self.leverage
-        })
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "equity": total_equity,
+                "capital": self.capital,
+                "position_value": position_value,
+                "unrealized_pnl": self.position.unrealized_pnl,
+                "position_direction": self.position.direction,
+                "leverage": self.leverage,
+            }
+        )
 
     def get_total_equity(self, current_price: float) -> float:
         """
@@ -551,7 +589,9 @@ class BacktestEngine:
         """
         raise NotImplementedError("子类必须实现 on_kline 方法")
 
-    def run(self, klines: List[Dict], progress_callback: Optional[Callable] = None) -> Dict:
+    def run(
+        self, klines: List[Dict], progress_callback: Optional[Callable] = None
+    ) -> Dict:
         """
         运行回测
 
@@ -562,7 +602,9 @@ class BacktestEngine:
         Returns:
             回测结果
         """
-        logger.info(f"开始回测: {self.symbol}, 初始资金: {self.initial_capital}, K线数量: {len(klines)}, 杠杆: {self.leverage}x, 做空: {self.enable_short}")
+        logger.info(
+            f"开始回测: {self.symbol}, 初始资金: {self.initial_capital}, K线数量: {len(klines)}, 杠杆: {self.leverage}x, 做空: {self.enable_short}"
+        )
 
         self.reset()
 
@@ -572,8 +614,8 @@ class BacktestEngine:
             self.current_index = i
             self.current_kline = kline
 
-            close_price = float(kline['close'])
-            timestamp = int(kline['timestamp'])
+            close_price = float(kline["close"])
+            timestamp = int(kline["timestamp"])
 
             # 检查强平（杠杆模式下）
             if self.leverage > 1 and self.check_liquidation(close_price):
@@ -596,28 +638,34 @@ class BacktestEngine:
 
         # 强制平掉期末持仓，确保所有盈亏都体现在交易记录中
         if klines and self.position.amount != 0:
-            final_price = float(klines[-1]['close'])
-            final_ts = int(klines[-1]['timestamp'])
+            final_price = float(klines[-1]["close"])
+            final_ts = int(klines[-1]["timestamp"])
             if self.position.amount > 0:
-                logger.info(f"回测结束，强制平多仓: {self.position.amount:.8f} @ {final_price:.2f}")
+                logger.info(
+                    f"回测结束，强制平多仓: {self.position.amount:.8f} @ {final_price:.2f}"
+                )
                 self.sell(final_price, self.position.amount, final_ts)
             elif self.position.amount < 0:
-                logger.info(f"回测结束，强制平空仓: {abs(self.position.amount):.8f} @ {final_price:.2f}")
+                logger.info(
+                    f"回测结束，强制平空仓: {abs(self.position.amount):.8f} @ {final_price:.2f}"
+                )
                 self.cover(final_price, abs(self.position.amount), final_ts)
 
         # 计算最终权益
         if klines:
-            final_price = float(klines[-1]['close'])
+            final_price = float(klines[-1]["close"])
             final_equity = self.get_total_equity(final_price)
         else:
             final_equity = self.initial_capital
 
-        logger.info(f"回测完成: 最终权益: {final_equity:.2f}, 交易次数: {len(self.trades)}, 强平次数: {self.liquidation_count}")
+        logger.info(
+            f"回测完成: 最终权益: {final_equity:.2f}, 交易次数: {len(self.trades)}, 强平次数: {self.liquidation_count}"
+        )
 
         return {
             "final_equity": final_equity,
             "total_trades": len(self.trades),
             "initial_capital": self.initial_capital,
             "liquidation_count": self.liquidation_count,
-            "leverage": self.leverage
+            "leverage": self.leverage,
         }

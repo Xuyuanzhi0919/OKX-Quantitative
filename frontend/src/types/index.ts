@@ -146,24 +146,24 @@ export interface TopAltcoinStrategyCandidate {
 
 // 交易产品信息 (OKX API格式)
 export interface Instrument {
-  instType: string      // 产品类型: SPOT/SWAP/FUTURES/OPTION
-  instId: string        // 产品ID: BTC-USDT
-  uly?: string          // 标的指数
-  baseCcy?: string      // 交易货币: BTC
-  quoteCcy?: string     // 计价货币: USDT
-  settCcy?: string      // 盈亏结算和保证金币种
-  ctVal?: string        // 合约面值
-  ctMult?: string       // 合约乘数
-  ctValCcy?: string     // 合约面值计价币种
-  minSz: string         // 最小下单量
-  maxSz?: string        // 最大下单量
-  lotSz: string         // 下单量精度
-  tickSz: string        // 下单价格精度
-  listTime?: string     // 上线时间
-  expTime?: string      // 到期日期
-  lever?: string        // 杠杆倍数
-  state: string         // 产品状态: live/suspend/preopen
-  category?: string     // 产品类别
+  instType: string // 产品类型: SPOT/SWAP/FUTURES/OPTION
+  instId: string // 产品ID: BTC-USDT
+  uly?: string // 标的指数
+  baseCcy?: string // 交易货币: BTC
+  quoteCcy?: string // 计价货币: USDT
+  settCcy?: string // 盈亏结算和保证金币种
+  ctVal?: string // 合约面值
+  ctMult?: string // 合约乘数
+  ctValCcy?: string // 合约面值计价币种
+  minSz: string // 最小下单量
+  maxSz?: string // 最大下单量
+  lotSz: string // 下单量精度
+  tickSz: string // 下单价格精度
+  listTime?: string // 上线时间
+  expTime?: string // 到期日期
+  lever?: string // 杠杆倍数
+  state: string // 产品状态: live/suspend/preopen
+  category?: string // 产品类别
 }
 
 // 用户信息
@@ -207,21 +207,21 @@ export interface GridParamsRecommendation {
 // 策略性能统计
 export interface StrategyPerformance {
   strategy_id: number
-  total_profit: number          // 总盈亏
-  total_profit_rate: number     // 总收益率(%)
-  realized_profit: number       // 已实现盈亏
-  unrealized_profit: number     // 未实现盈亏
-  total_trades: number          // 总交易次数
-  total_orders?: number         // 总订单次数
-  in_position?: boolean         // 是否当前持仓中
-  position_side?: string        // 当前持仓方向
-  successful_trades: number     // 成功交易次数
-  failed_trades: number         // 失败交易次数
-  win_rate: number              // 胜率(%)
-  total_fee: number             // 总手续费
-  max_drawdown: number          // 最大回撤
-  profit_history: ProfitHistoryItem[]  // 盈亏历史
-  daily_profits: DailyProfit[]  // 每日盈亏
+  total_profit: number // 总盈亏
+  total_profit_rate: number // 总收益率(%)
+  realized_profit: number // 已实现盈亏
+  unrealized_profit: number // 未实现盈亏
+  total_trades: number // 总交易次数
+  total_orders?: number // 总订单次数
+  in_position?: boolean // 是否当前持仓中
+  position_side?: string // 当前持仓方向
+  successful_trades: number // 成功交易次数
+  failed_trades: number // 失败交易次数
+  win_rate: number // 胜率(%)
+  total_fee: number // 总手续费
+  max_drawdown: number // 最大回撤
+  profit_history: ProfitHistoryItem[] // 盈亏历史
+  daily_profits: DailyProfit[] // 每日盈亏
 }
 
 export interface StrategyEvent {
@@ -272,7 +272,7 @@ export interface Alert {
   severity: AlertSeverity
   title: string
   message: string
-  data?: string  // JSON字符串
+  data?: string // JSON字符串
   is_read: boolean
   is_handled: boolean
   created_at: string

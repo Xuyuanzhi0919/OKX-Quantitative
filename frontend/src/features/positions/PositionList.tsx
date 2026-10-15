@@ -55,9 +55,7 @@ const PositionList = () => {
       key: 'side',
       width: 80,
       render: (side: string) => (
-        <Tag color={side === 'long' ? '#22c55e' : '#ef4444'}>
-          {side === 'long' ? '多' : '空'}
-        </Tag>
+        <Tag color={side === 'long' ? '#22c55e' : '#ef4444'}>{side === 'long' ? '多' : '空'}</Tag>
       ),
     },
     {
@@ -91,7 +89,8 @@ const PositionList = () => {
       align: 'right',
       render: (_: any, record: Position) => {
         const color = record.unrealized_pnl >= 0 ? '#22c55e' : '#ef4444'
-        const icon = record.unrealized_pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />
+        const icon =
+          record.unrealized_pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />
         return (
           <div style={{ color, fontWeight: 600 }}>
             <div>{formatAmount(record.unrealized_pnl)} USDT</div>
@@ -136,21 +135,12 @@ const PositionList = () => {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
           <Card size="small">
-            <Statistic
-              title="持仓数量"
-              value={positions.length}
-              suffix="个"
-            />
+            <Statistic title="持仓数量" value={positions.length} suffix="个" />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic
-              title="总保证金"
-              value={totalMargin}
-              precision={2}
-              suffix="USDT"
-            />
+            <Statistic title="总保证金" value={totalMargin} precision={2} suffix="USDT" />
           </Card>
         </Col>
         <Col span={6}>

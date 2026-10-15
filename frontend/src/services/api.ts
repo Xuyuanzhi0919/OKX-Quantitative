@@ -3,7 +3,18 @@
  */
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig } from 'axios'
-import type { Strategy, StrategyEvent, Order, Position, Ticker, Kline, Instrument, StrategyPerformance, User, TopAltcoinStrategyCandidate } from '@/types'
+import type {
+  Strategy,
+  StrategyEvent,
+  Order,
+  Position,
+  Ticker,
+  Kline,
+  Instrument,
+  StrategyPerformance,
+  User,
+  TopAltcoinStrategyCandidate,
+} from '@/types'
 
 type ApiClient = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete'> & {
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
@@ -29,7 +40,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 // 响应拦截器
@@ -39,8 +50,8 @@ api.interceptors.response.use(
   },
   (error) => {
     if (
-      error?.response?.status === 401
-      && !String(error?.config?.url || '').includes('/auth/login')
+      error?.response?.status === 401 &&
+      !String(error?.config?.url || '').includes('/auth/login')
     ) {
       localStorage.removeItem('token')
       if (window.location.pathname !== '/login') {
@@ -48,13 +59,16 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 // 认证API
 export const authApi = {
   login: (username: string, password: string) =>
-    api.post<{ access_token: string; token_type: string; user: User }>('/auth/login', { username, password }),
+    api.post<{ access_token: string; token_type: string; user: User }>('/auth/login', {
+      username,
+      password,
+    }),
   register: (username: string, email: string, password: string) =>
     api.post<User>('/auth/register', { username, email, password }),
   getCurrentUser: () => api.get<User>('/auth/me'),
@@ -65,37 +79,47 @@ export const strategyApi = {
   getList: () => api.get<{ total: number; items: Strategy[] }>('/strategies/'),
   getById: (id: number) => api.get<Strategy>(`/strategies/${id}`),
   create: (data: Partial<Strategy>) => api.post('/strategies', data),
-  update: (id: number, data: Partial<Strategy>) =>
-    api.put(`/strategies/${id}`, data),
+  update: (id: number, data: Partial<Strategy>) => api.put(`/strategies/${id}`, data),
   delete: (id: number) => api.delete(`/strategies/${id}`),
   start: (id: number, forceStart: boolean = false) =>
     api.post(`/strategies/${id}/start`, null, { params: { force_start: forceStart } }),
   startPreflight: (id: number) =>
-    api.get<{ code: number; msg: string; data: any }>(`/strategies/${id}/start-preflight`)
-      .then(res => (res as any).data),
+    api
+      .get<{ code: number; msg: string; data: any }>(`/strategies/${id}/start-preflight`)
+      .then((res) => (res as any).data),
   stop: (id: number, cancelOrders: boolean = true, closePosition: boolean = true) =>
-    api.post(`/strategies/${id}/stop`, null, { params: { cancel_orders: cancelOrders, close_position: closePosition } }),
+    api.post(`/strategies/${id}/stop`, null, {
+      params: { cancel_orders: cancelOrders, close_position: closePosition },
+    }),
   getStats: (id: number) => api.get(`/strategies/${id}/stats`),
   getOrders: (id: number, skip?: number, limit?: number) =>
-    api.get<{ code: number; msg: string; data: { total: number; items: Order[] } }>(
-      `/strategies/${id}/orders`,
-      { params: { skip, limit } }
-    ).then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: { total: number; items: Order[] }
+      }>(`/strategies/${id}/orders`, { params: { skip, limit } })
+      .then((res) => (res as any).data),
   getEvents: (id: number, skip?: number, limit?: number) =>
-    api.get<{ code: number; msg: string; data: { total: number; items: StrategyEvent[] } }>(
-      `/strategies/${id}/events`,
-      { params: { skip, limit } }
-    ).then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: { total: number; items: StrategyEvent[] }
+      }>(`/strategies/${id}/events`, { params: { skip, limit } })
+      .then((res) => (res as any).data),
   getPerformance: (id: number) =>
-    api.get<{ code: number; msg: string; data: StrategyPerformance }>(
-      `/strategies/${id}/performance`
-    ).then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: StrategyPerformance
+      }>(`/strategies/${id}/performance`)
+      .then((res) => (res as any).data),
   getAdaptiveGridTrendRecommendation: () =>
     api.get('/strategies/adaptive-grid-trend/recommendation'),
-  backtest: (id: number, params: any) =>
-    api.post(`/strategies/${id}/backtest`, params),
-  getPnl: (id: number) =>
-    api.get(`/strategies/${id}/pnl`),
+  backtest: (id: number, params: any) => api.post(`/strategies/${id}/backtest`, params),
+  getPnl: (id: number) => api.get(`/strategies/${id}/pnl`),
 }
 
 export const safetyApi = {
@@ -115,7 +139,7 @@ export const orderApi = {
     side?: string
     strategy_id?: number
     limit?: number
-  }) => api.get<Order[]>('/orders/list', { params }).then(res => (res as any).data || res),
+  }) => api.get<Order[]>('/orders/list', { params }).then((res) => (res as any).data || res),
   getById: (id: string) => api.get<Order>(`/orders/${id}`),
 
   // 创建订单 (新实现)
@@ -131,24 +155,29 @@ export const orderApi = {
     reduce_only?: boolean
     tgt_ccy?: 'base_ccy' | 'quote_ccy'
   }) =>
-    api.post<{ code: number; msg: string; data: any }>('/orders/create', data)
-      .then(res => res.data),
+    api
+      .post<{ code: number; msg: string; data: any }>('/orders/create', data)
+      .then((res) => res.data),
 
   // 取消订单 (新实现)
   cancel: (symbol: string, orderId?: string, clOrdId?: string) =>
-    api.post<{ code: number; msg: string; data: any }>('/orders/cancel', {
-      symbol,
-      order_id: orderId,
-      cl_ord_id: clOrdId,
-    }).then(res => res.data),
+    api
+      .post<{ code: number; msg: string; data: any }>('/orders/cancel', {
+        symbol,
+        order_id: orderId,
+        cl_ord_id: clOrdId,
+      })
+      .then((res) => res.data),
 
   // 查询订单详情 (新实现)
   getDetail: (symbol: string, orderId?: string, clOrdId?: string) =>
-    api.post<{ code: number; msg: string; data: any }>('/orders/detail', {
-      symbol,
-      order_id: orderId,
-      cl_ord_id: clOrdId,
-    }).then(res => res.data),
+    api
+      .post<{ code: number; msg: string; data: any }>('/orders/detail', {
+        symbol,
+        order_id: orderId,
+        cl_ord_id: clOrdId,
+      })
+      .then((res) => res.data),
 }
 
 // 持仓API
@@ -160,24 +189,29 @@ export const positionApi = {
 // 行情API
 export const marketApi = {
   getTicker: (symbol: string) =>
-    api.get<{ code: number; msg: string; data: Ticker }>(`/market/ticker/${symbol}`)
-      .then(res => (res as any).data as Ticker),
+    api
+      .get<{ code: number; msg: string; data: Ticker }>(`/market/ticker/${symbol}`)
+      .then((res) => (res as any).data as Ticker),
 
   getKline: (
     symbol: string,
     timeframe: string = '1m',
     limit: number = 100,
     after?: string,
-    before?: string
+    before?: string,
   ) =>
-    api.get<{ code: number; msg: string; data: Kline[] }>(`/market/kline/${symbol}`, {
-      params: { timeframe, limit, after, before },
-    }).then(res => (res as any).data as Kline[]),
+    api
+      .get<{ code: number; msg: string; data: Kline[] }>(`/market/kline/${symbol}`, {
+        params: { timeframe, limit, after, before },
+      })
+      .then((res) => (res as any).data as Kline[]),
 
   getOrderbook: (symbol: string, depth: number = 20) =>
-    api.get<{ code: number; msg: string; data: any }>(`/market/orderbook/${symbol}`, {
-      params: { depth },
-    }).then(res => (res as any).data),
+    api
+      .get<{ code: number; msg: string; data: any }>(`/market/orderbook/${symbol}`, {
+        params: { depth },
+      })
+      .then((res) => (res as any).data),
 
   // 获取交易产品列表
   getInstruments: (params?: {
@@ -186,22 +220,26 @@ export const marketApi = {
     inst_id?: string
     quote_ccy?: string
   }) =>
-    api.get<{ code: number; msg: string; data: Instrument[] }>('/market/instruments', {
-      params: {
-        inst_type: params?.inst_type || 'SPOT',
-        uly: params?.uly,
-        inst_id: params?.inst_id,
-        quote_ccy: params?.quote_ccy,
-      },
-    }).then(res => (res as any).data as Instrument[]),
+    api
+      .get<{ code: number; msg: string; data: Instrument[] }>('/market/instruments', {
+        params: {
+          inst_type: params?.inst_type || 'SPOT',
+          uly: params?.uly,
+          inst_id: params?.inst_id,
+          quote_ccy: params?.quote_ccy,
+        },
+      })
+      .then((res) => (res as any).data as Instrument[]),
 }
 
 // 账户API (新增)
 export const accountApi = {
   getBalance: (ccy?: string) =>
-    api.get<{ code: number; msg: string; data: any }>('/positions/balance', {
-      params: { ccy },
-    }).then(res => (res as any).data),
+    api
+      .get<{ code: number; msg: string; data: any }>('/positions/balance', {
+        params: { ccy },
+      })
+      .then((res) => (res as any).data),
 
   // 后端直接返回数组，拦截器已提取 response.data，无需再取 .data
   getPositions: (instType?: string, instId?: string, posId?: string) =>
@@ -209,33 +247,44 @@ export const accountApi = {
       params: {
         inst_type: instType,
         inst_id: instId,
-        pos_id: posId
+        pos_id: posId,
       },
     }),
 
   // 获取账户净值历史快照（用于计算最大回撤）
   getAccountSnapshots: (days: number = 7) =>
-    api.get<{
-      code: number; msg: string; data: {
-        snapshots: Array<{ total_equity: number; available_balance: number; unrealized_pnl: number; timestamp: string }>
-        max_drawdown: number
-        max_drawdown_pct: number
-        days: number
-        count: number
-      }
-    }>('/positions/account-snapshots', { params: { days } })
-      .then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: {
+          snapshots: Array<{
+            total_equity: number
+            available_balance: number
+            unrealized_pnl: number
+            timestamp: string
+          }>
+          max_drawdown: number
+          max_drawdown_pct: number
+          days: number
+          count: number
+        }
+      }>('/positions/account-snapshots', { params: { days } })
+      .then((res) => (res as any).data),
 
   // 获取今日盈亏基线（UTC+8 自然日 0:00 重置）
   getDailyPnlBaseline: () =>
-    api.get<{
-      code: number; msg: string; data: {
-        baseline_equity: number | null
-        baseline_time: string | null
-        has_baseline: boolean
-      }
-    }>('/positions/daily-pnl')
-      .then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: {
+          baseline_equity: number | null
+          baseline_time: string | null
+          has_baseline: boolean
+        }
+      }>('/positions/daily-pnl')
+      .then((res) => (res as any).data),
 }
 
 // 告警API
@@ -249,40 +298,37 @@ export const alertApi = {
     severity?: 'info' | 'warning' | 'error' | 'success'
     is_read?: boolean
   }) =>
-    api.get<{ code: number; msg: string; data: { total: number; alerts: any[] } }>(
-      '/alerts/list',
-      { params }
-    ).then(res => (res as any).data),
+    api
+      .get<{
+        code: number
+        msg: string
+        data: { total: number; alerts: any[] }
+      }>('/alerts/list', { params })
+      .then((res) => (res as any).data),
 
   // 获取未读告警数量
   getUnreadCount: () =>
-    api.get<{ code: number; msg: string; data: { count: number } }>(
-      '/alerts/unread-count'
-    ).then(res => (res as any).data),
+    api
+      .get<{ code: number; msg: string; data: { count: number } }>('/alerts/unread-count')
+      .then((res) => (res as any).data),
 
   // 标记单个告警为已读
   markRead: (id: number) =>
-    api.post<{ code: number; msg: string }>(
-      `/alerts/${id}/mark-read`
-    ).then(res => (res as any)),
+    api.post<{ code: number; msg: string }>(`/alerts/${id}/mark-read`).then((res) => res as any),
 
   // 标记所有告警为已读
   markAllRead: () =>
-    api.post<{ code: number; msg: string; data: { count: number } }>(
-      '/alerts/mark-all-read'
-    ).then(res => (res as any).data),
+    api
+      .post<{ code: number; msg: string; data: { count: number } }>('/alerts/mark-all-read')
+      .then((res) => (res as any).data),
 
   // 标记告警为已处理
   handleAlert: (id: number) =>
-    api.post<{ code: number; msg: string }>(
-      `/alerts/${id}/handle`
-    ).then(res => (res as any)),
+    api.post<{ code: number; msg: string }>(`/alerts/${id}/handle`).then((res) => res as any),
 
   // 删除告警
   delete: (id: number) =>
-    api.delete<{ code: number; msg: string }>(
-      `/alerts/${id}`
-    ).then(res => (res as any)),
+    api.delete<{ code: number; msg: string }>(`/alerts/${id}`).then((res) => res as any),
 }
 
 // AI分析API
@@ -306,8 +352,7 @@ export const aiApi = {
     }>('/ai/analyze', { symbol, detailed }),
 
   // 批量分析
-  analyzeBatch: (symbols: string[]) =>
-    api.post('/ai/analyze/batch', symbols),
+  analyzeBatch: (symbols: string[]) => api.post('/ai/analyze/batch', symbols),
 
   analyzeTopAltcoinStrategies: (params?: {
     limit?: number
@@ -316,16 +361,19 @@ export const aiApi = {
     min_volume_usdt?: number
     exclude_majors?: boolean
   }) =>
-    api.post<{ code: number; msg: string; data: { items: TopAltcoinStrategyCandidate[]; universe_count: number; ai_enabled: boolean } }>(
-      '/ai/top-altcoin-strategies',
-      {
+    api
+      .post<{
+        code: number
+        msg: string
+        data: { items: TopAltcoinStrategyCandidate[]; universe_count: number; ai_enabled: boolean }
+      }>('/ai/top-altcoin-strategies', {
         limit: params?.limit ?? 5,
         inst_type: params?.inst_type ?? 'SWAP',
         quote_ccy: params?.quote_ccy ?? 'USDT',
         min_volume_usdt: params?.min_volume_usdt ?? 1000000,
         exclude_majors: params?.exclude_majors ?? true,
-      }
-    ).then(res => (res as any).data),
+      })
+      .then((res) => (res as any).data),
 
   analyzeStealthAltcoinStrategies: (params?: {
     limit?: number
@@ -343,9 +391,12 @@ export const aiApi = {
     max_recent_position?: number
     exclude_majors?: boolean
   }) =>
-    api.post<{ code: number; msg: string; data: { items: TopAltcoinStrategyCandidate[]; universe_count: number; ai_enabled: boolean } }>(
-      '/ai/stealth-altcoin-strategies',
-      {
+    api
+      .post<{
+        code: number
+        msg: string
+        data: { items: TopAltcoinStrategyCandidate[]; universe_count: number; ai_enabled: boolean }
+      }>('/ai/stealth-altcoin-strategies', {
         limit: params?.limit ?? 5,
         inst_type: params?.inst_type ?? 'SWAP',
         quote_ccy: params?.quote_ccy ?? 'USDT',
@@ -360,35 +411,30 @@ export const aiApi = {
         min_ma_gap_pct: params?.min_ma_gap_pct ?? -2,
         max_recent_position: params?.max_recent_position ?? 0.75,
         exclude_majors: params?.exclude_majors ?? true,
-      }
-    ).then(res => (res as any).data),
+      })
+      .then((res) => (res as any).data),
 
   // AI配置管理
-  getConfigList: () =>
-    api.get<any[]>('/ai-configs/list'),
+  getConfigList: () => api.get<any[]>('/ai-configs/list'),
 
-  createConfig: (data: {
-    name: string
-    provider: string
-    api_key: string
-    model: string
-  }) => api.post('/ai-configs/create', data),
+  createConfig: (data: { name: string; provider: string; api_key: string; model: string }) =>
+    api.post('/ai-configs/create', data),
 
-  updateConfig: (id: number, data: {
-    name?: string
-    api_key?: string
-    model?: string
-    is_active?: boolean
-  }) => api.put(`/ai-configs/update/${id}`, data),
+  updateConfig: (
+    id: number,
+    data: {
+      name?: string
+      api_key?: string
+      model?: string
+      is_active?: boolean
+    },
+  ) => api.put(`/ai-configs/update/${id}`, data),
 
-  deleteConfig: (id: number) =>
-    api.delete(`/ai-configs/delete/${id}`),
+  deleteConfig: (id: number) => api.delete(`/ai-configs/delete/${id}`),
 
-  activateConfig: (id: number) =>
-    api.post(`/ai-configs/activate/${id}`),
+  activateConfig: (id: number) => api.post(`/ai-configs/activate/${id}`),
 
-  getActiveConfig: () =>
-    api.get<any>('/ai-configs/active'),
+  getActiveConfig: () => api.get<any>('/ai-configs/active'),
 }
 
 export default api

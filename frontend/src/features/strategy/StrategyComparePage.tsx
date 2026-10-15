@@ -71,7 +71,9 @@ export default function StrategyComparePage() {
       const list = await strategyApi.getList()
       const targets = list.items
         .filter((item) => item.type === 'explosive_momentum_chaser')
-        .filter((item) => item.name.includes('爆量急拉') || item.symbol.includes('EXPLOSIVE-MOMENTUM'))
+        .filter(
+          (item) => item.name.includes('爆量急拉') || item.symbol.includes('EXPLOSIVE-MOMENTUM'),
+        )
         .sort((a, b) => a.id - b.id)
 
       return Promise.all(
@@ -85,7 +87,7 @@ export default function StrategyComparePage() {
             stats: statsResult.status === 'fulfilled' ? statsResult.value : undefined,
             events: eventsResult.status === 'fulfilled' ? eventsResult.value.items : [],
           }
-        })
+        }),
       )
     },
   })
@@ -132,9 +134,14 @@ export default function StrategyComparePage() {
 
   return (
     <div>
-      <Space align="center" style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
+      <Space
+        align="center"
+        style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}
+      >
         <div>
-          <Title level={3} style={{ margin: 0 }}>策略对比</Title>
+          <Title level={3} style={{ margin: 0 }}>
+            策略对比
+          </Title>
           <Text type="secondary">10 秒自动刷新</Text>
         </div>
         <Tag color="blue">{rows.length} 个策略</Tag>
@@ -166,9 +173,14 @@ export default function StrategyComparePage() {
                 <Col xs={24} xl={12} key={row.strategy.id}>
                   <Card loading={isLoading} bodyStyle={{ padding: 18 }}>
                     <Space direction="vertical" size={14} style={{ width: '100%' }}>
-                      <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+                      <Space
+                        align="center"
+                        style={{ width: '100%', justifyContent: 'space-between' }}
+                      >
                         <Space>
-                          <Title level={4} style={{ margin: 0 }}>{shortName(row.strategy.name)}</Title>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {shortName(row.strategy.name)}
+                          </Title>
                           <Tag color={row.strategy.status === 'running' ? 'green' : 'default'}>
                             {row.strategy.status === 'running' ? '运行中' : '已停止'}
                           </Tag>
@@ -185,14 +197,18 @@ export default function StrategyComparePage() {
                         }}
                       >
                         <Text type="secondary">当前信号</Text>
-                        <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4 }}>{signalText(row.stats)}</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4 }}>
+                          {signalText(row.stats)}
+                        </div>
                         <Text type="secondary">候选：{candidateText(row.stats)}</Text>
                       </div>
 
                       <Row gutter={12}>
                         <Col span={8}>
                           <Text type="secondary">持仓</Text>
-                          <div style={{ fontSize: 18, fontWeight: 700 }}>{open ? `${open}个` : '空仓'}</div>
+                          <div style={{ fontSize: 18, fontWeight: 700 }}>
+                            {open ? `${open}个` : '空仓'}
+                          </div>
                         </Col>
                         <Col span={8}>
                           <Text type="secondary">仓位</Text>
@@ -200,14 +216,18 @@ export default function StrategyComparePage() {
                         </Col>
                         <Col span={8}>
                           <Text type="secondary">交易</Text>
-                          <div style={{ fontSize: 18, fontWeight: 700 }}>{row.stats?.total_trades || 0}</div>
+                          <div style={{ fontSize: 18, fontWeight: 700 }}>
+                            {row.stats?.total_trades || 0}
+                          </div>
                         </Col>
                       </Row>
 
                       <Space wrap>
                         <Tag color={hasError ? 'red' : 'green'}>{hasError ? '异常' : '健康'}</Tag>
                         <Tag color="purple">回撤 {fmtPct(risk.max_runtime_drawdown)}</Tag>
-                        <Tag color="orange">连亏 {risk.consecutive_losses ?? 0}/{risk.max_consecutive_losses ?? '-'}</Tag>
+                        <Tag color="orange">
+                          连亏 {risk.consecutive_losses ?? 0}/{risk.max_consecutive_losses ?? '-'}
+                        </Tag>
                         <Tag>{lastEventText(row.events)}</Tag>
                       </Space>
                     </Space>

@@ -2,6 +2,7 @@
 均线交叉策略回测实现
 支持做多和做空，支持杠杆
 """
+
 from typing import Dict, List, Optional
 from loguru import logger
 from .backtest_engine import BacktestEngine
@@ -44,7 +45,7 @@ class MACrossBacktestEngine(BacktestEngine):
             initial_capital=initial_capital,
             fee_rate=fee_rate,
             leverage=leverage,
-            enable_short=enable_short
+            enable_short=enable_short,
         )
 
         self.fast_period = fast_period
@@ -68,12 +69,16 @@ class MACrossBacktestEngine(BacktestEngine):
     def reset(self):
         """重置回测状态"""
         super().reset()
-        self.kline_buffer = KlineBuffer(max_size=max(self.fast_period, self.slow_period) + 10)
+        self.kline_buffer = KlineBuffer(
+            max_size=max(self.fast_period, self.slow_period) + 10
+        )
         self.fast_ma_history = []
         self.slow_ma_history = []
 
     @classmethod
-    def from_params(cls, symbol: str, initial_capital: float, params: Dict) -> "MACrossBacktestEngine":
+    def from_params(
+        cls, symbol: str, initial_capital: float, params: Dict
+    ) -> "MACrossBacktestEngine":
         """
         从参数字典创建引擎实例
 
@@ -95,7 +100,7 @@ class MACrossBacktestEngine(BacktestEngine):
             fee_rate=float(params.get("fee_rate", 0.001)),
             leverage=int(params.get("leverage", 1)),
             enable_short=bool(params.get("enable_short", False)),
-            use_price_filter=bool(params.get("use_price_filter", False))
+            use_price_filter=bool(params.get("use_price_filter", False)),
         )
 
     def calculate_ma(self, data: List[float], period: int) -> Optional[float]:
@@ -181,7 +186,9 @@ class MACrossBacktestEngine(BacktestEngine):
                 # 开多仓
                 self.buy(close_price, self.amount_per_trade, timestamp)
                 self.position.direction = "long"
-                logger.debug(f"金叉开多: 价格={close_price:.2f}, 快线={fast_ma:.2f}, 慢线={slow_ma:.2f}")
+                logger.debug(
+                    f"金叉开多: 价格={close_price:.2f}, 快线={fast_ma:.2f}, 慢线={slow_ma:.2f}"
+                )
 
         elif death_cross:
             # 死叉：平多或开空
@@ -193,7 +200,9 @@ class MACrossBacktestEngine(BacktestEngine):
             # 如果启用做空，开空仓
             if self.enable_short and self.position.amount == 0:
                 self.short(close_price, self.amount_per_trade, timestamp)
-                logger.debug(f"死叉开空: 价格={close_price:.2f}, 快线={fast_ma:.2f}, 慢线={slow_ma:.2f}")
+                logger.debug(
+                    f"死叉开空: 价格={close_price:.2f}, 快线={fast_ma:.2f}, 慢线={slow_ma:.2f}"
+                )
 
 
 class DualMACrossBacktestEngine(BacktestEngine):
@@ -237,7 +246,7 @@ class DualMACrossBacktestEngine(BacktestEngine):
             initial_capital=initial_capital,
             fee_rate=fee_rate,
             leverage=leverage,
-            enable_short=enable_short
+            enable_short=enable_short,
         )
 
         self.fast_period = fast_period
@@ -263,13 +272,17 @@ class DualMACrossBacktestEngine(BacktestEngine):
     def reset(self):
         """重置回测状态"""
         super().reset()
-        self.kline_buffer = KlineBuffer(max_size=max(self.fast_period, self.slow_period) + 10)
+        self.kline_buffer = KlineBuffer(
+            max_size=max(self.fast_period, self.slow_period) + 10
+        )
         self.fast_ma_history = []
         self.slow_ma_history = []
         self.entry_price = None
 
     @classmethod
-    def from_params(cls, symbol: str, initial_capital: float, params: Dict) -> "DualMACrossBacktestEngine":
+    def from_params(
+        cls, symbol: str, initial_capital: float, params: Dict
+    ) -> "DualMACrossBacktestEngine":
         """从参数字典创建引擎实例"""
         return cls(
             symbol=symbol,
@@ -282,7 +295,7 @@ class DualMACrossBacktestEngine(BacktestEngine):
             leverage=int(params.get("leverage", 1)),
             enable_short=bool(params.get("enable_short", True)),
             stop_loss=float(params.get("stop_loss", 0.0)),
-            take_profit=float(params.get("take_profit", 0.0))
+            take_profit=float(params.get("take_profit", 0.0)),
         )
 
     def calculate_position_size(self, price: float) -> float:
@@ -320,13 +333,17 @@ class DualMACrossBacktestEngine(BacktestEngine):
                 # 触发止损
                 self.sell(close_price, self.position.amount, timestamp)
                 self.entry_price = None
-                logger.debug(f"做多止损触发: 价格={close_price:.2f}, 亏损={pnl_ratio*100:.2f}%")
+                logger.debug(
+                    f"做多止损触发: 价格={close_price:.2f}, 亏损={pnl_ratio*100:.2f}%"
+                )
 
             elif self.take_profit > 0 and pnl_ratio >= self.take_profit:
                 # 触发止盈
                 self.sell(close_price, self.position.amount, timestamp)
                 self.entry_price = None
-                logger.debug(f"做多止盈触发: 价格={close_price:.2f}, 盈利={pnl_ratio*100:.2f}%")
+                logger.debug(
+                    f"做多止盈触发: 价格={close_price:.2f}, 盈利={pnl_ratio*100:.2f}%"
+                )
 
         elif self.position.direction == "short":
             # 做空止损止盈
@@ -336,13 +353,17 @@ class DualMACrossBacktestEngine(BacktestEngine):
                 # 触发止损
                 self.cover(close_price, abs(self.position.amount), timestamp)
                 self.entry_price = None
-                logger.debug(f"做空止损触发: 价格={close_price:.2f}, 亏损={pnl_ratio*100:.2f}%")
+                logger.debug(
+                    f"做空止损触发: 价格={close_price:.2f}, 亏损={pnl_ratio*100:.2f}%"
+                )
 
             elif self.take_profit > 0 and pnl_ratio >= self.take_profit:
                 # 触发止盈
                 self.cover(close_price, abs(self.position.amount), timestamp)
                 self.entry_price = None
-                logger.debug(f"做空止盈触发: 价格={close_price:.2f}, 盈利={pnl_ratio*100:.2f}%")
+                logger.debug(
+                    f"做空止盈触发: 价格={close_price:.2f}, 盈利={pnl_ratio*100:.2f}%"
+                )
 
     def on_kline(self, kline: Dict):
         """
@@ -401,7 +422,9 @@ class DualMACrossBacktestEngine(BacktestEngine):
                 self.buy(close_price, trade_amount, timestamp)
                 self.position.direction = "long"
                 self.entry_price = close_price
-                logger.debug(f"金叉开多: 价格={close_price:.2f}, 数量={trade_amount:.6f}")
+                logger.debug(
+                    f"金叉开多: 价格={close_price:.2f}, 数量={trade_amount:.6f}"
+                )
 
         elif death_cross and self.enable_short:
             # 死叉：平多开空
@@ -414,4 +437,6 @@ class DualMACrossBacktestEngine(BacktestEngine):
                 self.short(close_price, trade_amount, timestamp)
                 self.position.direction = "short"
                 self.entry_price = close_price
-                logger.debug(f"死叉开空: 价格={close_price:.2f}, 数量={trade_amount:.6f}")
+                logger.debug(
+                    f"死叉开空: 价格={close_price:.2f}, 数量={trade_amount:.6f}"
+                )

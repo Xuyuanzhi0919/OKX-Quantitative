@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Card,
   Table,
@@ -11,35 +11,27 @@ import {
   Tag,
   Popconfirm,
   Typography,
-  App as AntApp
-} from 'antd';
-import {
-  Plus,
-  CheckCircle,
-  XCircle,
-  Pencil,
-  Trash2,
-  RefreshCw,
-  Zap
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+  App as AntApp,
+} from 'antd'
+import { Plus, CheckCircle, XCircle, Pencil, Trash2, RefreshCw, Zap } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography
 
 // API配置接口
 interface APIConfig {
-  id: number;
-  name: string;
-  exchange: string;
-  api_key: string;
-  is_simulated: boolean;
-  is_active: boolean;
-  is_valid: boolean;
-  proxy?: string;
-  last_verified_at?: string;
-  error_message?: string;
-  created_at: string;
-  updated_at?: string;
+  id: number
+  name: string
+  exchange: string
+  api_key: string
+  is_simulated: boolean
+  is_active: boolean
+  is_valid: boolean
+  proxy?: string
+  last_verified_at?: string
+  error_message?: string
+  created_at: string
+  updated_at?: string
 }
 
 // API配置端点
@@ -50,21 +42,21 @@ const API_CONFIGS_API = {
   delete: (id: number) => `/api/v1/api-configs/${id}`,
   verify: (id: number) => `/api/v1/api-configs/${id}/verify`,
   getActive: '/api/v1/api-configs/active',
-};
+}
 
 const authHeaders = (extra?: HeadersInit): HeadersInit => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token')
   return {
     ...(extra || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
+  }
+}
 
 const APIConfigManagement: React.FC = () => {
-  const { message } = AntApp.useApp();
-  const [form] = Form.useForm();
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const queryClient = useQueryClient();
+  const { message } = AntApp.useApp()
+  const [form] = Form.useForm()
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const queryClient = useQueryClient()
 
   // 获取配置列表
   const { data: configs = [], isLoading } = useQuery<APIConfig[]>({
@@ -72,12 +64,12 @@ const APIConfigManagement: React.FC = () => {
     queryFn: async () => {
       const response = await fetch(API_CONFIGS_API.list, {
         headers: authHeaders(),
-      });
-      if (!response.ok) throw new Error('获取配置列表失败');
-      return response.json();
+      })
+      if (!response.ok) throw new Error('获取配置列表失败')
+      return response.json()
     },
     refetchInterval: 30000, // 每30秒刷新
-  });
+  })
 
   // 创建配置
   const createMutation = useMutation({
@@ -86,23 +78,23 @@ const APIConfigManagement: React.FC = () => {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(values),
-      });
+      })
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || '创建失败');
+        const error = await response.json()
+        throw new Error(error.detail || '创建失败')
       }
-      return response.json();
+      return response.json()
     },
     onSuccess: (data) => {
-      message.success(`配置创建成功${data.is_valid ? '' : ',但验证失败: ' + data.error_message}`);
-      queryClient.invalidateQueries({ queryKey: ['api-configs'] });
-      setIsModalVisible(false);
-      form.resetFields();
+      message.success(`配置创建成功${data.is_valid ? '' : ',但验证失败: ' + data.error_message}`)
+      queryClient.invalidateQueries({ queryKey: ['api-configs'] })
+      setIsModalVisible(false)
+      form.resetFields()
     },
     onError: (error: Error) => {
-      message.error(`创建失败: ${error.message}`);
+      message.error(`创建失败: ${error.message}`)
     },
-  });
+  })
 
   // 激活配置
   const activateMutation = useMutation({
@@ -110,22 +102,22 @@ const APIConfigManagement: React.FC = () => {
       const response = await fetch(API_CONFIGS_API.activate(id), {
         method: 'POST',
         headers: authHeaders(),
-      });
+      })
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || '切换失败');
+        const error = await response.json()
+        throw new Error(error.detail || '切换失败')
       }
-      return response.json();
+      return response.json()
     },
     onSuccess: (data) => {
-      message.success(data.msg);
-      localStorage.removeItem('okk_dashboard_v1');
-      queryClient.invalidateQueries({ queryKey: ['api-configs'] });
+      message.success(data.msg)
+      localStorage.removeItem('okk_dashboard_v1')
+      queryClient.invalidateQueries({ queryKey: ['api-configs'] })
     },
     onError: (error: Error) => {
-      message.error(`切换失败: ${error.message}`);
+      message.error(`切换失败: ${error.message}`)
     },
-  });
+  })
 
   // 删除配置
   const deleteMutation = useMutation({
@@ -133,21 +125,21 @@ const APIConfigManagement: React.FC = () => {
       const response = await fetch(API_CONFIGS_API.delete(id), {
         method: 'DELETE',
         headers: authHeaders(),
-      });
+      })
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || '删除失败');
+        const error = await response.json()
+        throw new Error(error.detail || '删除失败')
       }
-      return response.json();
+      return response.json()
     },
     onSuccess: () => {
-      message.success('删除成功');
-      queryClient.invalidateQueries({ queryKey: ['api-configs'] });
+      message.success('删除成功')
+      queryClient.invalidateQueries({ queryKey: ['api-configs'] })
     },
     onError: (error: Error) => {
-      message.error(`删除失败: ${error.message}`);
+      message.error(`删除失败: ${error.message}`)
     },
-  });
+  })
 
   // 验证配置
   const verifyMutation = useMutation({
@@ -155,22 +147,22 @@ const APIConfigManagement: React.FC = () => {
       const response = await fetch(API_CONFIGS_API.verify(id), {
         method: 'POST',
         headers: authHeaders(),
-      });
-      if (!response.ok) throw new Error('验证失败');
-      return response.json();
+      })
+      if (!response.ok) throw new Error('验证失败')
+      return response.json()
     },
     onSuccess: (data) => {
       if (data.data.is_valid) {
-        message.success('配置验证成功');
+        message.success('配置验证成功')
       } else {
-        message.error(`配置验证失败: ${data.data.error_message}`);
+        message.error(`配置验证失败: ${data.data.error_message}`)
       }
-      queryClient.invalidateQueries({ queryKey: ['api-configs'] });
+      queryClient.invalidateQueries({ queryKey: ['api-configs'] })
     },
     onError: (error: Error) => {
-      message.error(`验证失败: ${error.message}`);
+      message.error(`验证失败: ${error.message}`)
     },
-  });
+  })
 
   const columns = [
     {
@@ -200,9 +192,7 @@ const APIConfigManagement: React.FC = () => {
       dataIndex: 'is_simulated',
       key: 'is_simulated',
       render: (isSimulated: boolean) => (
-        <Tag color={isSimulated ? 'orange' : 'green'}>
-          {isSimulated ? '模拟盘' : '实盘'}
-        </Tag>
+        <Tag color={isSimulated ? 'orange' : 'green'}>{isSimulated ? '模拟盘' : '实盘'}</Tag>
       ),
     },
     {
@@ -262,11 +252,7 @@ const APIConfigManagement: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button
-                danger
-                size="small"
-                icon={<Trash2 size={14} />}
-              >
+              <Button danger size="small" icon={<Trash2 size={14} />}>
                 删除
               </Button>
             </Popconfirm>
@@ -274,29 +260,27 @@ const APIConfigManagement: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ]
 
   const handleCreateConfig = () => {
     form.validateFields().then((values) => {
-      createMutation.mutate(values);
-    });
-  };
+      createMutation.mutate(values)
+    })
+  }
 
   return (
     <div style={{ padding: '24px' }}>
       <Card
         title={
           <Space>
-            <Title level={4} style={{ margin: 0 }}>API 配置管理</Title>
+            <Title level={4} style={{ margin: 0 }}>
+              API 配置管理
+            </Title>
             <Text type="secondary">管理你的实盘和模拟盘 API 配置</Text>
           </Space>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<Plus size={14} />}
-            onClick={() => setIsModalVisible(true)}
-          >
+          <Button type="primary" icon={<Plus size={14} />} onClick={() => setIsModalVisible(true)}>
             添加配置
           </Button>
         }
@@ -316,8 +300,8 @@ const APIConfigManagement: React.FC = () => {
         open={isModalVisible}
         onOk={handleCreateConfig}
         onCancel={() => {
-          setIsModalVisible(false);
-          form.resetFields();
+          setIsModalVisible(false)
+          form.resetFields()
         }}
         confirmLoading={createMutation.isPending}
         width={600}
@@ -339,10 +323,7 @@ const APIConfigManagement: React.FC = () => {
             <Input placeholder="例如: OKX 实盘配置" />
           </Form.Item>
 
-          <Form.Item
-            label="交易所"
-            name="exchange"
-          >
+          <Form.Item label="交易所" name="exchange">
             <Input disabled />
           </Form.Item>
 
@@ -370,24 +351,17 @@ const APIConfigManagement: React.FC = () => {
             <Input.Password placeholder="输入你的 Passphrase" />
           </Form.Item>
 
-          <Form.Item
-            label="模拟盘"
-            name="is_simulated"
-            valuePropName="checked"
-          >
+          <Form.Item label="模拟盘" name="is_simulated" valuePropName="checked">
             <Switch checkedChildren="是" unCheckedChildren="否" />
           </Form.Item>
 
-          <Form.Item
-            label="代理地址"
-            name="proxy"
-          >
+          <Form.Item label="代理地址" name="proxy">
             <Input placeholder="可选，例如: http://127.0.0.1:7897" allowClear />
           </Form.Item>
         </Form>
       </Modal>
     </div>
-  );
-};
+  )
+}
 
-export default APIConfigManagement;
+export default APIConfigManagement
